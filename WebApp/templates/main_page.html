@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Agent Data</title>
+	<link rel="stylesheet" type="text/css" href="/static/default.css">
+</head>
+<body>
+<form method="post">
+<textarea title="content" name="content" rows="10" cols="20" style="width: 150px height: 150px"></textarea>
+<br>
+<input type="submit" name="Save" value="Save" class="button">
+</form>
+<h1>Submmited Content</h1>
+{% if content %}
+{% for c in content %}
+<p>{{c}}</p>
+{% endfor %}
+{% endif %}
+</body>
+</html>
