@@ -72,33 +72,27 @@ public abstract class BaseAgent extends Agent{
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
+                System.out.println("Called action");
                 ACLMessage msg = receive();
                 if (msg != null) {
-                    switch (msg.getPerformative()) {
-                        case ACLMessage.INFORM:{
-                            if (msg.getContent().contains("next time")) {
-                                if (msg.getContent().contains("next time now")) {
-                                    _current_time ++;
-                                    TimeExpired();
-                                    break;
-                                }
-                                else {
-                                    String[] num = msg.getContent().split("[[:punct:]]+");
-                                    TimeExpiringIn(Integer.parseInt(num[num.length - 1]));
-                                    break;
-                                }
-                            }
-                            else if (msg.getContent().equals("sale")) {
-                                SaleMade(msg);
-                                break;
-                            }
-                            UnhandledMessage(msg);
-                            break;
+                    if (msg.getPerformative() == ACLMessage.INFORM && msg.getContent().contains("next time")) {
+                        if (msg.getContent().contains("next time now")) {
+                            System.out.println("Handling time inform message");
+                            _current_time ++;
+                            TimeExpired();
                         }
-                        default: {
-                            UnhandledMessage(msg);
+                        else {
+                            String[] num = msg.getContent().split("[[:punct:]]+");
+                            TimeExpiringIn(Integer.parseInt(num[num.length - 1]));
+                            System.out.println("Handling time inform message");
                         }
                     }
+                    else {
+                        System.out.println("Handling non inform message");
+                        UnhandledMessage(msg);
+                    }
+                } else{
+                    System.out.println("Got null msg");
                 }
                 block();
             }

@@ -1,14 +1,11 @@
 package Agents.Other;
 
-import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
-
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
+//import Agents.Other.BaseAgent;
 /******************************************************************************
  *  Use: Used to push data periodically to the WS
  *  Name: Always only have one of these on the main container, have it name set
@@ -17,7 +14,7 @@ import java.util.Vector;
  *       - inform : Used to ask send info to server
  *             content: "any info that the server needs."
  *****************************************************************************/
-public class WebAgent extends BaseAgent{
+public class WebAgent extends Agents.Other.BaseAgent{
     private Vector<String> _messages;
 
     protected void setup() {
@@ -25,6 +22,7 @@ public class WebAgent extends BaseAgent{
     }
 
     protected void UnhandledMessage(ACLMessage msg) {
+        System.out.println(msg.getContent());
         if (msg.getPerformative() == ACLMessage.INFORM) {
             // Should do some formating and error checking here.
             _messages.add(msg.getContent());
