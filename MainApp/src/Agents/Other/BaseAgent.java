@@ -8,9 +8,18 @@ import jade.domain.AMSService;
 import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
+
+import java.util.*;
+
 /******************************************************************************
  *  Use: An abstract base agent class used to provide all of the default time
  *       keeping functionality that all agents need.
+ *  Notes:
+ *       - Message handling: Base agent deals with all message que interactions
+ *         for an agent. To respond to a message from a sub class of BaseAgent
+ *         invoke the register message command with the message template and
+ *         the function to handle the message.
  *  Preformatives understood:
  *       - INFORM : Used to tell the agent the next time slice is occurring
  *           - content: "next time now"
@@ -26,18 +35,29 @@ import jade.lang.acl.ACLMessage;
  *****************************************************************************/
 public abstract class BaseAgent extends Agent{
     protected int _current_time;
+    protected IMessageHandler _time_message_handler;
+    private HashMap<MessageTemplate, IMessageHandler> _msg_handlers;
+
+    private MessageTemplate timeMessage = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            MessageTemplate.MatchContent("next time now"));
 
     @Override
     protected void setup() {
         super.setup();
         _current_time = getCurrentTimeBlocking();
+        _time_message_handler = new HandleTimeMessage();
+        _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
+        _msg_handlers.put(timeMessage, _time_message_handler);
         this.addMessageHandlingBehavior();
     }
 
-    abstract protected void UnhandledMessage(ACLMessage msg);
     abstract protected void TimeExpiringIn(int expireTimeMS);
     abstract protected void TimeExpired ();
     abstract protected void SaleMade(ACLMessage msg);
+
+    protected void addMessageHandler(MessageTemplate template, IMessageHandler handler) {
+        _msg_handlers.put(template, handler);
+    }
 
     // Used to tell someone that you don't understand there message.
     protected void sendNotUndersood(ACLMessage origionalMsg, String content) {
@@ -73,30 +93,35 @@ public abstract class BaseAgent extends Agent{
             @Override
             public void action() {
                 System.out.println("Called action");
-                ACLMessage msg = receive();
-                if (msg != null) {
-                    if (msg.getPerformative() == ACLMessage.INFORM && msg.getContent().contains("next time")) {
-                        if (msg.getContent().contains("next time now")) {
-                            System.out.println("Handling time inform message");
-                            _current_time ++;
-                            TimeExpired();
-                        }
-                        else {
-                            String[] num = msg.getContent().split("[[:punct:]]+");
-                            TimeExpiringIn(Integer.parseInt(num[num.length - 1]));
-                            System.out.println("Handling time inform message");
-                        }
+                Iterator keys = _msg_handlers.keySet().iterator();
+                while(keys.hasNext()) {
+                    MessageTemplate template = (MessageTemplate) keys.next();
+                    ACLMessage msg = receive(template);
+                    if (msg != null) {
+                        // We found a message, pass it to its handler function.
+                        System.out.println("Sending message");
+                        _msg_handlers.get(template).Handler(msg);
                     }
-                    else {
-                        System.out.println("Handling non inform message");
-                        UnhandledMessage(msg);
-                    }
-                } else{
-                    System.out.println("Got null msg");
                 }
                 block();
             }
         });
+    }
+
+    private class HandleTimeMessage implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+            if (msg.getPerformative() == ACLMessage.INFORM && msg.getContent().contains("next time")) {
+                if (msg.getContent().contains("next time now")) {
+                    _current_time ++;
+                    TimeExpired();
+                    System.out.println("Changing time");
+                }
+                else {
+                    String[] num = msg.getContent().split("[[:punct:]]+");
+                    TimeExpiringIn(Integer.parseInt(num[num.length - 1]));
+                }
+            }
+        }
     }
 
     // Method to return list of agents in the platform (taken from AMSDumpAgent from Week3)

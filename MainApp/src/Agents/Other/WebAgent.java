@@ -5,7 +5,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
-//import Agents.Other.BaseAgent;
+import Agents.Other.BaseAgent;
 /******************************************************************************
  *  Use: Used to push data periodically to the WS
  *  Name: Always only have one of these on the main container, have it name set
@@ -14,7 +14,7 @@ import java.util.Vector;
  *       - inform : Used to ask send info to server
  *             content: "any info that the server needs."
  *****************************************************************************/
-public class WebAgent extends Agents.Other.BaseAgent{
+public class WebAgent extends BaseAgent{
     private Vector<String> _messages;
 
     protected void setup() {
