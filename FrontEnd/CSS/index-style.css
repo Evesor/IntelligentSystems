@@ -1,0 +1,15 @@
+body {
+  padding-top: 5rem;
+}
+
+.simple-container {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.dropdown-toggle:hover .dropdown-item {
+    display: block;
+}
+.dropdown-menu {
+    margin-top: 0px;
+}
