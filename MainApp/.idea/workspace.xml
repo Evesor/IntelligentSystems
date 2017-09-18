@@ -1,24 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="8cd4702e-5e0d-4d37-a840-db6aa16a4f3f" name="Default" comment="About to make some big changes....&#10;&#10;Figured I would do a update before hand">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/out/production/Project/Agents/Other/TimeKeeperAgent$1.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/out/production/Project/Agents/Other/TimeKeeperAgent$2.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/out/production/Project/Agents/Other/TimeKeeperAgent.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/out/production/Project/Agents/Other/Weather.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/out/production/Project/Agents/Other/WeatherAgent.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/Agents/Other/TimeKeeperAgent.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/Agents/Other/WeatherAgent.java" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/src/Agents/Other/IMessageHandler.java" afterPath="$PROJECT_DIR$/src/Helpers/IMessageHandler.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/Project/Agents/Other/BaseAgent$1.class" afterPath="$PROJECT_DIR$/out/production/Project/Agents/Other/BaseAgent$1.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/Project/Agents/Other/BaseAgent.class" afterPath="$PROJECT_DIR$/out/production/Project/Agents/Other/BaseAgent.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/Project/Agents/PowerPlants/PowerPlantAgent.class" afterPath="$PROJECT_DIR$/out/production/Project/Agents/PowerPlants/PowerPlantAgent.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/Project/Agents/Resellers/ResellerAgent.class" afterPath="$PROJECT_DIR$/out/production/Project/Agents/Resellers/ResellerAgent.class" />
+    <list default="true" id="8cd4702e-5e0d-4d37-a840-db6aa16a4f3f" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/Agents/Other/GlobalValuesAgent.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/Helpers/GlobalValues.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/Helpers/Weather.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/APDescription.txt" afterPath="$PROJECT_DIR$/APDescription.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Agents/Other/BaseAgent.java" afterPath="$PROJECT_DIR$/src/Agents/Other/BaseAgent.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Agents/PowerPlants/PowerPlantAgent.java" afterPath="$PROJECT_DIR$/src/Agents/PowerPlants/PowerPlantAgent.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Agents/Resellers/ResellerAgent.java" afterPath="$PROJECT_DIR$/src/Agents/Resellers/ResellerAgent.java" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -36,8 +23,8 @@
       <file leaf-file-name="PowerPlantAgent.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/Agents/PowerPlants/PowerPlantAgent.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="22" column="48" lean-forward="true" selection-start-line="22" selection-start-column="48" selection-end-line="22" selection-end-column="48" />
+            <state relative-caret-position="221">
+              <caret line="30" column="22" lean-forward="true" selection-start-line="30" selection-start-column="22" selection-end-line="30" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -323,7 +310,14 @@
       <option name="project" value="LOCAL" />
       <updated>1505719371286</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Make branch&#10;&#10;thing0">
+      <created>1505723638247</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1505723638247</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TodoView">
@@ -437,7 +431,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Changed around the base agent&#10;&#10;Other agents have not been updated to use the new message system but i think we all need to look at each type and work out what way is going to be better moving forward." />
     <MESSAGE value="About to make some big changes....&#10;&#10;Figured I would do a update before hand" />
-    <option name="LAST_COMMIT_MESSAGE" value="About to make some big changes....&#10;&#10;Figured I would do a update before hand" />
+    <MESSAGE value="Make branch&#10;&#10;thing0" />
+    <option name="LAST_COMMIT_MESSAGE" value="Make branch&#10;&#10;thing0" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -816,8 +811,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/Agents/PowerPlants/PowerPlantAgent.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="22" column="48" lean-forward="true" selection-start-line="22" selection-start-column="48" selection-end-line="22" selection-end-column="48" />
+        <state relative-caret-position="221">
+          <caret line="30" column="22" lean-forward="true" selection-start-line="30" selection-start-column="22" selection-end-line="30" selection-end-column="22" />
           <folding />
         </state>
       </provider>
