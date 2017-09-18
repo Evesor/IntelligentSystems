@@ -33,25 +33,10 @@ public class PowerPlantAgent extends BaseAgent {
         _max_production = 100;
         _min_price = 0.4;
         _current_sell_price = 0.6;
-        this.addResponseBehavior();
     }
 
     protected void SaleMade(ACLMessage msg) {
 
-    }
-
-    protected void UnhandledMessage(ACLMessage msg) {
-        switch (msg.getPerformative()) {
-            case ACLMessage.CFP: {
-                sendQuote(msg);
-            }
-            case ACLMessage.ACCEPT_PROPOSAL: {
-                quoteAcceptedMessage(msg);
-            }
-            case ACLMessage.REJECT_PROPOSAL: {
-                quoteRejectedMessage(msg);
-            }
-        }
     }
 
     protected void TimeExpired (){
@@ -62,10 +47,6 @@ public class PowerPlantAgent extends BaseAgent {
 
     }
 
-    // Add all of our behaviors, only call once at construction.
-    private void addResponseBehavior() {
-
-    }
 
     private void sendQuote(ACLMessage msg) {
         // A request for a price on electricity

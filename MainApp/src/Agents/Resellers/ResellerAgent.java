@@ -1,7 +1,7 @@
 package Agents.Resellers;
 
 import Agents.Other.BaseAgent;
-import Agents.Other.IMessageHandler;
+import Helpers.IMessageHandler;
 import Helpers.PowerSaleProposal;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -36,28 +36,12 @@ public class ResellerAgent extends BaseAgent {
     private double _current_sell_price;
     private double _current_by_price;
     private Vector<PowerSaleProposal> _awaitingProposals;
-
-
-    private MessageTemplate saleMessageTemplate = MessageTemplate.and(
-            MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
-            MessageTemplate.MatchContent("wow"));
-
-    private class saleHandler implements IMessageHandler {
-        public void Handler(ACLMessage msg) {
-            msg.getContent();
-            // DO what yoyut want
-        }
-    }
-
+    private MessageTemplate proposalAcceptedTemplate = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
 
     protected void setup () {
         super.setup();
         _awaitingProposals = new Vector<PowerSaleProposal>();
-        addMessageHandler(saleMessageTemplate, new saleHandler());
-
-    }
-
-    protected void SaleMade(ACLMessage msg) {
+        addMessageHandler(proposalAcceptedTemplate, new saleHandler());
 
     }
 
@@ -65,33 +49,10 @@ public class ResellerAgent extends BaseAgent {
 
     }
 
-    protected void TimeExpiringIn(int expireTimeMS) {
-
-    }
-
-    protected void UnhandledMessage(ACLMessage msg) {
-        switch (msg.getPerformative()) {
-            case ACLMessage.CFP: {
-                sendQuote(msg);
-            }
-            case ACLMessage.ACCEPT_PROPOSAL: {
-                quoteAcceptedMessage(msg);
-            }
-            case ACLMessage.REJECT_PROPOSAL: {
-                quoteRejectedMessage(msg);
-            }
+    private class saleHandler implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+            msg.getContent();
+            // DO what you want
         }
-    }
-
-    private void sendQuote(ACLMessage msg) {
-
-    }
-
-    private void quoteAcceptedMessage(ACLMessage msg) {
-
-    }
-
-    private void quoteRejectedMessage(ACLMessage msg) {
-
     }
 }

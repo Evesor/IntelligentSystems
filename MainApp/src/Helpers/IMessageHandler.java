@@ -1,4 +1,4 @@
-package Agents.Other;
+package Helpers;
 
 import jade.lang.acl.ACLMessage;
 

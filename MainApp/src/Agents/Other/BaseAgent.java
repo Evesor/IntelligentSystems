@@ -1,6 +1,7 @@
 package Agents.Other;
 
 import Helpers.GlobalValues;
+import Helpers.IMessageHandler;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -11,52 +12,47 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import java.util.*;
-import Helpers.Weather;
 /******************************************************************************
- *  Use: An abstract base agent class used to provide all of the default time
- *       keeping functionality that all agents need.
+ *  Use: An abstract base agent class used to provide all of the default global
+ *       value management and checking we need.
  *  Notes:
  *       - Message handling: Base agent deals with all message que interactions
  *         for an agent. To respond to a message from a sub class of BaseAgent
  *         invoke the register message command with the message template and
  *         the function to handle the message.
  *  Preformatives understood:
- *       - INFORM : Used to tell the agent the next time slice is occurring
- *           - content: "next time now"
- *       - INFORM : Used to tell the agent the next time slice is occurring in
- *                  x amount of time
- *           - content: "next time in"
- *           - content-obj: next time as double
- *       - INFORM : Used to let the agent know what the current weather is
- *           - content: "weather now"
- *           - content-obj: Weather enum object
- *       - INFORM_REF : Used to let base know the current time
- *          - inResponseTo: "time"
- *          - content: "time" int as a string
- *  Preformatives Used:
- *       - QUERY_REF : Used to ask the TimeKeeperAgent for the time
- *          - content: "time"
+ *       - INFORM : Used to send out all of the global variables for this
+ *                  time slice.
+ *          - content : "new globals"
+ *          - content-obj : Serialized global values object
+ *       - INFORM : Used to send out new globals and signal the next time-slice
+ *          - content : "new time-slice"
+ *          - content-obj : Serialized global values object
+ *        - INFORM-REF : Used to get back global values
+ *          - content : "new globals"
+ *          - content-obj : Serialized global values object
  *****************************************************************************/
 public abstract class BaseAgent extends Agent{
-    private GlobalValues _current_globals;
-    protected IMessageHandler _time_message_handler;
+    protected GlobalValues _current_globals;
     private HashMap<MessageTemplate, IMessageHandler> _msg_handlers;
-
-    private MessageTemplate weatherMessageTemplate = MessageTemplate.and(
+    // Templates used
+    private MessageTemplate globalValuesChangedTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            MessageTemplate.MatchSender(new AID("WeatherMan")));
-    private MessageTemplate timeMessage = MessageTemplate.and(
+            MessageTemplate.MatchContent("new globals"));
+    private MessageTemplate globalValuesTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM_REF),
+            MessageTemplate.MatchContent("new globals"));
+    private MessageTemplate newTimeSliceTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            MessageTemplate.MatchSender(new AID("TimeKeeper", true)));
+            MessageTemplate.MatchContent("new time-slice"));
 
     @Override
     protected void setup() {
         super.setup();
-        _current_time = getCurrentTimeBlocking();
-        _time_message_handler = new HandleTimeMessage();
         _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
-        addMessageHandler(timeMessage, _time_message_handler);
-        addMessageHandler(weatherMessageTemplate, new weatherMessageHandler());
+        addMessageHandler(globalValuesChangedTemplate, new GlobalsChangedHandler());
+        addMessageHandler(newTimeSliceTemplate, new NewTimeSliceHandler());
+        _current_globals = getCurrentGlobalValuesBlocking();
         this.addMessageHandlingBehavior();
     }
 
@@ -68,8 +64,7 @@ public abstract class BaseAgent extends Agent{
 
     // Used to tell someone that you don't understand there message.
     protected void sendNotUndersood(ACLMessage originalMsg, String content) {
-        ACLMessage response = new ACLMessage();
-        response.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+        ACLMessage response = new ACLMessage(ACLMessage.NOT_UNDERSTOOD);
         response.setContent(content);
         response.setInReplyTo(originalMsg.getReplyWith());
         response.addReceiver(originalMsg.getSender());
@@ -77,20 +72,24 @@ public abstract class BaseAgent extends Agent{
     }
 
     // Used by the agent at construction to make sure that it get a time at initialization.
-    private int getCurrentTimeBlocking() {
-        ACLMessage msg = new ACLMessage();
-        msg.setPerformative(ACLMessage.QUERY_REF);
-        msg.setContent("time");
+    private GlobalValues getCurrentGlobalValuesBlocking() {
+        ACLMessage msg = new ACLMessage(ACLMessage.QUERY_REF);
+        msg.setContent("new globals");
         msg.setSender(this.getAID());
-        msg.setReplyWith("time");
-        msg.addReceiver(new AID("TimeKeeper"));
+        msg.setReplyWith("current globals");
+        msg.addReceiver(new AID("GlobalValues", true));
         this.send(msg);
         ACLMessage replyMsg = blockingReceive();
-        if ((replyMsg.getInReplyTo().equals("time")) && (replyMsg.getPerformative() == ACLMessage.INFORM_REF)) {
-            // We got the correct message, initialize with that time.
-            return Integer.parseInt(replyMsg.getContent());
+        while (true) {
+            if (globalValuesTemplate.match(replyMsg)) {
+                // We got the correct message, try and grab the object
+                try {
+                    return (GlobalValues) msg.getContentObject();
+                } catch (UnreadableException e) {
+                    return null;
+                }
+            }
         }
-        return 0;
     }
 
     // Add the message handling to the base class.
@@ -115,31 +114,20 @@ public abstract class BaseAgent extends Agent{
         });
     }
 
-    private class HandleTimeMessage implements IMessageHandler {
+    private class GlobalsChangedHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            if (msg.getPerformative() == ACLMessage.INFORM && msg.getContent().contains("next time")) {
-                if (msg.getContent().equals("next time now")) {
-                    _current_time ++;
-                    TimeExpired();
-                }
-                else if (msg.getContent().equals("next time in")) {
-                    try{
-                        _time_expiring_in = (double)msg.getContentObject();
-                    } catch (UnreadableException e) {}
-                }
-            }
+            try {
+                _current_globals = (GlobalValues) msg.getContentObject();
+            } catch (UnreadableException e) {}
         }
     }
 
-
-
-    private class weatherMessageHandler implements IMessageHandler {
+    private class NewTimeSliceHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            if (msg.getContent().equals("weather now")) {
-                try {
-                    _weather = (Weather) msg.getContentObject();
-                } catch (UnreadableException e) {}
-            }
+            try {
+                _current_globals = (GlobalValues) msg.getContentObject();
+            } catch (UnreadableException e) {}
+            TimeExpired();
         }
     }
 
