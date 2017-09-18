@@ -1,48 +1,56 @@
 package Agents.Other;
 
-import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.lang.acl.ACLMessage;
-import java.util.Vector;
-/******************************************************************************
- *  Enums for types of weather we can have in our system
- *****************************************************************************/
-enum Weather {
-    VerySunny ,Sunny, Overcast, Night;
 
-    public static Weather getRandom() {
-        return values()[(int) (Math.random() * values().length)];
-    }
-}
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Vector;
+import Helpers.Weather;
 /******************************************************************************
  *  Use: Used by other agents to find the current weather conditions and get
  *       predictions about future weather events.
- *  Preformatives used:
+ *  Preformatives understood:
  *       - query-ref : Used to ask about the weather
  *             syntax: "weather"
  *       - query-ref : Used to ask what the weather will be like at some time
  *             syntax: "weather at:xxx" Where xxx is int as a string
+ *   Preformatives Used:
+ *       - QUERY_REF : Used to ask the TimeKeeperAgent for the time
+ *          - content: "time"
+ *       - INFORM : Used to let the agent know what the current weather is
+ *           - content: "weather now"
+ *           - content-obj: Weather enum object
  *****************************************************************************/
 public class WeatherAgent extends BaseAgent{
     private Weather _currentWeather;
-    private Vector<Weather> _predicitons;
+    private Vector<Weather> _predictions;
 
     @Override
     protected void setup() {
         super.setup();
-        // Needs to be random.
         _currentWeather = Weather.getRandom();
-        _predicitons = new Vector<Weather>();
+        _predictions = new Vector<Weather>();
         for (int i = 0; i < 10; i++) {
-            _predicitons.add(Weather.getRandom()); // Make forecast random for the moment.
+            _predictions.add(Weather.getRandom()); // Make forecast random for the moment.
         }
     }
 
-    // Make current weather Remove latest prediction and make new one
+    // Make current weather Remove latest prediction and make new one.
+    // Also send an update to everyone about the weather.
     protected void TimeExpired (){
-        _currentWeather = _predicitons.elementAt(0);
-        _predicitons.removeElementAt(0);
-        _predicitons.add(Weather.getRandom());
+        _currentWeather = _predictions.elementAt(0);
+        _predictions.removeElementAt(0);
+        _predictions.add(Weather.getRandom());
+        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+        AMSAgentDescription[] agents = getAgentList();
+        for (AMSAgentDescription agent : agents) {
+            message.addReceiver(agent.getName());
+        }
+        message.setContent("weather now");
+        try {
+            message.setContentObject(_currentWeather);
+        } catch (IOException e) {}
     }
 
     protected void UnhandledMessage(ACLMessage msg) {
@@ -68,13 +76,5 @@ public class WeatherAgent extends BaseAgent{
         else { //Not a query message, send back a not understood.
             sendNotUndersood(msg, "Unused preformative");
         }
-    }
-
-    protected void SaleMade(ACLMessage msg) {
-        // Weathermen don't care about sales.
-    }
-
-    protected void TimeExpiringIn(int expireTimeMS){
-        // Dose not care about when time will expire
     }
 }

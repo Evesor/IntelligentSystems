@@ -1,8 +1,10 @@
 package Agents.Resellers;
 
 import Agents.Other.BaseAgent;
+import Agents.Other.IMessageHandler;
 import Helpers.PowerSaleProposal;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 
 import java.util.Vector;
 
@@ -35,9 +37,24 @@ public class ResellerAgent extends BaseAgent {
     private double _current_by_price;
     private Vector<PowerSaleProposal> _awaitingProposals;
 
+
+    private MessageTemplate saleMessageTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
+            MessageTemplate.MatchContent("wow"));
+
+    private class saleHandler implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+            msg.getContent();
+            // DO what yoyut want
+        }
+    }
+
+
     protected void setup () {
         super.setup();
         _awaitingProposals = new Vector<PowerSaleProposal>();
+        addMessageHandler(saleMessageTemplate, new saleHandler());
+
     }
 
     protected void SaleMade(ACLMessage msg) {

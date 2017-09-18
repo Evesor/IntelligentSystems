@@ -19,9 +19,13 @@ import jade.domain.FIPAAgentManagement.SearchConstraints;
  *           - content: "time"
  *  Preformatives Used:
  *       - INFORM_REF : Used to send back the current time
- *          - content: "####" int as a string
+ *          - content: "current time"
+ *          - content-obj: time as and int
  *       - INFORM : Used to tell the agent the next time slice is occurring
  *           - content: "next time now"
+ *       - INFORM : Used to signal that the time will be expiring at some point in the future
+ *           - content: "next time in"
+ *           - content-obj: next time as double
  *****************************************************************************/
 public class TimeKeeperAgent extends Agent {
     private int _current_time;

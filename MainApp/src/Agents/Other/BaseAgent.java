@@ -1,6 +1,6 @@
 package Agents.Other;
 
-import Helpers.PowerSaleAgreement;
+import Helpers.GlobalValues;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -9,9 +9,9 @@ import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-
+import jade.lang.acl.UnreadableException;
 import java.util.*;
-
+import Helpers.Weather;
 /******************************************************************************
  *  Use: An abstract base agent class used to provide all of the default time
  *       keeping functionality that all agents need.
@@ -25,7 +25,11 @@ import java.util.*;
  *           - content: "next time now"
  *       - INFORM : Used to tell the agent the next time slice is occurring in
  *                  x amount of time
- *           - content: "next time:X" - "X" int as string in ms
+ *           - content: "next time in"
+ *           - content-obj: next time as double
+ *       - INFORM : Used to let the agent know what the current weather is
+ *           - content: "weather now"
+ *           - content-obj: Weather enum object
  *       - INFORM_REF : Used to let base know the current time
  *          - inResponseTo: "time"
  *          - content: "time" int as a string
@@ -34,12 +38,16 @@ import java.util.*;
  *          - content: "time"
  *****************************************************************************/
 public abstract class BaseAgent extends Agent{
-    protected int _current_time;
+    private GlobalValues _current_globals;
     protected IMessageHandler _time_message_handler;
     private HashMap<MessageTemplate, IMessageHandler> _msg_handlers;
 
-    private MessageTemplate timeMessage = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            MessageTemplate.MatchContent("next time now"));
+    private MessageTemplate weatherMessageTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            MessageTemplate.MatchSender(new AID("WeatherMan")));
+    private MessageTemplate timeMessage = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            MessageTemplate.MatchSender(new AID("TimeKeeper", true)));
 
     @Override
     protected void setup() {
@@ -47,25 +55,24 @@ public abstract class BaseAgent extends Agent{
         _current_time = getCurrentTimeBlocking();
         _time_message_handler = new HandleTimeMessage();
         _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
-        _msg_handlers.put(timeMessage, _time_message_handler);
+        addMessageHandler(timeMessage, _time_message_handler);
+        addMessageHandler(weatherMessageTemplate, new weatherMessageHandler());
         this.addMessageHandlingBehavior();
     }
 
-    abstract protected void TimeExpiringIn(int expireTimeMS);
     abstract protected void TimeExpired ();
-    abstract protected void SaleMade(ACLMessage msg);
 
     protected void addMessageHandler(MessageTemplate template, IMessageHandler handler) {
         _msg_handlers.put(template, handler);
     }
 
     // Used to tell someone that you don't understand there message.
-    protected void sendNotUndersood(ACLMessage origionalMsg, String content) {
+    protected void sendNotUndersood(ACLMessage originalMsg, String content) {
         ACLMessage response = new ACLMessage();
         response.setPerformative(ACLMessage.NOT_UNDERSTOOD);
         response.setContent(content);
-        response.setInReplyTo(origionalMsg.getReplyWith());
-        response.addReceiver(origionalMsg.getSender());
+        response.setInReplyTo(originalMsg.getReplyWith());
+        response.addReceiver(originalMsg.getSender());
         send(response);
     }
 
@@ -111,15 +118,27 @@ public abstract class BaseAgent extends Agent{
     private class HandleTimeMessage implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             if (msg.getPerformative() == ACLMessage.INFORM && msg.getContent().contains("next time")) {
-                if (msg.getContent().contains("next time now")) {
+                if (msg.getContent().equals("next time now")) {
                     _current_time ++;
                     TimeExpired();
-                    System.out.println("Changing time");
                 }
-                else {
-                    String[] num = msg.getContent().split("[[:punct:]]+");
-                    TimeExpiringIn(Integer.parseInt(num[num.length - 1]));
+                else if (msg.getContent().equals("next time in")) {
+                    try{
+                        _time_expiring_in = (double)msg.getContentObject();
+                    } catch (UnreadableException e) {}
                 }
+            }
+        }
+    }
+
+
+
+    private class weatherMessageHandler implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+            if (msg.getContent().equals("weather now")) {
+                try {
+                    _weather = (Weather) msg.getContentObject();
+                } catch (UnreadableException e) {}
             }
         }
     }
