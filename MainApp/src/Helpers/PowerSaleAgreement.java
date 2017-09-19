@@ -5,9 +5,9 @@ import java.io.Serializable;
  *  Use: To hold the details of a contract agreed to by two agents.
  *****************************************************************************/
 public class PowerSaleAgreement implements Serializable{
-    double _power_amount;
-    int _start_time;
-    int _end_time;
+    private double _power_amount;
+    private int _start_time;
+    private int _end_time;
 
     public  PowerSaleAgreement(PowerSaleProposal prop, int time_now) {
         _power_amount = prop.getAmount();

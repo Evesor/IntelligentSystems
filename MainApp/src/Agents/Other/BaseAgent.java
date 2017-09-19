@@ -20,7 +20,7 @@ import java.util.*;
  *         for an agent. To respond to a message from a sub class of BaseAgent
  *         invoke the register message command with the message template and
  *         the function to handle the message.
- *  Preformatives understood:
+ *  Messages understood:
  *       - INFORM : Used to send out all of the global variables for this
  *                  time slice.
  *          - content : "new globals"
@@ -31,6 +31,12 @@ import java.util.*;
  *        - INFORM-REF : Used to get back global values
  *          - content : "new globals"
  *          - content-obj : Serialized global values object
+ *   Messages sent:
+ *       - NOT_UNDERSTOOD : Response from base if no one deals with a message
+ *          - content : "no handlers found"
+ *       - INFORM : D
+ *          - content : "agent data"
+ *          - content-obj : State data as JSON, string object
  *****************************************************************************/
 public abstract class BaseAgent extends Agent{
     protected GlobalValues _current_globals;
@@ -98,15 +104,22 @@ public abstract class BaseAgent extends Agent{
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
-                System.out.println("Called action");
-                Iterator keys = _msg_handlers.keySet().iterator();
-                while(keys.hasNext()) {
-                    MessageTemplate template = (MessageTemplate) keys.next();
-                    ACLMessage msg = receive(template);
-                    if (msg != null) {
-                        // We found a message, pass it to its handler function.
-                        System.out.println("Sending message");
-                        _msg_handlers.get(template).Handler(msg);
+                ACLMessage msg = receive();
+                if (msg != null) {
+                    System.out.println("Message");
+                    boolean message_handled = false;
+                    Iterator keys = _msg_handlers.keySet().iterator();
+                    while(keys.hasNext()) {
+                        System.out.println("Handled");
+                        MessageTemplate template = (MessageTemplate) keys.next();
+                        if (template.match(msg)) {
+                            // We found a message, pass it to its handler function.
+                            _msg_handlers.get(template).Handler(msg);
+                            message_handled = true;
+                        }
+                    }
+                    if (!message_handled) {
+                        sendNotUndersood(msg, "no handlers found");
                     }
                 }
                 block();
@@ -118,7 +131,9 @@ public abstract class BaseAgent extends Agent{
         public void Handler(ACLMessage msg) {
             try {
                 _current_globals = (GlobalValues) msg.getContentObject();
-            } catch (UnreadableException e) {}
+            } catch (UnreadableException e) {
+                return;
+            }
         }
     }
 
@@ -126,7 +141,7 @@ public abstract class BaseAgent extends Agent{
         public void Handler(ACLMessage msg) {
             try {
                 _current_globals = (GlobalValues) msg.getContentObject();
-            } catch (UnreadableException e) {}
+            } catch (UnreadableException e) { }
             TimeExpired();
         }
     }
@@ -145,5 +160,4 @@ public abstract class BaseAgent extends Agent{
         }
         return agents;
     }
-
 }

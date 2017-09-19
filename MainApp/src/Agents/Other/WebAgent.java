@@ -1,11 +1,14 @@
 package Agents.Other;
 
+import Helpers.IMessageHandler;
 import jade.lang.acl.ACLMessage;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
 import Agents.Other.BaseAgent;
+import jade.lang.acl.MessageTemplate;
+
 /******************************************************************************
  *  Use: Used to push data periodically to the WS
  *  Name: Always only have one of these on the main container, have it name set
@@ -17,20 +20,14 @@ import Agents.Other.BaseAgent;
 public class WebAgent extends BaseAgent{
     private Vector<String> _messages;
 
+    private MessageTemplate InformMessageTemplate = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+
     protected void setup() {
+        super.setup();
         _messages = new Vector<String>();
+        addMessageHandler(InformMessageTemplate, new InfromMessageHandler());
     }
 
-    protected void UnhandledMessage(ACLMessage msg) {
-        System.out.println(msg.getContent());
-        if (msg.getPerformative() == ACLMessage.INFORM) {
-            // Should do some formating and error checking here.
-            _messages.add(msg.getContent());
-        }
-        else { //Not an inform message, send back a not understood.
-            sendNotUndersood(msg, "");
-        }
-    }
 
     protected void TimeExpired () {
         if (_messages.size() != 0) {
@@ -39,22 +36,22 @@ public class WebAgent extends BaseAgent{
         }
     }
 
-    protected void TimeExpiringIn(int expireTimeMS) {
-
-    }
-
-    protected void SaleMade(ACLMessage msg) {
-
-    }
 
     // This is basically a hook for later, we likely will need a few classes for data types and a largish class for
     // formatting it properly.
     private String formatData (Vector<String> input) {
         String newS = "content=";
         for (String s: input) {
-            newS += s;
+            newS.concat(s);
         }
         return newS;
+    }
+
+    private class InfromMessageHandler implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+
+
+        }
     }
 
 
