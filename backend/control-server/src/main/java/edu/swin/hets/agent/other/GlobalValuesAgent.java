@@ -1,7 +1,7 @@
-package Agents.Other;
+package edu.swin.hets.agent.other;
 
-import Helpers.GlobalValues;
-import Helpers.Weather;
+import edu.swin.hets.helper.GlobalValues;
+import edu.swin.hets.helper.Weather;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
@@ -10,8 +10,10 @@ import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+
 import java.io.IOException;
 import java.util.Vector;
+
 /******************************************************************************
  *  Use:  An agent to push out global values that change each cycle, for the
  *        moment that is just time and weather.
@@ -64,14 +66,15 @@ public class GlobalValuesAgent extends Agent {
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.setContent("new globals");
                 AMSAgentDescription[] agents = getAgentList();
-                for (AMSAgentDescription agent: agents) {
+                for (AMSAgentDescription agent : agents) {
                     if (agent.getName() != this.getAgent().getAID()) {
                         msg.addReceiver(agent.getName());
                     }
                 }
-                try{
+                try {
                     msg.setContentObject(_current_global_value);
-                } catch (IOException e) {}
+                } catch (IOException e) {
+                }
                 send(msg);
             }
         });
@@ -101,7 +104,7 @@ public class GlobalValuesAgent extends Agent {
         response.setInReplyTo(msg.getReplyWith());
         response.setContent("new globals");
         response.addReceiver(msg.getSender());
-        try{
+        try {
             msg.setContentObject(_current_global_value);
         } catch (IOException e) {
             return;
@@ -111,14 +114,13 @@ public class GlobalValuesAgent extends Agent {
 
     // Method to return list of agents in the platform (taken from AMSDumpAgent from Week3)
     private AMSAgentDescription[] getAgentList() {
-        AMSAgentDescription [] agents = null;
+        AMSAgentDescription[] agents = null;
         try {
             SearchConstraints c = new SearchConstraints();
-            c.setMaxResults (new Long(-1));
-            agents = AMSService.search( this, new AMSAgentDescription (), c );
-        }
-        catch (Exception e) {
-            System.out.println( "Problem searching AMS: " + e );
+            c.setMaxResults(new Long(-1));
+            agents = AMSService.search(this, new AMSAgentDescription(), c);
+        } catch (Exception e) {
+            System.out.println("Problem searching AMS: " + e);
             e.printStackTrace();
         }
         return agents;

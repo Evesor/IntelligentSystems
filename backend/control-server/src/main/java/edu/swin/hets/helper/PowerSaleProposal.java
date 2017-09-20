@@ -1,4 +1,4 @@
-package Helpers;
+package edu.swin.hets.helper;
 
 import java.io.Serializable;
 /******************************************************************************

@@ -1,16 +1,15 @@
-package Agents.PowerPlants;
+package edu.swin.hets.agent.powerplant;
 
-import Agents.Other.BaseAgent;
-import Helpers.GoodMessageTemplates;
-import Helpers.IMessageHandler;
-import Helpers.PowerSaleAgreement;
-import Helpers.PowerSaleProposal;
+import edu.swin.hets.agent.other.BaseAgent;
+import edu.swin.hets.helper.GoodMessageTemplates;
+import edu.swin.hets.helper.IMessageHandler;
+import edu.swin.hets.helper.PowerSaleAgreement;
+import edu.swin.hets.helper.PowerSaleProposal;
 import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 
-import java.util.List;
 import java.util.Vector;
 
 /******************************************************************************
@@ -48,27 +47,27 @@ public class PowerPlantAgent extends BaseAgent {
 
     @Override
     protected void setup() {
-            super.setup();
-            _current_production = 10;
-            _max_production = 100;
-            _current_sell_price = 0.6;
-            addMessageHandler(CFPMessageTemplate, new CFPHandler());
-            addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
-            addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
-            System.out.println("ADded handlers for power plant");
-            _current_contracts = new Vector<PowerSaleAgreement>();
-            _quotes_accepted = new Vector<PowerSaleProposal>();
+        super.setup();
+        _current_production = 10;
+        _max_production = 100;
+        _current_sell_price = 0.6;
+        addMessageHandler(CFPMessageTemplate, new CFPHandler());
+        addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
+        addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
+        System.out.println("ADded handlers for power plant");
+        _current_contracts = new Vector<PowerSaleAgreement>();
+        _quotes_accepted = new Vector<PowerSaleProposal>();
     }
 
-    protected void TimeExpired (){
+    protected void TimeExpired() {
         // Move new quotes into commitments vector
-        for (PowerSaleProposal prop: _quotes_accepted) {
+        for (PowerSaleProposal prop : _quotes_accepted) {
             _current_contracts.add(new PowerSaleAgreement(prop, _current_globals.getTime()));
         }
         _quotes_accepted.clear();
         // Update how much electricity we are selling.
         _current_production = 0;
-        for (PowerSaleAgreement agreement: _current_contracts) {
+        for (PowerSaleAgreement agreement : _current_contracts) {
             if (agreement.getEndTime() > _current_globals.getTime()) {
                 _current_contracts.removeElement(agreement); //  Valid in JAVA? cool:D
             }
@@ -82,9 +81,9 @@ public class PowerPlantAgent extends BaseAgent {
         public void Handler(ACLMessage msg) {
             // A request for a price on electricity
             PowerSaleProposal proposed;
-            try{
+            try {
                 proposed = (PowerSaleProposal) msg.getContentObject();
-            } catch (UnreadableException e){
+            } catch (UnreadableException e) {
                 sendNotUndersood(msg, "no proposal found");
                 return;
             }
@@ -95,8 +94,7 @@ public class PowerPlantAgent extends BaseAgent {
             if (proposed.getCost() < 0) {
                 // No amount set, set how much we will sell that quantity for.
                 proposed.setCost(_current_sell_price * proposed.getAmount());
-            }
-            else if (proposed.getCost() < _current_sell_price * proposed.getAmount()) {
+            } else if (proposed.getCost() < _current_sell_price * proposed.getAmount()) {
                 // To low a price, don't bother agreeing.
                 return;
             }
@@ -106,24 +104,28 @@ public class PowerPlantAgent extends BaseAgent {
             response.setContent("sell");
             try {
                 response.setContentObject(proposed);
-            } catch (java.io.IOException e) { return; }
+            } catch (java.io.IOException e) {
+                return;
+            }
             send(response);
         }
     }
 
-    private class QuoteRejectedHandler implements IMessageHandler{
+    private class QuoteRejectedHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             // Don't care ATM
         }
     }
 
-    private class QuoteAcceptedHandler implements IMessageHandler{
+    private class QuoteAcceptedHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             // A quote we have previously made has been accepted.
             PowerSaleAgreement agreement;
-            try{
+            try {
                 agreement = (PowerSaleAgreement) msg.getContentObject();
-            } catch (UnreadableException e){ return;}
+            } catch (UnreadableException e) {
+                return;
+            }
             if (agreement.getAmount() > (_max_production - _current_production)) {
                 // Cant sell that much electricity, send back error message.
                 quoteNoLongerValid(msg);
@@ -137,14 +139,16 @@ public class PowerPlantAgent extends BaseAgent {
             response.setSender(getAID());
             // Inform everyone about the sale.
             AMSAgentDescription[] agents = getAgentList();
-            for (AMSAgentDescription agent: agents) {
+            for (AMSAgentDescription agent : agents) {
                 if (agent.getName() != getAID()) {
                     msg.addReceiver(agent.getName());
                 }
             }
             try {
                 response.setContentObject(agreement);
-            } catch (java.io.IOException e) { return; }
+            } catch (java.io.IOException e) {
+                return;
+            }
             send(response);
             _current_production += agreement.getAmount();
         }

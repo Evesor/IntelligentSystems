@@ -1,8 +1,8 @@
-package Agents.Other;
+package edu.swin.hets.agent.other;
 
-import Helpers.GlobalValues;
-import Helpers.GoodMessageTemplates;
-import Helpers.IMessageHandler;
+import edu.swin.hets.helper.GlobalValues;
+import edu.swin.hets.helper.GoodMessageTemplates;
+import edu.swin.hets.helper.IMessageHandler;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;

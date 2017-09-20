@@ -1,10 +1,10 @@
-package Agents.Resellers;
+package edu.swin.hets.agent.reseller;
 
-import Agents.Other.BaseAgent;
-import Helpers.GoodMessageTemplates;
-import Helpers.IMessageHandler;
-import Helpers.PowerSaleAgreement;
-import Helpers.PowerSaleProposal;
+import edu.swin.hets.agent.other.BaseAgent;
+import edu.swin.hets.helper.GoodMessageTemplates;
+import edu.swin.hets.helper.IMessageHandler;
+import edu.swin.hets.helper.PowerSaleAgreement;
+import edu.swin.hets.helper.PowerSaleProposal;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
@@ -53,7 +53,7 @@ public class ResellerAgent extends BaseAgent {
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
             MessageTemplate.MatchContent("buy"));
 
-    protected void setup () {
+    protected void setup() {
         super.setup();
         _awaitingProposals = new Vector<PowerSaleProposal>();
         _current_agrements = new Vector<PowerSaleAgreement>();

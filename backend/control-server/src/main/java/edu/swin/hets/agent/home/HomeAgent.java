@@ -1,4 +1,4 @@
-package Agents.Home;
+package edu.swin.hets.agent.home;
 
 import java.util.Vector;
 
@@ -6,7 +6,7 @@ import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
-import Agents.Other.BaseAgent;
+import edu.swin.hets.agent.other.BaseAgent;
 //import java.lang.*;
 /*
 public class HomeAgent extends BaseAgent

@@ -1,12 +1,12 @@
-package Agents.Appliance;
-
+package edu.swin.hets.agent.appliance;
+/*
 import java.util.Iterator;
 
 import jade.core.AID;
 import jade.core.behaviours.Behaviour;
 import jade.lang.acl.ACLMessage;
-import Agents.Other.BaseAgent;
-/*
+import edu.swin.hets.agent.other.BaseAgent;
+
 public class ApplianceAgent extends BaseAgent
 {
 	//should be vector, should store enumeration instead of int

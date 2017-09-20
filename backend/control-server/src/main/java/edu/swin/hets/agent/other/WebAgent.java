@@ -1,13 +1,13 @@
-package Agents.Other;
+package edu.swin.hets.agent.other;
 
-import Helpers.IMessageHandler;
+import edu.swin.hets.helper.IMessageHandler;
 import jade.lang.acl.ACLMessage;
-import java.io.*;
+import jade.lang.acl.MessageTemplate;
+
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
-import Agents.Other.BaseAgent;
-import jade.lang.acl.MessageTemplate;
 
 /******************************************************************************
  *  Use: Used to push data periodically to the WS
@@ -17,7 +17,7 @@ import jade.lang.acl.MessageTemplate;
  *       - inform : Used to ask send info to server
  *             content: "any info that the server needs."
  *****************************************************************************/
-public class WebAgent extends BaseAgent{
+public class WebAgent extends BaseAgent {
     private Vector<String> _messages;
 
     private MessageTemplate InformMessageTemplate = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
@@ -29,7 +29,7 @@ public class WebAgent extends BaseAgent{
     }
 
 
-    protected void TimeExpired () {
+    protected void TimeExpired() {
         if (_messages.size() != 0) {
             new SendUpdate().Post(formatData(_messages));
             _messages.clear();
@@ -39,9 +39,9 @@ public class WebAgent extends BaseAgent{
 
     // This is basically a hook for later, we likely will need a few classes for data types and a largish class for
     // formatting it properly.
-    private String formatData (Vector<String> input) {
+    private String formatData(Vector<String> input) {
         String newS = "content=";
-        for (String s: input) {
+        for (String s : input) {
             newS.concat(s);
         }
         return newS;
@@ -55,8 +55,8 @@ public class WebAgent extends BaseAgent{
     }
 
 
-    class SendUpdate  {
-        String _url = "http://hello-udacity-170204.appspot.com/" ;
+    class SendUpdate {
+        String _url = "http://hello-udacity-170204.appspot.com/";
 
         SendUpdate() {
             this("");
@@ -69,13 +69,13 @@ public class WebAgent extends BaseAgent{
         void Post(String message) {
             System.out.println("Sending a post");
             try {
-                URL url = new URL (_url);
+                URL url = new URL(_url);
                 String formatted_message = message;
 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setDoOutput(true);
-                connection.setRequestProperty ("Accept-Charset", "UTF-8");
+                connection.setRequestProperty("Accept-Charset", "UTF-8");
                 connection.setFixedLengthStreamingMode(formatted_message.length());
 
                 // Write out
@@ -84,7 +84,7 @@ public class WebAgent extends BaseAgent{
                 stream_out.close();
                 System.out.println(formatted_message);
 
-            } catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
