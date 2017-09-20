@@ -1,6 +1,7 @@
 package Agents.Other;
 
-import Helpers.PowerSaleAgreement;
+import Helpers.GlobalValues;
+import Helpers.IMessageHandler;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -8,62 +9,85 @@ import jade.domain.AMSService;
 import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
+import java.util.*;
 /******************************************************************************
- *  Use: An abstract base agent class used to provide all of the default time
- *       keeping functionality that all agents need.
- *  Preformatives understood:
- *       - INFORM : Used to tell the agent the next time slice is occurring
- *           - content: "next time now"
- *       - INFORM : Used to tell the agent the next time slice is occurring in
- *                  x amount of time
- *           - content: "next time:X" - "X" int as string in ms
- *       - INFORM_REF : Used to let base know the current time
- *          - inResponseTo: "time"
- *          - content: "time" int as a string
- *  Preformatives Used:
- *       - QUERY_REF : Used to ask the TimeKeeperAgent for the time
- *          - content: "time"
+ *  Use: An abstract base agent class used to provide all of the default global
+ *       value management and checking we need.
+ *  Notes:
+ *       - Message handling: Base agent deals with all message que interactions
+ *         for an agent. To respond to a message from a sub class of BaseAgent
+ *         invoke the register message command with the message template and
+ *         the function to handle the message.
+ *  Messages understood:
+ *       - INFORM : Used to send out all of the global variables for this
+ *                  time slice.
+ *          - content : "new globals"
+ *          - content-obj : Serialized global values object
+ *       - INFORM : Used to send out new globals and signal the next time-slice
+ *          - content : "new time-slice"
+ *          - content-obj : Serialized global values object
+ *        - INFORM-REF : Used to get back global values
+ *          - content : "new globals"
+ *          - content-obj : Serialized global values object
+ *   Messages sent:
+ *       - NOT_UNDERSTOOD : Response from base if no one deals with a message
+ *          - content : "no handlers found"
+ *       - INFORM : D
+ *          - content : "agent data"
+ *          - content-obj : State data as JSON, string object
  *****************************************************************************/
 public abstract class BaseAgent extends Agent{
-    protected int _current_time;
+    protected GlobalValues _current_globals;
+    private HashMap<MessageTemplate, IMessageHandler> _msg_handlers;
+    // Templates used
+    private MessageTemplate globalValuesChangedTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            MessageTemplate.MatchContent("new globals"));
+    private MessageTemplate globalValuesTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM_REF),
+            MessageTemplate.MatchContent("new globals"));
+    private MessageTemplate newTimeSliceTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            MessageTemplate.MatchContent("new time-slice"));
 
     @Override
     protected void setup() {
         super.setup();
-        _current_time = getCurrentTimeBlocking();
+        _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
+        addMessageHandler(globalValuesChangedTemplate, new GlobalsChangedHandler());
+        addMessageHandler(newTimeSliceTemplate, new NewTimeSliceHandler());
+
+        //_current_globals = getCurrentGlobalValuesBlocking();
         this.addMessageHandlingBehavior();
     }
 
-    abstract protected void UnhandledMessage(ACLMessage msg);
-    abstract protected void TimeExpiringIn(int expireTimeMS);
     abstract protected void TimeExpired ();
-    abstract protected void SaleMade(ACLMessage msg);
+
+    protected void addMessageHandler(MessageTemplate template, IMessageHandler handler) {
+        _msg_handlers.put(template, handler);
+    }
 
     // Used to tell someone that you don't understand there message.
-    protected void sendNotUndersood(ACLMessage origionalMsg, String content) {
-        ACLMessage response = new ACLMessage();
-        response.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+    protected void sendNotUndersood(ACLMessage originalMsg, String content) {
+        ACLMessage response = new ACLMessage(ACLMessage.NOT_UNDERSTOOD);
         response.setContent(content);
-        response.setInReplyTo(origionalMsg.getReplyWith());
-        response.addReceiver(origionalMsg.getSender());
+        response.setInReplyTo(originalMsg.getReplyWith());
+        response.addReceiver(originalMsg.getSender());
         send(response);
     }
 
     // Used by the agent at construction to make sure that it get a time at initialization.
-    private int getCurrentTimeBlocking() {
-        ACLMessage msg = new ACLMessage();
-        msg.setPerformative(ACLMessage.QUERY_REF);
-        msg.setContent("time");
-        msg.setSender(this.getAID());
-        msg.setReplyWith("time");
-        msg.addReceiver(new AID("TimeKeeper"));
-        this.send(msg);
-        ACLMessage replyMsg = blockingReceive();
-        if ((replyMsg.getInReplyTo().equals("time")) && (replyMsg.getPerformative() == ACLMessage.INFORM_REF)) {
-            // We got the correct message, initialize with that time.
-            return Integer.parseInt(replyMsg.getContent());
-        }
-        return 0;
+    private GlobalValues getCurrentGlobalValuesBlocking() {
+            ACLMessage msg = blockingReceive(globalValuesChangedTemplate);
+                // We got the correct message, try and grab the object
+                try {
+                    return (GlobalValues) msg.getContentObject();
+                } catch (UnreadableException e) {
+                    return null;
+                }
+
     }
 
     // Add the message handling to the base class.
@@ -74,35 +98,44 @@ public abstract class BaseAgent extends Agent{
             public void action() {
                 ACLMessage msg = receive();
                 if (msg != null) {
-                    switch (msg.getPerformative()) {
-                        case ACLMessage.INFORM:{
-                            if (msg.getContent().contains("next time")) {
-                                if (msg.getContent().contains("next time now")) {
-                                    _current_time ++;
-                                    TimeExpired();
-                                    break;
-                                }
-                                else {
-                                    String[] num = msg.getContent().split("[[:punct:]]+");
-                                    TimeExpiringIn(Integer.parseInt(num[num.length - 1]));
-                                    break;
-                                }
-                            }
-                            else if (msg.getContent().equals("sale")) {
-                                SaleMade(msg);
-                                break;
-                            }
-                            UnhandledMessage(msg);
-                            break;
+                    boolean message_handled = false;
+                    Iterator keys = _msg_handlers.keySet().iterator();
+                    while(keys.hasNext()) {
+                        MessageTemplate template = (MessageTemplate) keys.next();
+                        if (template.match(msg)) {
+                            // We found a message, pass it to its handler function.
+                            _msg_handlers.get(template).Handler(msg);
+                            message_handled = true;
+                            System.out.println(msg.getContent());
                         }
-                        default: {
-                            UnhandledMessage(msg);
-                        }
+                    }
+                    if (!message_handled) {
+                        System.out.println("Not undersood" + msg.getContent());
+                        sendNotUndersood(msg, "no handlers found");
                     }
                 }
                 block();
             }
         });
+    }
+
+    private class GlobalsChangedHandler implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+            try {
+                _current_globals = (GlobalValues) msg.getContentObject();
+            } catch (UnreadableException e) {
+                return;
+            }
+        }
+    }
+
+    private class NewTimeSliceHandler implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+            try {
+                _current_globals = (GlobalValues) msg.getContentObject();
+            } catch (UnreadableException e) { }
+            TimeExpired();
+        }
     }
 
     // Method to return list of agents in the platform (taken from AMSDumpAgent from Week3)
@@ -119,5 +152,4 @@ public abstract class BaseAgent extends Agent{
         }
         return agents;
     }
-
 }
