@@ -4,7 +4,6 @@ import java.util.Iterator;
 
 import jade.core.AID;
 import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import Agents.Other.BaseAgent;
 
@@ -19,7 +18,7 @@ public class ApplianceAgent extends BaseAgent
 	private void init()
 	{
 		on = true;
-		current = 10;
+		current = 0;
 		updateWeather();
 	}
 	
@@ -77,7 +76,10 @@ public class ApplianceAgent extends BaseAgent
 	}
 	
 	//calculate current usage and update variable
-	private void updateCurrentUsage(){}
+	private void updateCurrentUsage()
+	{
+		current = 10;
+	}
 	
 	private void sendForecastUsage()
 	{
