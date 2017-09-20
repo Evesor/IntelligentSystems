@@ -1,6 +1,5 @@
-package edu.swin.hets.agent.reseller;
+package edu.swin.hets.agent;
 
-import edu.swin.hets.agent.other.BaseAgent;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;

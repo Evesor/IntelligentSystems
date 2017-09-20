@@ -1,4 +1,4 @@
-package edu.swin.hets.agent.appliance;
+package edu.swin.hets.agent;
 /*
 import java.util.Iterator;
 
@@ -13,7 +13,7 @@ public class ApplianceAgent extends BaseAgent
 	int[] weather = new int[24];
 	boolean on;
 	int current, forecast;
-	
+
 	//initialize variables
 	private void init()
 	{
@@ -21,14 +21,14 @@ public class ApplianceAgent extends BaseAgent
 		current = 0;
 		updateWeather();
 	}
-	
+
 	@Override
 	protected void setup()
 	{
 		super.setup();
 		init();
 	}
-	
+
 	private void updateWeather()
 	{
 		//send request for weather forecast
@@ -39,11 +39,11 @@ public class ApplianceAgent extends BaseAgent
 		//wait for result
 		addBehaviour(new weatherForecastReceiver());
 	}
-	
+
 	private class weatherForecastReceiver extends Behaviour
 	{
 		boolean finish=false;
-		
+
 		@Override
 		public void action()
 		{
@@ -64,7 +64,7 @@ public class ApplianceAgent extends BaseAgent
 			return finish;
 		}
 	}
-	
+
 	private void sendCurrentUsage()
 	{
 		updateCurrentUsage();
@@ -74,13 +74,13 @@ public class ApplianceAgent extends BaseAgent
 		msg.addReceiver(new AID("HomeAgent", AID.ISLOCALNAME));
 		send(msg);
 	}
-	
+
 	//calculate current usage and update variable
 	private void updateCurrentUsage()
 	{
 		current = 10;
 	}
-	
+
 	private void sendForecastUsage()
 	{
 		updateForecastUsage();
@@ -89,10 +89,10 @@ public class ApplianceAgent extends BaseAgent
 		msg.addReceiver(new AID("HomeAgent", AID.ISLOCALNAME));
 		send(msg);
 	}
-	
+
 	//calculate forecast usage and update variable
 	private void updateForecastUsage(){}
-	
+
 	private void sendElectricityRequest()
 	{
 		//send request for weather forecast
@@ -103,11 +103,11 @@ public class ApplianceAgent extends BaseAgent
 		//wait for result
 		addBehaviour(new electricityReceiver());
 	}
-	
+
 	private class electricityReceiver extends Behaviour
 	{
 		boolean finish=false;
-		
+
 		@Override
 		public void action()
 		{
@@ -135,7 +135,7 @@ public class ApplianceAgent extends BaseAgent
 			return finish;
 		}
 	}
-	
+
 	private void turn(boolean on)
 	{
 		if(this.on!=on)
@@ -154,17 +154,17 @@ public class ApplianceAgent extends BaseAgent
 			}
 		}
 	}
-	
+
 	//use parallel behaviour to count time
 	//update current usage every minute
 	private class parallelTickerBehaviour{}
-	
+
 	//TODO UnhandledMessage function
 	@Override
 	protected void UnhandledMessage(ACLMessage msg)
 	{
 		String senderName = msg.getSender().getLocalName();
-		
+
 		if(msg.getPerformative()==ACLMessage.REQUEST)
 		{
 			//UserAgent or HomeAgent turn on / off
@@ -182,7 +182,7 @@ public class ApplianceAgent extends BaseAgent
 		}
 		else{sendNotUndersood(msg,"Sorry?");}
 	}
-	
+
 	//TODO TimeExpiringIn function
 	@Override
 	protected void TimeExpiringIn(int expireTimeMS){}

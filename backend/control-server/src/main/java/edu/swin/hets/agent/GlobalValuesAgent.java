@@ -1,4 +1,4 @@
-package edu.swin.hets.agent.other;
+package edu.swin.hets.agent;
 
 import edu.swin.hets.helper.GlobalValues;
 import edu.swin.hets.helper.Weather;
