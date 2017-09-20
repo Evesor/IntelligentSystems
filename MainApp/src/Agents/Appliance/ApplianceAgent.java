@@ -6,7 +6,7 @@ import jade.core.AID;
 import jade.core.behaviours.Behaviour;
 import jade.lang.acl.ACLMessage;
 import Agents.Other.BaseAgent;
-
+/*
 public class ApplianceAgent extends BaseAgent
 {
 	//should be vector, should store enumeration instead of int
@@ -194,4 +194,4 @@ public class ApplianceAgent extends BaseAgent
 	//TODO SaleMade function
 	@Override
 	protected void SaleMade(ACLMessage msg){}
-}
+}*/

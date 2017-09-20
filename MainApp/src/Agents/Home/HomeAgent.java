@@ -8,7 +8,7 @@ import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
 import Agents.Other.BaseAgent;
 //import java.lang.*;
-
+/*
 public class HomeAgent extends BaseAgent
 {
 	//number of appliances
@@ -126,3 +126,5 @@ public class HomeAgent extends BaseAgent
 }
 
 //TODO behaviour to negotiate price for buy & sell
+
+*/

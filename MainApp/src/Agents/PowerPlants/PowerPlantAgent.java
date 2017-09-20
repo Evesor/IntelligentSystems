@@ -18,19 +18,16 @@ import java.util.Vector;
  *       on any events, should be extended later for more detailed classes.
  *  Messages understood:
  *       - CFP : Used to ask for a request of electricity
- *             content: "buy"
  *             content Object: A PowerSaleProposal object
  *       - ACCEPT_PROPOSAL : Used to signify a proposal has been accepted.
- *             content: "buy"
  *             content Object: A PowerSaleAgreement object
  *       - REJECT_PROPOSAL : Used to signify failed proposal
- *             content: "buy"
  *             content Object: A PowerSaleProposal object
  *   Messages Sent:
  *       - NOT-UNDERSTOOD : Used to signal that there was no attached prop obj
  *              content: "no proposal found"
  *       - PROPOSE : Used to send out a proposal to someone
- *              content: "sell"
+ *              content Object : A power sale proposal obj
  *****************************************************************************/
 public class PowerPlantAgent extends BaseAgent {
     private double _current_sell_price;

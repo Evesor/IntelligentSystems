@@ -1,6 +1,7 @@
 package Agents.Other;
 
 import Helpers.GlobalValues;
+import Helpers.GoodMessageTemplates;
 import Helpers.IMessageHandler;
 import jade.core.AID;
 import jade.core.Agent;
@@ -44,20 +45,16 @@ public abstract class BaseAgent extends Agent{
     // Templates used
     private MessageTemplate globalValuesChangedTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            MessageTemplate.MatchContent("new globals"));
+            GoodMessageTemplates.ContatinsString("GlobalValues"));
     private MessageTemplate globalValuesTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM_REF),
-            MessageTemplate.MatchContent("new globals"));
-    private MessageTemplate newTimeSliceTemplate = MessageTemplate.and(
-            MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            MessageTemplate.MatchContent("new time-slice"));
+            GoodMessageTemplates.ContatinsString("GlobalValues"));
 
     @Override
     protected void setup() {
         super.setup();
         _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
         addMessageHandler(globalValuesChangedTemplate, new GlobalsChangedHandler());
-        addMessageHandler(newTimeSliceTemplate, new NewTimeSliceHandler());
 
         //_current_globals = getCurrentGlobalValuesBlocking();
         this.addMessageHandlingBehavior();
@@ -106,7 +103,6 @@ public abstract class BaseAgent extends Agent{
                             // We found a message, pass it to its handler function.
                             _msg_handlers.get(template).Handler(msg);
                             message_handled = true;
-                            System.out.println(msg.getContent());
                         }
                     }
                     if (!message_handled) {
@@ -122,19 +118,16 @@ public abstract class BaseAgent extends Agent{
     private class GlobalsChangedHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             try {
-                _current_globals = (GlobalValues) msg.getContentObject();
+                GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
+                if (_current_globals != null) {
+                    if (newGlobals.getTime() != _current_globals.getTime()) {
+                        TimeExpired();
+                    }
+                    _current_globals = newGlobals;
+                }
             } catch (UnreadableException e) {
-                return;
+                sendNotUndersood(msg, "invalid globals attached");
             }
-        }
-    }
-
-    private class NewTimeSliceHandler implements IMessageHandler {
-        public void Handler(ACLMessage msg) {
-            try {
-                _current_globals = (GlobalValues) msg.getContentObject();
-            } catch (UnreadableException e) { }
-            TimeExpired();
         }
     }
 
