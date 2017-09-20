@@ -18,7 +18,7 @@ dependencies {
 }
 
 jar {
-    archiveName = "hets.jar"
+    archiveName = "hets-container.jar"
     manifest {
         attributes 'Main-Class': 'ContainerApplicationKt'
     }
@@ -27,6 +27,6 @@ jar {
 }
 
 task moveJar(type: Copy, dependsOn: jar) {
-    from 'build/libs/hets.jar'
-    into '../jade-deployment-spike/remote-executable/'
+    from "build/libs/hets-container.jar"
+    into '../control-server/container-executable/'
 }

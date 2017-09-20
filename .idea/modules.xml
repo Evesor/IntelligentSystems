@@ -3,12 +3,12 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/backend.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/backend.iml" group="backend" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/backend_main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/backend_main.iml" group="backend" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/backend_test.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/backend_test.iml" group="backend" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/control-server/control-server.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/control-server/control-server.iml" group="backend/control-server" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/control-server/control-server_main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/control-server/control-server_main.iml" group="backend/control-server" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/control-server/control-server_test.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/control-server/control-server_test.iml" group="backend/control-server" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/is7-hets.iml" filepath="$PROJECT_DIR$/.idea/modules/is7-hets.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/is7-hets_main.iml" filepath="$PROJECT_DIR$/.idea/modules/is7-hets_main.iml" group="is7-hets" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/is7-hets_test.iml" filepath="$PROJECT_DIR$/.idea/modules/is7-hets_test.iml" group="is7-hets" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/remote-container/remote-container.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/remote-container/remote-container.iml" group="backend/remote-container" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/remote-container/remote-container_main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/remote-container/remote-container_main.iml" group="backend/remote-container" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/remote-container/remote-container_test.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/remote-container/remote-container_test.iml" group="backend/remote-container" />
