@@ -1,1 +1,0 @@
-Use certain prefixes for types of agents to make them easy to look for.
