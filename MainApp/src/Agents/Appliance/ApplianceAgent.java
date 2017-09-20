@@ -1,4 +1,4 @@
-package Agents;
+package Agents.Appliance;
 
 import java.util.Iterator;
 

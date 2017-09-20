@@ -1,4 +1,4 @@
-package Agents;
+package Agents.Home;
 
 import java.util.Vector;
 
