@@ -52,6 +52,10 @@ public class LoggingAgent extends BaseAgent{
     protected void TimePush(int ms_left) {
     }
 
+    protected String getJSON() {
+        return "Not implemented";
+    }
+
     private class ErrorMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             System.out.println(msg.getContent());

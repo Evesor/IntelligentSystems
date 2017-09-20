@@ -58,6 +58,8 @@ public abstract class BaseAgent extends Agent{
     abstract protected void TimeExpired ();
     // Called to signal that we are now slightly further along in time.
     abstract protected void TimePush (int ms_left);
+    // Called to get the internal data of this agent to push to the web server
+    abstract protected String getJSON ();
 
     protected void addMessageHandler(MessageTemplate template, IMessageHandler handler) {
         _msg_handlers.put(template, handler);

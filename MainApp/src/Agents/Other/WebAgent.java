@@ -36,6 +36,10 @@ public class WebAgent extends BaseAgent{
         }
     }
 
+    protected String getJSON() {
+        return "Not implemented";
+    }
+
     protected void TimePush(int ms_left) {
 
     }

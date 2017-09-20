@@ -82,6 +82,10 @@ public class ResellerAgent extends BaseAgent {
         RegisterAMSService(getAID().getName() ,"reseller");
     }
 
+    protected String getJSON() {
+        return "Not implemented";
+    }
+
     protected void TimeExpired() {
         _next_purchased_amount = 0;
         for (PowerSaleAgreement agreement: _current_sell_agrements) {
@@ -160,6 +164,15 @@ public class ResellerAgent extends BaseAgent {
     // Someone is buying electricity off us
     private class ProposalAcceptedHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
+            PowerSaleAgreement agreement;
+            try {
+                agreement = (PowerSaleAgreement)msg.getContentObject();
+            } catch (UnreadableException e) {
+                LogError("No agreement found in accepted message, exception thrown");
+                return;
+            }
+            _current_sell_agrements.add(agreement);
+
 
         }
     }
@@ -174,5 +187,9 @@ public class ResellerAgent extends BaseAgent {
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
         }
+    }
+
+    private void quoteNoLongerValid(ACLMessage msg) {
+
     }
 }
