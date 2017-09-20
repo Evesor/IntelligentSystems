@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/is7-hets.iml" filepath="$PROJECT_DIR$/.idea/modules/is7-hets.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/is7-hets_main.iml" filepath="$PROJECT_DIR$/.idea/modules/is7-hets_main.iml" group="is7-hets" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/is7-hets_test.iml" filepath="$PROJECT_DIR$/.idea/modules/is7-hets_test.iml" group="is7-hets" />
+    </modules>
+  </component>
+</project>

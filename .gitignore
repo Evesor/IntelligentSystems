@@ -83,6 +83,13 @@ local.properties
 .idea/**/gradle.xml
 .idea/**/libraries
 
+### Intellij+iml Patch ###
+# Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-249601023
+
+*.iml
+.idea/misc.xml
+*.ipr
+
 # CMake
 cmake-build-debug/
 
