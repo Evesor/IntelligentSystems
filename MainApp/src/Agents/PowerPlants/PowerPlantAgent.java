@@ -16,6 +16,7 @@ import java.util.Vector;
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.
+ *  Services Registered: "powerplant"
  *  Messages understood:
  *       - CFP : Used to ask for a request of electricity
  *             content Object: A PowerSaleProposal object
@@ -34,17 +35,16 @@ public class PowerPlantAgent extends BaseAgent {
     private double _max_production;
     private double _current_production;
     private Vector<PowerSaleAgreement> _current_contracts;
-    private Vector<PowerSaleProposal> _quotes_accepted;
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
-            GoodMessageTemplates.ContatinsString("test"));
+            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleProposal"));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
-            MessageTemplate.MatchContent("buy"));
+            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleAgreement"));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            MessageTemplate.MatchContent("buy"));
+            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleProposal"));
 
     @Override
     protected void setup() {
@@ -55,17 +55,11 @@ public class PowerPlantAgent extends BaseAgent {
             addMessageHandler(CFPMessageTemplate, new CFPHandler());
             addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
             addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
-            System.out.println("ADded handlers for power plant");
             _current_contracts = new Vector<PowerSaleAgreement>();
-            _quotes_accepted = new Vector<PowerSaleProposal>();
+            RegisterAMSService("powerplant");
     }
 
     protected void TimeExpired (){
-        // Move new quotes into commitments vector
-        for (PowerSaleProposal prop: _quotes_accepted) {
-            _current_contracts.add(new PowerSaleAgreement(prop, _current_globals.getTime()));
-        }
-        _quotes_accepted.clear();
         // Update how much electricity we are selling.
         _current_production = 0;
         for (PowerSaleAgreement agreement: _current_contracts) {
@@ -76,6 +70,10 @@ public class PowerPlantAgent extends BaseAgent {
                 _current_production += agreement.getAmount(); //Update current production values.
             }
         }
+    }
+
+    protected void TimePush(int ms_left) {
+
     }
 
     private class CFPHandler implements IMessageHandler {
@@ -98,12 +96,11 @@ public class PowerPlantAgent extends BaseAgent {
             }
             else if (proposed.getCost() < _current_sell_price * proposed.getAmount()) {
                 // To low a price, don't bother agreeing.
+                //TODO Add negotiation here to try and make a more agreeable price.
                 return;
             }
-            ACLMessage response = new ACLMessage(ACLMessage.PROPOSE);
-            response.setInReplyTo(msg.getReplyWith());
-            response.addReceiver(msg.getSender());
-            response.setContent("sell");
+            ACLMessage response = msg.createReply();
+            response.setPerformative(ACLMessage.PROPOSE);
             try {
                 response.setContentObject(proposed);
             } catch (java.io.IOException e) { return; }
@@ -131,10 +128,8 @@ public class PowerPlantAgent extends BaseAgent {
             }
             _current_contracts.add(agreement);
             // Inform other about sale
-            ACLMessage response = new ACLMessage(ACLMessage.INFORM);
-            response.setInReplyTo(msg.getReplyWith());
-            response.setContent("buy");
-            response.setSender(getAID());
+            ACLMessage InformMessage = new ACLMessage(ACLMessage.INFORM);
+            InformMessage.setSender(getAID());
             // Inform everyone about the sale.
             AMSAgentDescription[] agents = getAgentList();
             for (AMSAgentDescription agent: agents) {
@@ -143,15 +138,15 @@ public class PowerPlantAgent extends BaseAgent {
                 }
             }
             try {
-                response.setContentObject(agreement);
+                InformMessage.setContentObject(agreement);
             } catch (java.io.IOException e) { return; }
-            send(response);
+            send(InformMessage);
             _current_production += agreement.getAmount();
         }
     }
 
     private void quoteNoLongerValid(ACLMessage msg) {
-        // Needs implementation
+        //TODO : Needs implementation
     }
 
 }

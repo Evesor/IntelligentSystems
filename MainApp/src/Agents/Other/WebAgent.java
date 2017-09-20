@@ -36,6 +36,9 @@ public class WebAgent extends BaseAgent{
         }
     }
 
+    protected void TimePush(int ms_left) {
+
+    }
 
     // This is basically a hook for later, we likely will need a few classes for data types and a largish class for
     // formatting it properly.

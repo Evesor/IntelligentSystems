@@ -7,8 +7,12 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.AMSService;
+import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.AMSAgentDescription;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
@@ -24,30 +28,17 @@ import java.util.*;
  *  Messages understood:
  *       - INFORM : Used to send out all of the global variables for this
  *                  time slice.
- *          - content : "new globals"
- *          - content-obj : Serialized global values object
- *       - INFORM : Used to send out new globals and signal the next time-slice
- *          - content : "new time-slice"
- *          - content-obj : Serialized global values object
- *        - INFORM-REF : Used to get back global values
- *          - content : "new globals"
  *          - content-obj : Serialized global values object
  *   Messages sent:
  *       - NOT_UNDERSTOOD : Response from base if no one deals with a message
  *          - content : "no handlers found"
- *       - INFORM : D
- *          - content : "agent data"
- *          - content-obj : State data as JSON, string object
  *****************************************************************************/
 public abstract class BaseAgent extends Agent{
     protected GlobalValues _current_globals;
     private HashMap<MessageTemplate, IMessageHandler> _msg_handlers;
-    // Templates used
+
     private MessageTemplate globalValuesChangedTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            GoodMessageTemplates.ContatinsString("GlobalValues"));
-    private MessageTemplate globalValuesTemplate = MessageTemplate.and(
-            MessageTemplate.MatchPerformative(ACLMessage.INFORM_REF),
             GoodMessageTemplates.ContatinsString("GlobalValues"));
 
     @Override
@@ -55,12 +46,14 @@ public abstract class BaseAgent extends Agent{
         super.setup();
         _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
         addMessageHandler(globalValuesChangedTemplate, new GlobalsChangedHandler());
-
-        //_current_globals = getCurrentGlobalValuesBlocking();
         this.addMessageHandlingBehavior();
+        _current_globals = getCurrentGlobalValuesBlocking();
     }
 
+    // Called to signal that the time has expired
     abstract protected void TimeExpired ();
+    // Called to signal that we are now slightly further along in time.
+    abstract protected void TimePush (int ms_left);
 
     protected void addMessageHandler(MessageTemplate template, IMessageHandler handler) {
         _msg_handlers.put(template, handler);
@@ -68,23 +61,22 @@ public abstract class BaseAgent extends Agent{
 
     // Used to tell someone that you don't understand there message.
     protected void sendNotUndersood(ACLMessage originalMsg, String content) {
-        ACLMessage response = new ACLMessage(ACLMessage.NOT_UNDERSTOOD);
+        //TODO, should log all uses of this into an error log file, just need to decide on a system.
+        ACLMessage response = originalMsg.createReply();
+        response.setPerformative(ACLMessage.NOT_UNDERSTOOD);
         response.setContent(content);
-        response.setInReplyTo(originalMsg.getReplyWith());
-        response.addReceiver(originalMsg.getSender());
         send(response);
     }
 
     // Used by the agent at construction to make sure that it get a time at initialization.
     private GlobalValues getCurrentGlobalValuesBlocking() {
-            ACLMessage msg = blockingReceive(globalValuesChangedTemplate);
-                // We got the correct message, try and grab the object
-                try {
-                    return (GlobalValues) msg.getContentObject();
-                } catch (UnreadableException e) {
-                    return null;
-                }
-
+        ACLMessage msg = blockingReceive(globalValuesChangedTemplate);
+        // We got the correct message, try and grab the object
+        try {
+            return (GlobalValues) msg.getContentObject();
+        } catch (UnreadableException e) {
+            return null;
+        }
     }
 
     // Add the message handling to the base class.
@@ -106,7 +98,8 @@ public abstract class BaseAgent extends Agent{
                         }
                     }
                     if (!message_handled) {
-                        System.out.println("Not undersood" + msg.getContent());
+                        System.out.println("Test");
+                        LogDebug("Message not understood: " + msg.getContent());
                         sendNotUndersood(msg, "no handlers found");
                     }
                 }
@@ -122,6 +115,8 @@ public abstract class BaseAgent extends Agent{
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
                         TimeExpired();
+                    } else {
+                        TimePush(_current_globals.getTimeLeft() * 1000);
                     }
                     _current_globals = newGlobals;
                 }
@@ -129,6 +124,47 @@ public abstract class BaseAgent extends Agent{
                 sendNotUndersood(msg, "invalid globals attached");
             }
         }
+    }
+
+    protected void RegisterAMSService (String serviceName) {
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType(serviceName);
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        dfd.addServices(sd);
+        try {
+            DFService.register(this, dfd);
+        } catch (FIPAException e) {
+
+            //TODO Add logging and handle this better.
+            e.printStackTrace();
+        }
+    }
+
+    protected void DeRegisterService () {
+        try  {
+            DFService.deregister(this);
+        } catch (Exception e) {
+            //TODO Add logging and handle this better.
+            e.printStackTrace();
+        }
+    }
+
+    protected DFAgentDescription[] getService(String serviceName) {
+        DFAgentDescription dfd = new DFAgentDescription();
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType( serviceName );
+        dfd.addServices(sd);
+        try {
+            DFAgentDescription[] result = DFService.search(this, dfd);
+            if (result.length == 0) {
+                LogDebug("No " + serviceName + " services found");
+            }
+            return result;
+        } catch (Exception e) {
+            LogError("Could not contact the DF, error thrown");
+        }
+        return null;
     }
 
     // Method to return list of agents in the platform (taken from AMSDumpAgent from Week3)
@@ -140,9 +176,31 @@ public abstract class BaseAgent extends Agent{
             agents = AMSService.search( this, new AMSAgentDescription (), c );
         }
         catch (Exception e) {
-            System.out.println( "Problem searching AMS: " + e );
+            LogError("Problem searching AMS");
             e.printStackTrace();
         }
         return agents;
+    }
+
+    protected void LogError (String toLog) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.setContent("error:".concat(toLog));
+        msg.addReceiver(new AID("LoggingAgent", true));
+        send(msg);
+    }
+
+    protected void LogDebug (String toLog) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.setContent("debug:".concat(toLog));
+        System.out.println("Logging: " + msg.getContent());
+        msg.addReceiver(new AID("LoggingAgent", true));
+        send(msg);
+    }
+
+    protected void LogVerbose (String toLog) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.setContent("verbose:".concat(toLog));
+        msg.addReceiver(new AID("LoggingAgent", true));
+        send(msg);
     }
 }

@@ -2,7 +2,11 @@ package Helpers;
 
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-
+/******************************************************************************
+ *  Use: Message templates of our own design.
+ *  Notes: Essentially a factory that makes comparing objects. Structure copied
+ *         form the JADE MessageTemplate class.
+ *****************************************************************************/
 public class GoodMessageTemplates extends MessageTemplate{
     public GoodMessageTemplates (MessageTemplate.MatchExpression e) {
         super(e);
