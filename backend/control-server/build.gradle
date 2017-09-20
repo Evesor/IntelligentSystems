@@ -22,7 +22,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'me.uwah.jds.ApplicationKt'
+        attributes 'Main-Class': 'edu.swin.hets.ApplicationKt'
     }
 
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
@@ -36,7 +36,7 @@ task runApp(dependsOn: [jar, ":jade-container-spike:moveJar"]) {
 
         javaexec {
             classpath = sourceSets.main.runtimeClasspath
-            main = 'me.uwah.jds.ApplicationKt'
+            main = 'edu.swin.hets.ApplicationKt'
         }
     }
 }
@@ -49,7 +49,7 @@ task provisionMachines(dependsOn: jar) {
 
         javaexec {
             classpath = sourceSets.main.runtimeClasspath
-            main = 'me.uwah.jds.tools.MachineProvisionerKt'
+            main = 'edu.swin.hets.tools.MachineProvisionerKt'
         }
     }
 }
@@ -62,7 +62,7 @@ task shutdownRemotes(dependsOn: jar) {
 
         javaexec {
             classpath = sourceSets.main.runtimeClasspath
-            main = 'me.uwah.jds.tools.RemoteTerminatorKt'
+            main = 'edu.swin.hets.tools.RemoteTerminatorKt'
         }
     }
 }
