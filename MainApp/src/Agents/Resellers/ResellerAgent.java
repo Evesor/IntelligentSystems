@@ -8,6 +8,7 @@ import Helpers.PowerSaleProposal;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
 import java.util.Vector;
@@ -78,7 +79,7 @@ public class ResellerAgent extends BaseAgent {
         addMessageHandler(PropRejectedMessageTemplate, new ProposalRejectedHandler());
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropMessageTemplate, new ProposalHandler());
-        RegisterAMSService("reseller");
+        RegisterAMSService(getAID().getName() ,"reseller");
     }
 
     protected void TimeExpired() {
@@ -103,15 +104,14 @@ public class ResellerAgent extends BaseAgent {
     }
 
     protected void TimePush(int ms_left) {
-        System.out.println("Reqired amount: " + _next_required_amount + " purchased amount: " + _next_purchased_amount);
         if (_next_required_amount - _next_purchased_amount > 0.1) {
+            LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount );
             sendCFP(); // We need to buy more electricity
         }
         // We have enough electricity do nothing.
     }
 
     private void sendCFP() {
-
         ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
         DFAgentDescription[] powerplants = getService("powerplant");
         for (DFAgentDescription powerplant: powerplants) {
@@ -124,7 +124,7 @@ public class ResellerAgent extends BaseAgent {
         try {
             cfp.setContentObject(prop);
         } catch (IOException e) {
-            e.printStackTrace(); //TODO Log and deal with
+            LogError("Could not attach a proposal to a message, exception thrown");
         }
         send(cfp);
     }
@@ -133,7 +133,27 @@ public class ResellerAgent extends BaseAgent {
     // Someone is offering to sell us electricity
     private class ProposalHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-
+            PowerSaleProposal proposed;
+            try{
+                proposed = (PowerSaleProposal) msg.getContentObject();
+            } catch (UnreadableException e){
+                sendNotUndersood(msg, "no proposal found");
+                return;
+            }
+            if (proposed.getCost() <= (_current_by_price * proposed.getAmount())) {
+                LogVerbose(getName() + " agreed to buy " + proposed.getAmount() + " electricity for " +
+                        proposed.getDuration() + " time slots");
+                PowerSaleAgreement contract = new PowerSaleAgreement(proposed, _current_globals.getTime());
+                _current_buy_agrements.add(contract);
+                _next_purchased_amount += contract.getAmount();
+                ACLMessage acceptMsg = msg.createReply();
+                acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                try {
+                    acceptMsg.setContentObject(contract);
+                } catch (IOException e) {
+                    LogError("Could not add a contract to message, exception thrown");
+                }
+            }
         }
     }
 

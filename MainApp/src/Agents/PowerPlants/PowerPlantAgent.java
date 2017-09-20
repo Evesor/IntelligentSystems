@@ -50,13 +50,13 @@ public class PowerPlantAgent extends BaseAgent {
     protected void setup() {
             super.setup();
             _current_production = 10;
-            _max_production = 100;
+            _max_production = 300;
             _current_sell_price = 0.6;
             addMessageHandler(CFPMessageTemplate, new CFPHandler());
             addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
             addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
             _current_contracts = new Vector<PowerSaleAgreement>();
-            RegisterAMSService("powerplant");
+            RegisterAMSService(getAID().getName(),"powerplant");
     }
 
     protected void TimeExpired (){
@@ -105,6 +105,7 @@ public class PowerPlantAgent extends BaseAgent {
                 response.setContentObject(proposed);
             } catch (java.io.IOException e) { return; }
             send(response);
+            LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
         }
     }
 

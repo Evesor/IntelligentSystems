@@ -29,6 +29,8 @@ import java.util.*;
  *       - INFORM : Used to send out all of the global variables for this
  *                  time slice.
  *          - content-obj : Serialized global values object
+ *       - NOT_UNDERSTOOD : logs a not understood message
+ *          - content : "error message"
  *   Messages sent:
  *       - NOT_UNDERSTOOD : Response from base if no one deals with a message
  *          - content : "no handlers found"
@@ -40,12 +42,14 @@ public abstract class BaseAgent extends Agent{
     private MessageTemplate globalValuesChangedTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
             GoodMessageTemplates.ContatinsString("GlobalValues"));
+    private MessageTemplate messageNotUndersoodTemplate = MessageTemplate.MatchPerformative(ACLMessage.NOT_UNDERSTOOD);
 
     @Override
     protected void setup() {
         super.setup();
         _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
         addMessageHandler(globalValuesChangedTemplate, new GlobalsChangedHandler());
+        addMessageHandler(messageNotUndersoodTemplate, new MessageNotUnderstoodHandler());
         this.addMessageHandlingBehavior();
         _current_globals = getCurrentGlobalValuesBlocking();
     }
@@ -61,7 +65,6 @@ public abstract class BaseAgent extends Agent{
 
     // Used to tell someone that you don't understand there message.
     protected void sendNotUndersood(ACLMessage originalMsg, String content) {
-        //TODO, should log all uses of this into an error log file, just need to decide on a system.
         ACLMessage response = originalMsg.createReply();
         response.setPerformative(ACLMessage.NOT_UNDERSTOOD);
         response.setContent(content);
@@ -98,8 +101,6 @@ public abstract class BaseAgent extends Agent{
                         }
                     }
                     if (!message_handled) {
-                        System.out.println("Test");
-                        LogDebug("Message not understood: " + msg.getContent());
                         sendNotUndersood(msg, "no handlers found");
                     }
                 }
@@ -126,18 +127,25 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    protected void RegisterAMSService (String serviceName) {
+    private class MessageNotUnderstoodHandler implements IMessageHandler{
+        public void Handler(ACLMessage msg) {
+            LogDebug("message not undersood reciver: " + getName() +
+                    " sender: " + msg.getSender().getName() + " content: " + msg.getContent());
+        }
+    }
+
+    protected void RegisterAMSService (String serviceName,String serviceType) {
+        LogVerbose("registering a " + serviceType + " service from " + serviceName);
         ServiceDescription sd = new ServiceDescription();
-        sd.setType(serviceName);
+        sd.setName(serviceName);
+        sd.setType(serviceType);
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
         dfd.addServices(sd);
         try {
             DFService.register(this, dfd);
         } catch (FIPAException e) {
-
-            //TODO Add logging and handle this better.
-            e.printStackTrace();
+            LogError("Could not add a " + serviceType + " service, exception thrown: " + e.getMessage());
         }
     }
 
@@ -145,20 +153,19 @@ public abstract class BaseAgent extends Agent{
         try  {
             DFService.deregister(this);
         } catch (Exception e) {
-            //TODO Add logging and handle this better.
-            e.printStackTrace();
+            LogError("Could not de register a service, exception thrown");
         }
     }
 
-    protected DFAgentDescription[] getService(String serviceName) {
+    protected DFAgentDescription[] getService(String serviceType) {
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType( serviceName );
+        sd.setType(serviceType);
         dfd.addServices(sd);
         try {
             DFAgentDescription[] result = DFService.search(this, dfd);
             if (result.length == 0) {
-                LogDebug("No " + serviceName + " services found");
+                LogDebug("No " + serviceType + " services found");
             }
             return result;
         } catch (Exception e) {
@@ -184,23 +191,22 @@ public abstract class BaseAgent extends Agent{
 
     protected void LogError (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.setContent("error:".concat(toLog));
-        msg.addReceiver(new AID("LoggingAgent", true));
+        msg.setContent("error: ".concat(toLog));
+        msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
         send(msg);
     }
 
     protected void LogDebug (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.setContent("debug:".concat(toLog));
-        System.out.println("Logging: " + msg.getContent());
-        msg.addReceiver(new AID("LoggingAgent", true));
+        msg.setContent("debug: ".concat(toLog));
+        msg.addReceiver( new AID("LoggingAgent", AID.ISLOCALNAME));
         send(msg);
     }
 
     protected void LogVerbose (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.setContent("verbose:".concat(toLog));
-        msg.addReceiver(new AID("LoggingAgent", true));
+        msg.setContent("verbose: ".concat(toLog));
+        msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
         send(msg);
     }
 }

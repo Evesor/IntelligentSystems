@@ -1,6 +1,8 @@
-package Helpers;
+package Agents.Other;
 
 import Agents.Other.BaseAgent;
+import Helpers.GoodMessageTemplates;
+import Helpers.IMessageHandler;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.util.Vector;
@@ -31,6 +33,7 @@ public class LoggingAgent extends BaseAgent{
 
     @Override
     protected void setup() {
+        System.out.println("Making logging");
         super.setup();
         _logged_debug = new Vector<String>();
         _logged_errors = new Vector<String>();
