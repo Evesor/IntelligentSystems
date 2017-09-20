@@ -1,0 +1,32 @@
+group 'intelligent-systems-7-backend-remote'
+version '1.0-SNAPSHOT'
+
+repositories {
+    jcenter()
+    maven {
+        url "http://jade.tilab.com/maven/"
+    }
+}
+
+dependencies {
+    compile group: 'com.tilab.jade', name: 'jade', version: '4.5.0'
+    compile group: 'com.tilab.jade', name: 'jade-test-suite', version: '1.13.0'
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile 'org.slf4j:slf4j-api:1.7.+'
+    compile 'org.slf4j:slf4j-simple:1.7+'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+jar {
+    archiveName = "hets-container.jar"
+    manifest {
+        attributes 'Main-Class': 'ContainerApplicationKt'
+    }
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+task moveJar(type: Copy, dependsOn: jar) {
+    from "build/libs/hets-container.jar"
+    into '../control-server/container-executable/'
+}
