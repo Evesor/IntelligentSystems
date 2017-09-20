@@ -58,7 +58,8 @@ public abstract class BaseAgent extends Agent{
         _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
         addMessageHandler(globalValuesChangedTemplate, new GlobalsChangedHandler());
         addMessageHandler(newTimeSliceTemplate, new NewTimeSliceHandler());
-        _current_globals = getCurrentGlobalValuesBlocking();
+
+        //_current_globals = getCurrentGlobalValuesBlocking();
         this.addMessageHandlingBehavior();
     }
 
@@ -79,23 +80,14 @@ public abstract class BaseAgent extends Agent{
 
     // Used by the agent at construction to make sure that it get a time at initialization.
     private GlobalValues getCurrentGlobalValuesBlocking() {
-        ACLMessage msg = new ACLMessage(ACLMessage.QUERY_REF);
-        msg.setContent("new globals");
-        msg.setSender(this.getAID());
-        msg.setReplyWith("current globals");
-        msg.addReceiver(new AID("GlobalValues", true));
-        this.send(msg);
-        ACLMessage replyMsg = blockingReceive();
-        while (true) {
-            if (globalValuesTemplate.match(replyMsg)) {
+            ACLMessage msg = blockingReceive(globalValuesChangedTemplate);
                 // We got the correct message, try and grab the object
                 try {
                     return (GlobalValues) msg.getContentObject();
                 } catch (UnreadableException e) {
                     return null;
                 }
-            }
-        }
+
     }
 
     // Add the message handling to the base class.
@@ -106,19 +98,19 @@ public abstract class BaseAgent extends Agent{
             public void action() {
                 ACLMessage msg = receive();
                 if (msg != null) {
-                    System.out.println("Message");
                     boolean message_handled = false;
                     Iterator keys = _msg_handlers.keySet().iterator();
                     while(keys.hasNext()) {
-                        System.out.println("Handled");
                         MessageTemplate template = (MessageTemplate) keys.next();
                         if (template.match(msg)) {
                             // We found a message, pass it to its handler function.
                             _msg_handlers.get(template).Handler(msg);
                             message_handled = true;
+                            System.out.println(msg.getContent());
                         }
                     }
                     if (!message_handled) {
+                        System.out.println("Not undersood" + msg.getContent());
                         sendNotUndersood(msg, "no handlers found");
                     }
                 }

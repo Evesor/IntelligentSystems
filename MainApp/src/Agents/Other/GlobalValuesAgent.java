@@ -103,7 +103,9 @@ public class GlobalValuesAgent extends Agent {
         response.addReceiver(msg.getSender());
         try{
             msg.setContentObject(_current_global_value);
-        } catch (IOException e) {}
+        } catch (IOException e) {
+            return;
+        }
         send(response);
     }
 

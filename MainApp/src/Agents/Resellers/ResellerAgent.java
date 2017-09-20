@@ -1,6 +1,7 @@
 package Agents.Resellers;
 
 import Agents.Other.BaseAgent;
+import Helpers.GoodMessageTemplates;
 import Helpers.IMessageHandler;
 import Helpers.PowerSaleAgreement;
 import Helpers.PowerSaleProposal;
@@ -44,7 +45,7 @@ public class ResellerAgent extends BaseAgent {
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
-            MessageTemplate.MatchContent("buy"));
+            GoodMessageTemplates.ContatinsString("buy"));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
             MessageTemplate.MatchContent("buy"));
