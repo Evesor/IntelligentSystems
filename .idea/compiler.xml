@@ -2,8 +2,22 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="backend__main" target="1.8" />
+      <module name="backend__test" target="1.8" />
+      <module name="backend_control-container_main" target="1.8" />
+      <module name="backend_control-container_test" target="1.8" />
+      <module name="backend_main" target="1.8" />
+      <module name="backend_remote-container_main" target="1.8" />
+      <module name="backend_remote-container_test" target="1.8" />
+      <module name="backend_test" target="1.8" />
+      <module name="control-container_main" target="1.8" />
+      <module name="control-container_test" target="1.8" />
+      <module name="control-server_main" target="1.8" />
+      <module name="control-server_test" target="1.8" />
       <module name="is7-hets_main" target="1.8" />
       <module name="is7-hets_test" target="1.8" />
+      <module name="remote-container_main" target="1.8" />
+      <module name="remote-container_test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
