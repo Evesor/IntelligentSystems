@@ -8,7 +8,7 @@ import jade.wrapper.ContainerController
 import jade.wrapper.gateway.JadeGateway
 
 class JadeController(private val runtime: Runtime) {
-    private val profile: Profile = ProfileImpl(null, 7777, null)
+    private val profile: Profile = ProfileImpl(true)
     private var mainContainer: ContainerController? = null
     private val gateway: JadeGateway? = null
 

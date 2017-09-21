@@ -28,13 +28,23 @@ jar {
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
-task runApp(dependsOn: [jar, ":jade-container-spike:moveJar"]) {
+task runApp(dependsOn: [jar, ":backend:remote-container:moveJar"]) {
     doLast {
         if (project.hasProperty("appArgs")) {
             args Eval.me(appArgs)
         }
 
         javaexec {
+            classpath = sourceSets.main.runtimeClasspath
+            main = 'edu.swin.hets.ApplicationKt'
+        }
+    }
+}
+
+task devRun(dependsOn: jar){
+    doLast {
+        javaexec {
+            args = ["--dev"]
             classpath = sourceSets.main.runtimeClasspath
             main = 'edu.swin.hets.ApplicationKt'
         }

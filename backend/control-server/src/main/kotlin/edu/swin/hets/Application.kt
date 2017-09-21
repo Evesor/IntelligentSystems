@@ -9,11 +9,13 @@ import org.apache.commons.configuration2.Configuration
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class Application {
+class Application (val args: Array<String>){
     companion object {
         val logger: Logger = LoggerFactory.getLogger(Application::class.java.name)
+        const val DEV_MODE_ARG: String = "--dev"
     }
 
+    private var devMode: Boolean = args.contains(DEV_MODE_ARG)
     private var configuration: Configuration = SystemConfig().loadConfig()
 
     fun start() {
@@ -22,10 +24,12 @@ class Application {
         val jadeController = JadeController(Runtime.instance())
         jadeController.start()
 
-        val collection = configuration.getCollection(ConnectionDetails::class.java, SystemConfig.CONNECTION_LIST, null)
+        val collection: Collection<ConnectionDetails>? = configuration.getCollection(ConnectionDetails::class.java, SystemConfig.CONNECTION_LIST, null)
 
-        // TODO: conditionally change to local container deployment in dev env
-        startUpRemotes(collection)
+        if (!devMode && collection != null)
+            startUpRemotes(collection)
+        else
+            TODO("Dev mode not implemented")
         //jadeController.configureAgents()
     }
 
@@ -38,6 +42,6 @@ class Application {
 
 
 fun main(args: Array<String>) {
-    val app = Application()
+    val app = Application(args)
     app.start()
 }
