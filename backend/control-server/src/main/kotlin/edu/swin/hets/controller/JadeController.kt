@@ -1,6 +1,7 @@
 package edu.swin.hets.controller
 
 import edu.swin.hets.controller.gateway.AgentListRetriever
+import edu.swin.hets.controller.gateway.ContainerListRetriever
 import jade.core.*
 import jade.util.leap.Properties
 import jade.wrapper.ContainerController
@@ -45,6 +46,8 @@ class JadeController(private val runtime: Runtime) {
 
 
     fun getContainers(): List<ContainerID> {
-        TODO()
+        val clr = ContainerListRetriever()
+        JadeGateway.execute(clr)
+        return clr.getContainerListNative()
     }
 }
