@@ -69,7 +69,7 @@ class SystemConfig {
     }
 
     private fun getExternalIpAddress(): String {
-        var ip: String = ""
+        var ip = ""
         try {
             ip = BufferedReader(
                     InputStreamReader(
