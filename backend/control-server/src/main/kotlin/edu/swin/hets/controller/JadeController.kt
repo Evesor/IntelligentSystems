@@ -1,13 +1,11 @@
 package edu.swin.hets.controller
 
 import edu.swin.hets.controller.gateway.AgentListRetriever
-import jade.core.Agent
-import jade.core.Profile
-import jade.core.ProfileImpl
-import jade.core.Runtime
+import jade.core.*
 import jade.util.leap.Properties
 import jade.wrapper.ContainerController
 import jade.wrapper.gateway.JadeGateway
+
 
 class JadeController(private val runtime: Runtime) {
     private val profile: Profile = ProfileImpl(true)
@@ -35,10 +33,18 @@ class JadeController(private val runtime: Runtime) {
         JadeGateway.shutdown()
     }
 
-    fun getAgents(): List<Agent> {
+    /**
+     * Runs an agent to collect list of agents.
+     * @return List of type AID of all running agents
+     */
+    fun getAgents(): List<AID> {
         val alr = AgentListRetriever()
         JadeGateway.execute(alr)
-        TODO("FIX ME! ALR returning null regardless")
-        return alr.agentList ?: emptyList()
+        return alr.getAgentListNative()
+    }
+
+
+    fun getContainers(): List<ContainerID> {
+        TODO()
     }
 }
