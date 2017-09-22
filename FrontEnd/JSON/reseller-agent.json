@@ -1,0 +1,20 @@
+{
+	"Agents": {
+		"resellerAgent" : [
+		{
+			"currentSellPrice" : 14,
+      		"currentBuyPrice" : 10,
+      		"currentCustomers" : ["agent1", "agent2", "agent3"]
+		},
+		{
+			"currentSellPrice" : 16,
+      		"currentBuyPrice" : 13,
+      		"currentCustomers" : ["agent2", "agent5", "agent6"]
+      	},
+      	{
+      		"currentSellPrice" : 24,
+      		"currentBuyPrice" : 17,
+      		"currentCustomers" : ["agent1", "agent3", "agent4"]
+      	} ]
+	}
+}

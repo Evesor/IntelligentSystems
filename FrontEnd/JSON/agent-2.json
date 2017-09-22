@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {"id": "agent", "group": 1},
+    {"id": "message1", "group": 2},
+    {"id": "message3", "group": 2}
+  ],
+  "links": [
+    {"source": "message1", "target": "agent", "value": 1},
+    {"source": "message3", "target": "agent", "value": 20}
+  ]
+}
