@@ -4,7 +4,6 @@ import jade.content.lang.sl.SLCodec
 import jade.content.onto.basic.Action
 import jade.content.onto.basic.Result
 import jade.core.AID
-import jade.core.AgentContainer
 import jade.core.ContainerID
 import jade.domain.FIPANames
 import jade.domain.JADEAgentManagement.JADEManagementOntology
@@ -16,9 +15,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class AgentListRetriever : AchieveREInitiator(null, null) {
+class AgentRetriever(private val containerID: ContainerID) : AchieveREInitiator(null, null) {
     companion object {
-        val logger: Logger = LoggerFactory.getLogger(AgentListRetriever::class.java)
+        val logger: Logger = LoggerFactory.getLogger(AgentRetriever::class.java)
     }
 
     private var agentList: jade.util.leap.List? = null
@@ -46,7 +45,7 @@ class AgentListRetriever : AchieveREInitiator(null, null) {
         }
 
         val queryAgentsOnLocation = QueryAgentsOnLocation().apply {
-            location = ContainerID(AgentContainer.MAIN_CONTAINER_NAME, null)
+            location = containerID
         }
         val action = Action(myAgent.ams, queryAgentsOnLocation)
 

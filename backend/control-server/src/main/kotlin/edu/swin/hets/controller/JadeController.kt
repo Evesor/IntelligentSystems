@@ -1,6 +1,6 @@
 package edu.swin.hets.controller
 
-import edu.swin.hets.controller.gateway.AgentListRetriever
+import edu.swin.hets.controller.gateway.AgentRetriever
 import edu.swin.hets.controller.gateway.ContainerListRetriever
 import jade.core.*
 import jade.util.leap.Properties
@@ -34,20 +34,22 @@ class JadeController(private val runtime: Runtime) {
         JadeGateway.shutdown()
     }
 
-    /**
-     * Runs an agent to collect list of agents.
-     * @return List of type AID of all running agents
-     */
-    fun getAgents(): List<AID> {
-        val alr = AgentListRetriever()
-        JadeGateway.execute(alr)
-        return alr.getAgentListNative()
-    }
-
-
     fun getContainers(): List<ContainerID> {
         val clr = ContainerListRetriever()
         JadeGateway.execute(clr)
         return clr.getContainerListNative()
+    }
+
+    fun getAgentsAtContainer(containerID: ContainerID): List<AID> {
+        val ar = AgentRetriever(containerID)
+        JadeGateway.execute(ar)
+        return ar.getAgentListNative()
+    }
+
+    fun getAllAgents(): List<AID> {
+        return getContainers()
+                .map { getAgentsAtContainer(it) }
+                .toList()
+                .flatMap { it }
     }
 }
