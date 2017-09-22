@@ -1,0 +1,36 @@
+{
+	"AGENT": {
+
+	}
+}
+
+-SENDING OVER-
+
+HomeAgent:
+	Type
+	Current power usage
+	predicted power usage (List)
+	Appliances (List)
+
+ApplianceAgent:
+	Current power usage
+	predicted power usage (List)
+	ON/OFF Switch
+
+PowerPlantAgent:
+	Current sell pice
+	Maximum production
+	Minimum price
+	Current production
+
+ResellerAgent:
+	Current Sell price
+	Current Buy Price
+	Current Customers (List)
+
+- AGENT TYPES -
+
+(1) HomeAgent
+(2) ApplianceAgent
+(3) PowerPlantAgent
+(4) ResellerAgent
