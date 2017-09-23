@@ -45,6 +45,8 @@ class Application(args: Array<String>) {
             println(it.name)
         }
 
+        jadeController.stop()
+
 //        if (!devMode && collection != null)
 //            startUpRemotes(collection)
 //        else

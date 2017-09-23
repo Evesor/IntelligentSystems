@@ -4,6 +4,7 @@ import edu.swin.hets.controller.container.ContainerDistributor
 import edu.swin.hets.controller.container.LocalContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
 import edu.swin.hets.controller.gateway.ContainerListRetriever
+import edu.swin.hets.controller.gateway.JadeTerminator
 import jade.core.*
 import jade.util.leap.Properties
 import jade.wrapper.ContainerController
@@ -35,7 +36,7 @@ class JadeController(private val runtime: Runtime) {
     }
 
     fun stop() {
-        JadeGateway.shutdown()
+        JadeGateway.execute(JadeTerminator())
     }
 
     fun getContainers(): List<ContainerID> {
