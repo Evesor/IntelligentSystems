@@ -1,5 +1,7 @@
 package edu.swin.hets.controller
 
+import edu.swin.hets.controller.container.ContainerDistributor
+import edu.swin.hets.controller.container.LocalContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
 import edu.swin.hets.controller.gateway.ContainerListRetriever
 import jade.core.*
@@ -11,6 +13,7 @@ import jade.wrapper.gateway.JadeGateway
 class JadeController(private val runtime: Runtime) {
     private val profile: Profile = ProfileImpl(true)
     var mainContainer: ContainerController? = null
+    val containerDistributor: ContainerDistributor = LocalContainerDistributor()
 
     init {
         profile.setParameter(Profile.GUI, "true")
@@ -21,6 +24,7 @@ class JadeController(private val runtime: Runtime) {
         mainContainer = runtime.createMainContainer(profile)
         JadeGateway.init(null,
                 Properties().apply {
+                    setProperty(Profile.CONTAINER_NAME, "Gateway")
                     setProperty(Profile.MAIN_HOST, "localhost")
                     setProperty(Profile.MAIN_PORT, "1099")
                 })
