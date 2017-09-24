@@ -1,7 +1,7 @@
 package edu.swin.hets.controller
 
-import edu.swin.hets.controller.container.ContainerDistributor
-import edu.swin.hets.controller.container.LocalContainerDistributor
+import edu.swin.hets.controller.distributor.ContainerDistributor
+import edu.swin.hets.controller.distributor.LocalContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
 import edu.swin.hets.controller.gateway.ContainerListRetriever
 import edu.swin.hets.controller.gateway.JadeTerminator

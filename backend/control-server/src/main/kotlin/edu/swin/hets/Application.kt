@@ -3,7 +3,7 @@ package edu.swin.hets
 import edu.swin.hets.agent.PowerPlantAgent
 import edu.swin.hets.configuration.SystemConfig
 import edu.swin.hets.controller.JadeController
-import edu.swin.hets.controller.container.LocalContainerDistributor
+import edu.swin.hets.controller.distributor.LocalContainerDistributor
 import edu.swin.hets.network.ConnectionDetails
 import edu.swin.hets.network.SlaveConnection
 import jade.core.ProfileImpl
@@ -45,7 +45,7 @@ class Application(args: Array<String>) {
             println(it.name)
         }
 
-        jadeController.stop()
+        //jadeController.stop()
 
 //        if (!devMode && collection != null)
 //            startUpRemotes(collection)

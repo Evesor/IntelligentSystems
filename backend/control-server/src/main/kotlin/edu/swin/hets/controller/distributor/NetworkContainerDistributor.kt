@@ -1,4 +1,4 @@
-package edu.swin.hets.controller.container
+package edu.swin.hets.controller.distributor
 
 class NetworkContainerDistributor : ContainerDistributor {
 }
