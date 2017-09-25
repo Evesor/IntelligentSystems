@@ -1,0 +1,6 @@
+group 'intelligent-systems-7'
+version '1.0-SNAPSHOT'
+
+allprojects {
+    apply plugin: 'idea'
+}
