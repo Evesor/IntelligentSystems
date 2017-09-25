@@ -121,9 +121,9 @@ public class ResellerAgent extends BaseAgent {
         for (DFAgentDescription powerplant: powerplants) {
             cfp.addReceiver(powerplant.getName()); //CFP to each power plant
         }
+        //TODO make more complicated logic.
         PowerSaleProposal prop = new PowerSaleProposal(
-                _next_required_amount - _next_purchased_amount,
-                4); //TODO make more complicated logic.
+                _next_required_amount - _next_purchased_amount,4);
         prop.setBuyerAID(getAID());
         try {
             cfp.setContentObject(prop);
@@ -157,6 +157,7 @@ public class ResellerAgent extends BaseAgent {
                 } catch (IOException e) {
                     LogError("Could not add a contract to message, exception thrown");
                 }
+                send(acceptMsg);
             }
         }
     }

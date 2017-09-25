@@ -117,6 +117,7 @@ public abstract class BaseAgent extends Agent{
                 GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
+                        //SendAgentDetailsToServer(getJSON()); //TODO Uncomment when we get the WS stuff up and running.
                         TimeExpired();
                     } else {
                         TimePush(_current_globals.getTimeLeft() * 1000);
@@ -127,6 +128,14 @@ public abstract class BaseAgent extends Agent{
                 sendNotUndersood(msg, "invalid globals attached");
             }
         }
+    }
+
+    // Used to send the server the object details as a JSON string
+    private void SendAgentDetailsToServer (String detailsAsJSON) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.addReceiver(new AID("WebServer", AID.ISLOCALNAME));
+        msg.setContent(detailsAsJSON);
+        send(msg);
     }
 
     private class MessageNotUnderstoodHandler implements IMessageHandler{

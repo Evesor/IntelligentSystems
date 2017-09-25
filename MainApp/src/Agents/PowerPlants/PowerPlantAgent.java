@@ -9,8 +9,6 @@ import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-
-import java.util.List;
 import java.util.Vector;
 
 /******************************************************************************
