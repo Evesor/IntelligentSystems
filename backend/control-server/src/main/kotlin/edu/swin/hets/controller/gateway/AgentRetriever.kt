@@ -44,9 +44,7 @@ class AgentRetriever(private val containerID: ContainerID) : AchieveREInitiator(
             language = FIPANames.ContentLanguage.FIPA_SL
         }
 
-        val queryAgentsOnLocation = QueryAgentsOnLocation().apply {
-            location = containerID
-        }
+        val queryAgentsOnLocation = QueryAgentsOnLocation().apply { location = containerID }
         val action = Action(myAgent.ams, queryAgentsOnLocation)
 
         myAgent.contentManager.fillContent(request, action)
@@ -54,10 +52,6 @@ class AgentRetriever(private val containerID: ContainerID) : AchieveREInitiator(
     }
 
     override fun handleInform(inform: ACLMessage?) {
-        try {
-            agentList = (myAgent.contentManager.extractContent(inform) as Result).value as ArrayList
-        } catch (e: Exception) {
-            logger.error(e.toString())
-        }
+        agentList = (myAgent.contentManager.extractContent(inform) as Result).value as ArrayList
     }
 }

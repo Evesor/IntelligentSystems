@@ -43,18 +43,13 @@ class ContainerListRetriever : AchieveREInitiator(null, null) {
             language = FIPANames.ContentLanguage.FIPA_SL
         }
 
-        val queryAgentsOnLocation = QueryPlatformLocationsAction()
-        val action = Action(myAgent.ams, queryAgentsOnLocation)
+        val action = Action(myAgent.ams, QueryPlatformLocationsAction())
 
         myAgent.contentManager.fillContent(request, action)
         return Vector<ACLMessage>(1).apply { add(request) }
     }
 
     override fun handleInform(inform: ACLMessage?) {
-        try {
-            containerList = (myAgent.contentManager.extractContent(inform) as Result).value as ArrayList
-        } catch (e: Exception) {
-            logger.error(e.toString())
-        }
+        containerList = (myAgent.contentManager.extractContent(inform) as Result).value as ArrayList
     }
 }
