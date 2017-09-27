@@ -36,13 +36,13 @@ public class PowerPlantAgent extends BaseAgent {
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
-            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleAgreement"));
+            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement"));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
 
     @Override
     protected void setup() {
@@ -60,14 +60,21 @@ public class PowerPlantAgent extends BaseAgent {
     protected void TimeExpired (){
         // Update how much electricity we are selling.
         _current_production = 0;
+        Vector<PowerSaleAgreement> toRemove = new Vector<>();
         for (PowerSaleAgreement agreement: _current_contracts) {
-            if (agreement.getEndTime() > _current_globals.getTime()) {
-                _current_contracts.removeElement(agreement); //  Valid in JAVA? cool:D
+            if (agreement.getEndTime() < _current_globals.getTime()) {
+                toRemove.add(agreement);
             }
+        }
+        for (PowerSaleAgreement remove: toRemove) {
+            _current_contracts.remove(remove);
+        }
+        for (PowerSaleAgreement agreement: _current_contracts) {
             if (agreement.getStartTime() <= _current_globals.getTime()) {
                 _current_production += agreement.getAmount(); //Update current production values.
             }
         }
+        LogDebug("Producting: " + _current_production);
     }
 
     protected String getJSON() {
@@ -123,7 +130,9 @@ public class PowerPlantAgent extends BaseAgent {
             PowerSaleAgreement agreement;
             try{
                 agreement = (PowerSaleAgreement) msg.getContentObject();
-            } catch (UnreadableException e){ return;}
+            } catch (UnreadableException e){
+                LogError("Did not find and accepted prop, exception thrown");
+                return;}
             if (agreement.getAmount() > (_max_production - _current_production)) {
                 // Cant sell that much electricity, send back error message.
                 quoteNoLongerValid(msg);

@@ -1,5 +1,6 @@
 package edu.swin.hets.agent;
 
+import com.hierynomus.msdtyp.ACL;
 import edu.swin.hets.helper.GlobalValues;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
@@ -103,7 +104,7 @@ public abstract class BaseAgent extends Agent{
                         }
                     }
                     if (!message_handled) {
-                        sendNotUndersood(msg, "no handlers found");
+                        sendNotUndersood(msg, "no handlers found for " + msg.getPerformative());
                     }
                 }
                 block();
