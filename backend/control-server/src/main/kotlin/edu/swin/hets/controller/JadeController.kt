@@ -39,22 +39,21 @@ class JadeController(private val runtime: Runtime) {
         JadeGateway.execute(JadeTerminator())
     }
 
-    fun getContainers(): List<ContainerID> {
-        val clr = ContainerListRetriever()
-        JadeGateway.execute(clr)
-        return clr.getContainerListNative()
-    }
+    fun getContainers(): List<ContainerID> =
+            ContainerListRetriever().let {
+                JadeGateway.execute(it)
+                it.getContainerListNative()
+            }
 
-    fun getAgentsAtContainer(containerID: ContainerID): List<AID> {
-        val ar = AgentRetriever(containerID)
-        JadeGateway.execute(ar)
-        return ar.getAgentListNative()
-    }
+    fun getAgentsAtContainer(containerID: ContainerID): List<AID> =
+            AgentRetriever(containerID).let {
+                JadeGateway.execute(it)
+                it.getAgentListNative()
+            }
 
-    fun getAllAgents(): List<AID> {
-        return getContainers()
-                .map { getAgentsAtContainer(it) }
-                .toList()
-                .flatMap { it }
-    }
+    fun getAllAgents(): List<AID> =
+            getContainers()
+                    .map { getAgentsAtContainer(it) }
+                    .toList()
+                    .flatMap { it }
 }
