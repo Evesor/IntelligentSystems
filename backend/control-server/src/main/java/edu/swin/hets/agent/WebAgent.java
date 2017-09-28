@@ -10,12 +10,12 @@ import java.net.URL;
 import java.util.Vector;
 
 /******************************************************************************
- *  Use: Used to push data periodically to the WS
+ *  Use: Used to dump data periodically to file for the WS
  *  Name: Always only have one of these on the main container, have it name set
  *        to "WebServer"
  *  Preformatives used:
- *       - inform : Used to ask send info to server
- *             content: "any info that the server needs."
+ *       - INFORM : Used to send info to server
+ *             content: "any info that the server needs, as JSON"
  *****************************************************************************/
 public class WebAgent extends BaseAgent{
     private Vector<String> _messages;
@@ -30,6 +30,7 @@ public class WebAgent extends BaseAgent{
 
 
     protected void TimeExpired () {
+        //TODO Rather than posting to a WS dump to file
         if (_messages.size() != 0) {
             new SendUpdate().Post(formatData(_messages));
             _messages.clear();
@@ -40,9 +41,7 @@ public class WebAgent extends BaseAgent{
         return "Not implemented";
     }
 
-    protected void TimePush(int ms_left) {
-
-    }
+    protected void TimePush(int ms_left) {   }
 
     // This is basically a hook for later, we likely will need a few classes for data types and a largish class for
     // formatting it properly.

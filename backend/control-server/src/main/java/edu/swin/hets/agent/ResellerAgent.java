@@ -54,20 +54,20 @@ public class ResellerAgent extends BaseAgent {
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
-            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleAgreement"));
+            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement"));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
     private MessageTemplate PropMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
-            GoodMessageTemplates.ContatinsString("Helpers.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
 
     protected void setup() {
         super.setup();
-        _current_by_price = 0.7;
+        _current_by_price = 10;
         _current_sell_price = 1.0;
         _min_purchase_amount = 100;
         _next_required_amount = 200; //TODO let home users set demand.
@@ -87,11 +87,20 @@ public class ResellerAgent extends BaseAgent {
 
     protected void TimeExpired() {
         _next_purchased_amount = 0;
-        for (PowerSaleAgreement agreement : _current_sell_agrements) {
-            if (agreement.getEndTime() >= _current_globals.getTime()) {
-                _current_sell_agrements.removeElement(agreement);
+        Vector<PowerSaleAgreement> toRemove = new Vector<>();
+        for (PowerSaleAgreement agreement : _current_buy_agrements) {
+            if (agreement.getEndTime() < _current_globals.getTime()) {
+                // No longer valid
+                toRemove.add(agreement);
             }
-            _next_required_amount += agreement.getAmount();
+        }
+        for (PowerSaleAgreement rem: toRemove) {
+            LogDebug("Removing a contract");
+            _current_buy_agrements.removeElement(rem);
+        }
+        for (PowerSaleAgreement agreement : _current_buy_agrements) {
+            // We have purchased this electricty.
+            _next_purchased_amount += agreement.getAmount();
         }
         /*
         _next_required_amount = 0;
@@ -103,7 +112,9 @@ public class ResellerAgent extends BaseAgent {
         } */ //TODO Uncomment when we are receiving orders from home users
         // We now know how much we have bought and how much we need to buy
         // Start making CFP's to get electricity we need.
-        sendCFP();
+        if (_next_required_amount - _next_purchased_amount > 0.1) {
+            sendCFP();
+        }
     }
 
     protected void TimePush(int ms_left) {
@@ -120,9 +131,9 @@ public class ResellerAgent extends BaseAgent {
         for (DFAgentDescription powerplant : powerplants) {
             cfp.addReceiver(powerplant.getName()); //CFP to each power plant
         }
+        //TODO make more complicated logic.
         PowerSaleProposal prop = new PowerSaleProposal(
-                _next_required_amount - _next_purchased_amount,
-                4); //TODO make more complicated logic.
+                _next_required_amount - _next_purchased_amount,4);
         prop.setBuyerAID(getAID());
         try {
             cfp.setContentObject(prop);
@@ -131,7 +142,6 @@ public class ResellerAgent extends BaseAgent {
         }
         send(cfp);
     }
-
 
     // Someone is offering to sell us electricity
     private class ProposalHandler implements IMessageHandler {
@@ -156,6 +166,7 @@ public class ResellerAgent extends BaseAgent {
                 } catch (IOException e) {
                     LogError("Could not add a contract to message, exception thrown");
                 }
+                send(acceptMsg);
             }
         }
     }

@@ -1,5 +1,6 @@
 package edu.swin.hets.agent;
 
+import com.hierynomus.msdtyp.ACL;
 import edu.swin.hets.helper.GlobalValues;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
@@ -103,7 +104,7 @@ public abstract class BaseAgent extends Agent{
                         }
                     }
                     if (!message_handled) {
-                        sendNotUndersood(msg, "no handlers found");
+                        sendNotUndersood(msg, "no handlers found for " + msg.getPerformative());
                     }
                 }
                 block();
@@ -117,6 +118,7 @@ public abstract class BaseAgent extends Agent{
                 GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
+                        //SendAgentDetailsToServer(getJSON()); //TODO Uncomment when we get the WS stuff up and running.
                         TimeExpired();
                     } else {
                         TimePush(_current_globals.getTimeLeft() * 1000);
@@ -127,6 +129,14 @@ public abstract class BaseAgent extends Agent{
                 sendNotUndersood(msg, "invalid globals attached");
             }
         }
+    }
+
+    // Used to send the server the object details as a JSON string
+    private void SendAgentDetailsToServer (String detailsAsJSON) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.addReceiver(new AID("WebServer", AID.ISLOCALNAME));
+        msg.setContent(detailsAsJSON);
+        send(msg);
     }
 
     private class MessageNotUnderstoodHandler implements IMessageHandler{
