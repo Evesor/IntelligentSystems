@@ -35,7 +35,7 @@ class Application(args: Array<String>) {
                 ProfileImpl().apply {
                 })
 
-        jadeController.containerDistributor.containers["HOLY HECK DOOD XD"]?.createNewAgent("asdf",PowerPlantAgent::class.java.name, arrayOf())
+        //jadeController.containerDistributor.containers["HOLY HECK DOOD XD"]?.createNewAgent("asdf",PowerPlantAgent::class.java.name, arrayOf())
 
         jadeController.getContainers().forEach{
             println(it.name)
