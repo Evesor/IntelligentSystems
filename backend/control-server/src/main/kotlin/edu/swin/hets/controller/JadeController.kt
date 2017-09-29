@@ -9,9 +9,15 @@ import jade.core.*
 import jade.util.leap.Properties
 import jade.wrapper.ContainerController
 import jade.wrapper.gateway.JadeGateway
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class JadeController(private val runtime: Runtime) {
+    companion object {
+        val logger: Logger = LoggerFactory.getLogger(JadeController::class.java)
+    }
+
     private val profile: Profile = ProfileImpl(true)
     var mainContainer: ContainerController? = null
     val containerDistributor: ContainerDistributor = LocalContainerDistributor()
@@ -56,4 +62,5 @@ class JadeController(private val runtime: Runtime) {
                     .map { getAgentsAtContainer(it) }
                     .toList()
                     .flatMap { it }
+
 }

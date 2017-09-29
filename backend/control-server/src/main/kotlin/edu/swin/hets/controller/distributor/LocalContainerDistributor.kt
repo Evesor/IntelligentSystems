@@ -12,7 +12,7 @@ class LocalContainerDistributor : ContainerDistributor {
         val logger: Logger = LoggerFactory.getLogger(LocalContainerDistributor::class.java)
     }
 
-    val containers: Map<String, ContainerController> = mutableMapOf()
+    val containers: Map<String, ContainerDefinition> = mutableMapOf()
 
     init {
 
@@ -20,8 +20,8 @@ class LocalContainerDistributor : ContainerDistributor {
 
     fun startContainer(name: String, runtime: Runtime, profile: ProfileImpl) {
         (containers as HashMap<String, ContainerController>).put(
-                        name,
-                        runtime.createAgentContainer(profile.apply{setParameter(Profile.CONTAINER_NAME, name)})
+                name,
+                runtime.createAgentContainer(profile.apply { setParameter(Profile.CONTAINER_NAME, name) })
         )
     }
 
