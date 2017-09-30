@@ -1,8 +1,11 @@
 package edu.swin.hets.configuration
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import edu.swin.hets.controller.distributor.ContainerDistributor
+import edu.swin.hets.controller.distributor.SystemDefinition
+import edu.swin.hets.controller.distributor.validateSystemDefinition
 import edu.swin.hets.network.ConnectionDetails
 import org.apache.commons.configuration2.Configuration
-import org.apache.commons.configuration2.PropertiesConfiguration
 import org.apache.commons.configuration2.builder.fluent.Configurations
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,6 +34,7 @@ class SystemConfig(args: Array<String>) {
     var hostMachineAddress: String = getExternalIpAddress()
     var endpointAddress: String = ""
     var connectionList = readServers()
+    var containerConfiguration = readJadeContainerConfiguration()
     var devMode = args.contains(DEV_MODE_ARG) //TODO: implement a sanity check on initialization of this class, for now assume that all connections are valid
 
     init {
@@ -46,7 +50,6 @@ class SystemConfig(args: Array<String>) {
     }
 
     private fun loadConfig(): Configuration? {
-        logger.info("Loading config file")
         val fileExists = Files.exists(Paths.get(PROPERTIES_PATH))
         return when (fileExists) {
             true -> {
@@ -61,10 +64,28 @@ class SystemConfig(args: Array<String>) {
         }
     }
 
+    private fun readJadeContainerConfiguration(): SystemDefinition {
+        val file = Paths.get(JADE_SYSTEM_DEFINITION_PATH).toFile()
+        if (!file.exists()) {
+            logger.warn("System configuration file $JADE_SYSTEM_DEFINITION_PATH doesn't exist, falling back to default")
+            return ContainerDistributor.DEFAULT_CONTAINER_CONFIGURATION
+        }
+
+        val systemDefinition: SystemDefinition = try {
+            jacksonObjectMapper().readValue(file, SystemDefinition::class.java)
+        } catch (e: Exception) {
+            logger.error("Error reading system configuration file $JADE_SYSTEM_DEFINITION_PATH, falling back to default")
+            logger.error(e.toString())
+            ContainerDistributor.DEFAULT_CONTAINER_CONFIGURATION
+        }
+
+        return if (validateSystemDefinition(systemDefinition)) systemDefinition else ContainerDistributor.DEFAULT_CONTAINER_CONFIGURATION
+    }
+
     private fun readServers(): Collection<ConnectionDetails> {
         val file = Paths.get(SERVER_LIST_PATH).toFile()
         if (!file.exists()) {
-            logger.warn("Server connection file not found")
+            logger.warn("Server connection file $SER not found")
             return listOf()
         }
 
@@ -83,7 +104,7 @@ class SystemConfig(args: Array<String>) {
         var ip = ""
         try {
             ip = BufferedReader(InputStreamReader(
-                            URL("http://checkip.amazonaws.com").openStream())).readLine()
+                    URL("http://checkip.amazonaws.com").openStream())).readLine()
         } catch (exception: IOException) {
             logger.error(exception.toString())
         }

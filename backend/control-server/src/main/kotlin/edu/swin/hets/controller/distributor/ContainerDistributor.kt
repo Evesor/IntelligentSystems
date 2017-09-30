@@ -12,6 +12,7 @@ data class AgentDefinition(val name: String, val className: String, val argument
 data class ContainerDefinition(val name: String, val agents: List<AgentDefinition>) : Serializable
 data class SystemDefinition(val containers: List<ContainerDefinition>) : Serializable
 
+// TODO: make factory for dev-mode fallback
 abstract class ContainerDistributor(val runtime: Runtime, val systemDefinition: SystemDefinition) {
     companion object {
         val DEFAULT_CONTAINER_CONFIGURATION =

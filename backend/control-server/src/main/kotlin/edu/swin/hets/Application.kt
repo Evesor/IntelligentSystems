@@ -6,7 +6,6 @@ import edu.swin.hets.controller.distributor.ContainerDistributor
 import edu.swin.hets.controller.distributor.LocalContainerDistributor
 import edu.swin.hets.network.ConnectionDetails
 import edu.swin.hets.network.SlaveConnection
-import jade.core.ProfileImpl
 import jade.core.Runtime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,7 +18,7 @@ class Application(args: Array<String>) {
     }
 
     private val configuration = SystemConfig(args)
-    private var containerDistributor = LocalContainerDistributor(Runtime.instance(), ContainerDistributor.DEFAULT_CONTAINER_CONFIGURATION)
+    private var containerDistributor = LocalContainerDistributor(Runtime.instance(), configuration.containerConfiguration)
 
     fun start() {
         logger.info("Loading connectionDetails")
