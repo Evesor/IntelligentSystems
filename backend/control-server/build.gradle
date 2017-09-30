@@ -55,7 +55,7 @@ task runApp(dependsOn: [jar, ":backend:remote-container:moveJar"]) {
     }
 }
 
-task devRun(dependsOn: jar){
+task runAppDev(dependsOn: jar){
     doLast {
         javaexec {
             args = ["--dev"]
