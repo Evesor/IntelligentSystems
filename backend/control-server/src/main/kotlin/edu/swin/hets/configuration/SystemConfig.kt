@@ -18,12 +18,12 @@ class SystemConfig(args: Array<String>) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(SystemConfig::class.java.name)
 
-        const val PROPERTIES_PATH: String = "system.properties"
-        const val SERVER_LIST_PATH: String = "servers.properties"
+        const val PROPERTIES_PATH: String = "config/system.properties"
+        const val SERVER_LIST_PATH: String = "config/servers.properties"
+        const val JADE_SYSTEM_DEFINITION_PATH: String = "config/system-definition.json"
 
         const val HOST_MACHINE_ADDRESS: String = "host.machine.address"
         const val WEB_ENDPOINT_ADDRESS: String = "web.endpoint.address"
-        const val CONNECTION_LIST: String = "connection.list"
 
         const val DEV_MODE_ARG: String = "--dev"
     }
@@ -31,7 +31,7 @@ class SystemConfig(args: Array<String>) {
     var hostMachineAddress: String = getExternalIpAddress()
     var endpointAddress: String = ""
     var connectionList = readServers()
-    var devMode = args.contains(DEV_MODE_ARG)
+    var devMode = args.contains(DEV_MODE_ARG) //TODO: implement a check on intialization of this class, for now assume that all connections are valid
 
     init {
         loadConfig()?.let {
