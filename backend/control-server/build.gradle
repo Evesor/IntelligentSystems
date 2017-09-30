@@ -17,13 +17,17 @@ dependencies {
     compile 'org.slf4j:slf4j-simple:1.7+'
 
     compile 'org.apache.commons:commons-configuration2:2.1.1'
-    compile 'com.xebialabs.overthere:overthere:5.0.2'
+    compile ('com.xebialabs.overthere:overthere:5.0.2'){
+        exclude group: 'javax.servlet', module:'servlet-api'
+    }
     compile 'commons-beanutils:commons-beanutils:1.9.3'
 
     compile 'com.fasterxml.jackson.core:jackson-core:2.9.0'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.9.0'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.9.0'
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.0"
+
+    compile 'com.sparkjava:spark-kotlin:1.0.0-alpha'
 
     testCompile 'org.mockito:mockito-core:2.10.0'
 
