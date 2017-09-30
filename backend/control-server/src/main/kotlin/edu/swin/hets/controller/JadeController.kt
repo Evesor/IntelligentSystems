@@ -1,7 +1,9 @@
 package edu.swin.hets.controller
 
+import edu.swin.hets.agent.LoggingAgent
+import edu.swin.hets.agent.PowerPlantAgent
+import edu.swin.hets.agent.WebAgent
 import edu.swin.hets.controller.distributor.ContainerDistributor
-import edu.swin.hets.controller.distributor.LocalContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
 import edu.swin.hets.controller.gateway.ContainerListRetriever
 import edu.swin.hets.controller.gateway.JadeTerminator
@@ -28,7 +30,11 @@ class JadeController(private val runtime: Runtime, private val containerDistribu
 
     fun start() {
         // TODO: conditional fallback if servers are not able to be connected to
-        mainContainer = runtime.createMainContainer(profile)
+        mainContainer = runtime.createMainContainer(profile).also {
+            it.createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf())
+            it.createNewAgent("WebServer", WebAgent::class.java.name, arrayOf())
+        }
+
         JadeGateway.init(null,
                 Properties().apply {
                     setProperty(Profile.CONTAINER_NAME, "Gateway")
@@ -37,6 +43,7 @@ class JadeController(private val runtime: Runtime, private val containerDistribu
                 })
 
         containerDistributor.start()
+
     }
 
     fun configureAgents() {
