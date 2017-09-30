@@ -11,6 +11,5 @@ internal class ContainerDistributorTest {
     @Test
     fun defaultContainerDefinitionShouldBeValid() {
         assert(validateSystemDefinition(ContainerDistributor.DEFAULT_CONTAINER_CONFIGURATION))
-        assert(false)
     }
 }
