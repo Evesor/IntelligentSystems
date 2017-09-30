@@ -20,7 +20,7 @@ class LocalContainerDistributor(runtime: Runtime, systemDefinition: SystemDefini
             })
 
             it.agents.forEach{ (name, className) ->
-                containerController.createNewAgent(name, className, arrayOf())
+                containerController.createNewAgent(name, className, arrayOf()).start()
             }
         }
     }

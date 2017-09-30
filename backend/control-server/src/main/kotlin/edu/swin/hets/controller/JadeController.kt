@@ -1,5 +1,6 @@
 package edu.swin.hets.controller
 
+import edu.swin.hets.agent.GlobalValuesAgent
 import edu.swin.hets.agent.LoggingAgent
 import edu.swin.hets.agent.PowerPlantAgent
 import edu.swin.hets.agent.WebAgent
@@ -31,17 +32,17 @@ class JadeController(private val runtime: Runtime, private val containerDistribu
     fun start() {
         // TODO: conditional fallback if servers are not able to be connected to
         mainContainer = runtime.createMainContainer(profile).also {
-            it.createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf())
-            it.createNewAgent("WebServer", WebAgent::class.java.name, arrayOf())
+            it.createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
+            it.createNewAgent("WebServer", WebAgent::class.java.name, arrayOf()).start()
+            it.createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf()).start()
         }
-
         JadeGateway.init(null,
                 Properties().apply {
                     setProperty(Profile.CONTAINER_NAME, "Gateway")
                     setProperty(Profile.MAIN_HOST, "localhost")
                     setProperty(Profile.MAIN_PORT, "1099")
                 })
-
+        Thread.sleep(1000)
         containerDistributor.start()
 
     }
