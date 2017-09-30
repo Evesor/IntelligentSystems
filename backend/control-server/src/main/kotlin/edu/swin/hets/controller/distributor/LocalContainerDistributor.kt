@@ -7,7 +7,7 @@ import jade.wrapper.ContainerController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class LocalContainerDistributor : ContainerDistributor {
+class LocalContainerDistributor(systemDefinition: SystemDefinition) : ContainerDistributor(systemDefinition) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(LocalContainerDistributor::class.java)
     }
@@ -15,7 +15,6 @@ class LocalContainerDistributor : ContainerDistributor {
     val containers: Map<String, ContainerDefinition> = mutableMapOf()
 
     init {
-
     }
 
     fun startContainer(name: String, runtime: Runtime, profile: ProfileImpl) {
@@ -23,6 +22,8 @@ class LocalContainerDistributor : ContainerDistributor {
                 name,
                 runtime.createAgentContainer(profile.apply { setParameter(Profile.CONTAINER_NAME, name) })
         )
+
+        
     }
 
 }

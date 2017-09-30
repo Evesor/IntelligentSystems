@@ -13,14 +13,14 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class JadeController(private val runtime: Runtime) {
+class JadeController(private val runtime: Runtime, private val containerDistributor: ContainerDistributor) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(JadeController::class.java)
     }
 
     private val profile: Profile = ProfileImpl(true)
     var mainContainer: ContainerController? = null
-    val containerDistributor: ContainerDistributor = LocalContainerDistributor()
+
 
     init {
         profile.setParameter(Profile.GUI, "true")

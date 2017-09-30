@@ -90,3 +90,7 @@ task shutdownRemotes(dependsOn: jar) {
         }
     }
 }
+
+sourceSets{
+    test.java.srcDirs += 'src/test/kotlin'
+}

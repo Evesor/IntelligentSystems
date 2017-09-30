@@ -1,4 +1,7 @@
 package edu.swin.hets.controller.distributor
 
-class NetworkContainerDistributor : ContainerDistributor {
+class NetworkContainerDistributor(systemDefinition: SystemDefinition) : ContainerDistributor(systemDefinition) {
+    init {
+        TODO()
+    }
 }
