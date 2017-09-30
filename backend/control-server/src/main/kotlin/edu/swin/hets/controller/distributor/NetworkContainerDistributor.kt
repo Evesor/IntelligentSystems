@@ -1,7 +1,11 @@
 package edu.swin.hets.controller.distributor
 
-class NetworkContainerDistributor(systemDefinition: SystemDefinition) : ContainerDistributor(systemDefinition) {
+import jade.core.Runtime
+
+class NetworkContainerDistributor(runtime: Runtime, systemDefinition: SystemDefinition) : ContainerDistributor(runtime, systemDefinition) {
     init {
         TODO()
     }
+
+    override fun start(){}
 }

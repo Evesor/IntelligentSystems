@@ -5,13 +5,14 @@ import edu.swin.hets.agent.HomeAgent
 import edu.swin.hets.agent.PowerPlantAgent
 import edu.swin.hets.agent.ResellerAgent
 import jade.core.Agent
+import jade.core.Runtime
 import java.io.Serializable
 
 data class AgentDefinition(val name: String, val className: String, val arguments: String = "") : Serializable
 data class ContainerDefinition(val name: String, val agents: List<AgentDefinition>) : Serializable
 data class SystemDefinition(val containers: List<ContainerDefinition>) : Serializable
 
-abstract class ContainerDistributor(val systemDefinition: SystemDefinition) {
+abstract class ContainerDistributor(val runtime: Runtime, val systemDefinition: SystemDefinition) {
     companion object {
         val DEFAULT_CONTAINER_CONFIGURATION =
                 SystemDefinition(listOf(
@@ -34,7 +35,7 @@ abstract class ContainerDistributor(val systemDefinition: SystemDefinition) {
                 ))
     }
 
-
+    abstract fun start()
 }
 
 fun validateSystemDefinition(systemDefinition: SystemDefinition): Boolean {

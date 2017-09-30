@@ -7,23 +7,21 @@ import jade.wrapper.ContainerController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class LocalContainerDistributor(systemDefinition: SystemDefinition) : ContainerDistributor(systemDefinition) {
+class LocalContainerDistributor(runtime: Runtime, systemDefinition: SystemDefinition) : ContainerDistributor(runtime, systemDefinition) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(LocalContainerDistributor::class.java)
     }
 
-    val containers: Map<String, ContainerDefinition> = mutableMapOf()
+    override fun start() {
+        logger.info("Starting up secondary containers...")
+        systemDefinition.containers.forEach {
+            val containerController = runtime.createAgentContainer(ProfileImpl().apply{
+                setParameter(Profile.CONTAINER_NAME, it.name)
+            })
 
-    init {
+            it.agents.forEach{ (name, className) ->
+                containerController.createNewAgent(name, className, arrayOf())
+            }
+        }
     }
-
-    fun startContainer(name: String, runtime: Runtime, profile: ProfileImpl) {
-        (containers as HashMap<String, ContainerController>).put(
-                name,
-                runtime.createAgentContainer(profile.apply { setParameter(Profile.CONTAINER_NAME, name) })
-        )
-
-        
-    }
-
 }

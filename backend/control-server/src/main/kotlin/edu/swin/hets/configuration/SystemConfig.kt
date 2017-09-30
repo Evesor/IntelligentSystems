@@ -31,7 +31,7 @@ class SystemConfig(args: Array<String>) {
     var hostMachineAddress: String = getExternalIpAddress()
     var endpointAddress: String = ""
     var connectionList = readServers()
-    var devMode = args.contains(DEV_MODE_ARG) //TODO: implement a check on intialization of this class, for now assume that all connections are valid
+    var devMode = args.contains(DEV_MODE_ARG) //TODO: implement a sanity check on initialization of this class, for now assume that all connections are valid
 
     init {
         loadConfig()?.let {
@@ -45,7 +45,7 @@ class SystemConfig(args: Array<String>) {
         }
     }
 
-    fun loadConfig(): Configuration? {
+    private fun loadConfig(): Configuration? {
         logger.info("Loading config file")
         val fileExists = Files.exists(Paths.get(PROPERTIES_PATH))
         return when (fileExists) {
@@ -68,6 +68,7 @@ class SystemConfig(args: Array<String>) {
             return listOf()
         }
 
+        logger.info("Reading servers")
         val lineList: List<String> = file.inputStream().bufferedReader().readLines()
         val connectionList: MutableCollection<ConnectionDetails> = mutableListOf()
         lineList.forEach({

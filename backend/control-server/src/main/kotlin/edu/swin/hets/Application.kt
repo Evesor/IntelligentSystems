@@ -19,30 +19,13 @@ class Application(args: Array<String>) {
     }
 
     private val configuration = SystemConfig(args)
-    private val containerDistributor: ContainerDistributor = LocalContainerDistributor(ContainerDistributor.DEFAULT_CONTAINER_CONFIGURATION)
+    private var containerDistributor = LocalContainerDistributor(Runtime.instance(), ContainerDistributor.DEFAULT_CONTAINER_CONFIGURATION)
 
     fun start() {
         logger.info("Loading connectionDetails")
         logger.info("Starting JADE deployment server...")
         val jadeController = JadeController(Runtime.instance(), containerDistributor)
         jadeController.start()
-
-//        (jadeController.containerDistributor as LocalContainerDistributor).startContainer(
-//                "HOLY HECK DOOD XD",
-//                Runtime.instance(),
-//                ProfileImpl().apply {
-//                })
-
-//        jadeController.containerDistributor.containers["HOLY HECK DOOD XD"]?.createNewAgent("asdf",PowerPlantAgent::class.java.name, arrayOf())
-
-        jadeController.getContainers().forEach {
-            println(it.name)
-        }
-
-        jadeController.getAllAgents().forEach {
-            println(it.name)
-        }
-
     }
 
     private fun startUpRemotes(serverList: Collection<ConnectionDetails>) {

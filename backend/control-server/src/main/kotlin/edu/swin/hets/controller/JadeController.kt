@@ -35,6 +35,8 @@ class JadeController(private val runtime: Runtime, private val containerDistribu
                     setProperty(Profile.MAIN_HOST, "localhost")
                     setProperty(Profile.MAIN_PORT, "1099")
                 })
+
+        containerDistributor.start()
     }
 
     fun configureAgents() {
