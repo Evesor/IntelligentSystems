@@ -85,7 +85,7 @@ class SystemConfig(args: Array<String>) {
     private fun readServers(): Collection<ConnectionDetails> {
         val file = Paths.get(SERVER_LIST_PATH).toFile()
         if (!file.exists()) {
-            logger.warn("Server connection file $SER not found")
+            logger.warn("Server connection file $SERVER_LIST_PATH not found")
             return listOf()
         }
 
