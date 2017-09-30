@@ -15,7 +15,7 @@ import java.io.File
 import java.io.InputStreamReader
 
 
-class SlaveConnection(val connectionDetails: ConnectionDetails, val configuration: Configuration) {
+class SlaveConnection(val connectionDetails: ConnectionDetails, val configuration: SystemConfig) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(SlaveConnection::class.java)
         const val DEFAULT_CONNECTION_TIMEOUT: Int = 30000
@@ -35,19 +35,19 @@ class SlaveConnection(val connectionDetails: ConnectionDetails, val configuratio
 
     fun start() {
         try {
-            val file = File("${HOST_MACHINE_EXECUTABLE_PATH}/${DEPLOYED_EXECUTABLE_FILENAME}")
+            val file = File("$HOST_MACHINE_EXECUTABLE_PATH/$DEPLOYED_EXECUTABLE_FILENAME")
             val srcFile: OverthereFile = LocalFile(LocalConnection("local", ConnectionOptions()), file)
 
-            val destFile: OverthereFile? = connection?.getFile("${SLAVE_MACHINE_EXECUTABLE_PATH}/${DEPLOYED_EXECUTABLE_FILENAME}")
+            val destFile: OverthereFile? = connection?.getFile("$SLAVE_MACHINE_EXECUTABLE_PATH/$DEPLOYED_EXECUTABLE_FILENAME")
             OverthereFileCopier.copy(srcFile, destFile)
 
             val process: OverthereProcess? = connection?.startProcess(
                     CmdLine.build(
                             "java",
                             "-jar",
-                            "${SLAVE_MACHINE_EXECUTABLE_PATH}/${DEPLOYED_EXECUTABLE_FILENAME}",
+                            "$SLAVE_MACHINE_EXECUTABLE_PATH/$DEPLOYED_EXECUTABLE_FILENAME",
                             connectionDetails.name,
-                            configuration.getString(SystemConfig.HOST_MACHINE_ADDRESS)
+                            configuration.hostMachineAddress
                     ))
 
             val stdout = BufferedReader(InputStreamReader(process?.getStdout()))
@@ -60,7 +60,7 @@ class SlaveConnection(val connectionDetails: ConnectionDetails, val configuratio
 
     private fun prepareConnection() {
         val options = ConnectionOptions()
-        options.set(SshConnectionBuilder.PRIVATE_KEY_FILE, "${KEYSTORE_PATH}/${connectionDetails.privateKey}")
+        options.set(SshConnectionBuilder.PRIVATE_KEY_FILE, "$KEYSTORE_PATH/${connectionDetails.privateKey}")
         options.set(ConnectionOptions.CONNECTION_TIMEOUT_MILLIS, DEFAULT_CONNECTION_TIMEOUT)
         options.set(ConnectionOptions.USERNAME, USERNAME)
         options.set(ConnectionOptions.ADDRESS, connectionDetails.address.hostAddress)

@@ -16,18 +16,16 @@ import org.slf4j.LoggerFactory
 class Application(args: Array<String>) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(Application::class.java.name)
-        const val DEV_MODE_ARG: String = "--dev"
+
     }
 
-    private val devMode: Boolean = args.contains(DEV_MODE_ARG)
-    private val configuration: Configuration = SystemConfig().loadConfig()
+    private val configuration = SystemConfig(args)
 
     fun start() {
         logger.info("Loading connectionDetails")
         logger.info("Starting JADE deployment server...")
         val jadeController = JadeController(Runtime.instance())
         jadeController.start()
-        val collection: Collection<ConnectionDetails>? = configuration.getCollection(ConnectionDetails::class.java, SystemConfig.CONNECTION_LIST, null)
 
         (jadeController.containerDistributor as LocalContainerDistributor).startContainer(
                 "HOLY HECK DOOD XD",
@@ -45,13 +43,6 @@ class Application(args: Array<String>) {
             println(it.name)
         }
 
-        //jadeController.stop()
-
-//        if (!devMode && collection != null)
-//            startUpRemotes(collection)
-//        else
-//            jadeController.getAgents()
-        //jadeController.configureAgents()
     }
 
     private fun startUpRemotes(serverList: Collection<ConnectionDetails>) {

@@ -1,6 +1,5 @@
 package edu.swin.hets.tools
 
-import edu.swin.hets.Application
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
