@@ -5,32 +5,37 @@ import edu.swin.hets.configuration.SystemConfig
 import edu.swin.hets.controller.JadeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import spark.kotlin.Http
-import spark.kotlin.ignite
+import spark.Spark.*
 
-class WebController(val systemConfig: SystemConfig, val jadeController: JadeController) {
+class WebController(private val systemConfig: SystemConfig, private val jadeController: JadeController) {
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(WebController::class.java)
     }
 
-    private val http: Http = ignite()
     fun start() {
-        http.get("/hello") {
-            logger.info("Hello world!")
-            status(200)
-            "Hello world!"
-        }
+        webSocket("/ws", WebSocketHandler::class.java)
+        path("/api") {
+            get("/hello") { req, res ->
+                "hello world!"
+            }
 
-        http.get("/hostAddress") {
-            status(200)
-            systemConfig.hostMachineAddress
-        }
+            get("/api/hello") { req, res ->
+                logger.info("Hello world!")
+                res.status(200)
+                "Hello world!"
+            }
 
-        http.post("/shutdown") {
-            logger.info("Stop Requested!")
-            jadeController.stop()
-            "done"
-        }
+            get("/api/hostAddress") { req, res ->
+                res.status(200)
+                systemConfig.hostMachineAddress
+            }
 
+            post("/api/shutdown") { req, res ->
+                logger.info("Stop Requested!")
+                res.status(200)
+                jadeController.stop()
+                "done"
+            }
+        }
     }
 }
