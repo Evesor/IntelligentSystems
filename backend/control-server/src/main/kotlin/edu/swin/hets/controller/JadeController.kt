@@ -2,7 +2,6 @@ package edu.swin.hets.controller
 
 import edu.swin.hets.agent.GlobalValuesAgent
 import edu.swin.hets.agent.LoggingAgent
-import edu.swin.hets.agent.PowerPlantAgent
 import edu.swin.hets.agent.WebAgent
 import edu.swin.hets.controller.distributor.ContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
@@ -15,7 +14,9 @@ import jade.wrapper.gateway.JadeGateway
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-
+/**
+ * Responsible for the JADE platform's lifecycle.
+ */
 class JadeController(private val runtime: Runtime, private val containerDistributor: ContainerDistributor) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(JadeController::class.java)
@@ -30,7 +31,7 @@ class JadeController(private val runtime: Runtime, private val containerDistribu
     }
 
     fun start() {
-        // TODO: conditional fallback if servers are not able to be connected to
+        logger.info("Spinning up the JADE platform...")
         mainContainer = runtime.createMainContainer(profile).also {
             it.createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
             it.createNewAgent("WebServer", WebAgent::class.java.name, arrayOf()).start()
@@ -42,13 +43,9 @@ class JadeController(private val runtime: Runtime, private val containerDistribu
                     setProperty(Profile.MAIN_HOST, "localhost")
                     setProperty(Profile.MAIN_PORT, "1099")
                 })
+
         Thread.sleep(1000)
         containerDistributor.start()
-
-    }
-
-    fun configureAgents() {
-        TODO("Detect active servers/dev mode, execute fallback")
     }
 
     fun stop() {

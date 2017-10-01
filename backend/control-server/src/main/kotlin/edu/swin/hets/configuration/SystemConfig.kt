@@ -16,7 +16,9 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
 
-
+/**
+ * Boot-time System configuration.
+ */
 class SystemConfig(args: Array<String>) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(SystemConfig::class.java.name)
@@ -33,15 +35,18 @@ class SystemConfig(args: Array<String>) {
 
     var hostMachineAddress: String = getExternalIpAddress()
     var endpointAddress: String = ""
-    var connectionList = readServers()
+    var connectionList: Collection<ConnectionDetails> = listOf()
     var containerConfiguration = readJadeContainerConfiguration()
     var devMode = args.contains(DEV_MODE_ARG) //TODO: implement a sanity check on initialization of this class, for now assume that all connections are valid
 
     init {
+        logger.info("Setting up system config...")
         loadConfig()?.let {
             (it.getProperty(HOST_MACHINE_ADDRESS) as? String)?.apply { hostMachineAddress = this }
             (it.getProperty(WEB_ENDPOINT_ADDRESS) as? String)?.apply { endpointAddress = this }
         }
+
+        connectionList = readServers()
 
         if (connectionList.isEmpty()) {
             logger.info("No connections found, fallback to dev mode")

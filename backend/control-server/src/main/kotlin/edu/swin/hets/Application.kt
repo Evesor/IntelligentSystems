@@ -9,7 +9,6 @@ import edu.swin.hets.web.WebController
 import jade.core.Runtime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.net.URLClassLoader
 
 
 class Application(args: Array<String>) {
@@ -18,17 +17,13 @@ class Application(args: Array<String>) {
     }
 
     private val configuration = SystemConfig(args)
-    private var containerDistributor = LocalContainerDistributor(Runtime.instance(), configuration.containerConfiguration)
+    private val containerDistributor = LocalContainerDistributor(Runtime.instance(), configuration.containerConfiguration)
+    private val jadeController = JadeController(Runtime.instance(), containerDistributor)
+    private val webController = WebController(configuration, jadeController)
 
     fun start() {
-        logger.info("Loading connectionDetails")
-        logger.info("Starting JADE deployment server...")
-        val jadeController = JadeController(Runtime.instance(), containerDistributor)
         jadeController.start()
-        logger.info("Starting Web server...")
-        val webController = WebController(configuration, jadeController)
         webController.start()
-
     }
 
     private fun startUpRemotes(serverList: Collection<ConnectionDetails>) {
@@ -40,6 +35,5 @@ class Application(args: Array<String>) {
 
 
 fun main(args: Array<String>) {
-    val app = Application(args)
-    app.start()
+    val app = Application(args).also { it.start() }
 }

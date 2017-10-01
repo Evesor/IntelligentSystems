@@ -13,6 +13,9 @@ data class ContainerDefinition(val name: String, val agents: List<AgentDefinitio
 data class SystemDefinition(val containers: List<ContainerDefinition>) : Serializable
 
 // TODO: make factory for dev-mode fallback
+/**
+ * Responsible for the distribution of JADE platform containers.
+ */
 abstract class ContainerDistributor(val runtime: Runtime, val systemDefinition: SystemDefinition) {
     companion object {
         val DEFAULT_CONTAINER_CONFIGURATION =
@@ -36,6 +39,9 @@ abstract class ContainerDistributor(val runtime: Runtime, val systemDefinition: 
                 ))
     }
 
+    /**
+     * Start distributing JADE containers.
+     */
     abstract fun start()
 }
 
