@@ -1,5 +1,6 @@
 package edu.swin.hets.agent;
 
+import com.hierynomus.msdtyp.ACL;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;
@@ -47,7 +48,8 @@ public class ResellerAgent extends BaseAgent {
     private double _min_purchase_amount;
     private double _next_purchased_amount;
     private double _next_required_amount;
-    private Vector<Double> _future_needs;
+    //private Vector<Double> _future_needs;
+    //private Vector<Double> _future_purchases;
     private Vector<PowerSaleAgreement> _current_buy_agrements;
     private Vector<PowerSaleAgreement> _current_sell_agrements;
     private Vector<PowerSaleProposal> _awaitingProposals;
@@ -118,7 +120,7 @@ public class ResellerAgent extends BaseAgent {
     }
 
     protected void TimePush(int ms_left) {
-        if (_next_required_amount - _next_purchased_amount > 0.1) {
+        if (_next_required_amount > _next_purchased_amount) {
             LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
             sendCFP(); // We need to buy more electricity
         }
@@ -133,7 +135,7 @@ public class ResellerAgent extends BaseAgent {
         }
         //TODO make more complicated logic.
         PowerSaleProposal prop = new PowerSaleProposal(
-                _next_required_amount - _next_purchased_amount,4);
+                _next_required_amount - _next_purchased_amount,1);
         prop.setBuyerAID(getAID());
         try {
             cfp.setContentObject(prop);
@@ -194,6 +196,32 @@ public class ResellerAgent extends BaseAgent {
     // Someone is wanting to buy electricity off us
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
+            if (_next_purchased_amount > _next_required_amount) {
+                // Try and sell some electricity we have to much
+                PowerSaleProposal prop = null;
+                try {
+                    prop = (PowerSaleProposal) msg.getContentObject();
+                }
+                catch (UnreadableException e) {
+                    LogError("Asked to quote, no quote object attached");
+                    return;
+                }
+                if (prop.getCost() < 0) {
+                    prop.setCost(_current_sell_price);
+                }
+                else if (prop.getCost() < _current_sell_price) {
+                    // Wanting to buy for less than we sell for, ignore it.
+                    //TODO, Add negotiating.
+                    return;
+                }
+                ACLMessage reply = msg.createReply();
+                reply.setPerformative(ACLMessage.PROPOSE);
+                addPowerSaleProposal(reply, prop);
+                send(reply);
+            }
+            else {
+                // TODO, deal with making offers to buy more electricity.
+            }
         }
     }
 

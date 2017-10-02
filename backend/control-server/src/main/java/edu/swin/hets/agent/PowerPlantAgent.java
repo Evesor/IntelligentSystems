@@ -74,10 +74,12 @@ public class PowerPlantAgent extends BaseAgent {
                 _current_production += agreement.getAmount(); //Update current production values.
             }
         }
-        LogDebug("Producting: " + _current_production);
+        LogDebug("Producing: " + _current_production);
     }
 
     protected String getJSON() {
+
+        //TODO Implement
         return "Not implemented";
     }
 
@@ -101,9 +103,9 @@ public class PowerPlantAgent extends BaseAgent {
             }
             if (proposed.getCost() < 0) {
                 // No amount set, set how much we will sell that quantity for.
-                proposed.setCost(_current_sell_price * proposed.getAmount());
+                proposed.setCost(_current_sell_price);
             }
-            else if (proposed.getCost() < _current_sell_price * proposed.getAmount()) {
+            else if (proposed.getCost() < _current_sell_price) {
                 // To low a price, don't bother agreeing.
                 //TODO Add negotiation here to try and make a more agreeable price.
                 return;
@@ -132,7 +134,8 @@ public class PowerPlantAgent extends BaseAgent {
                 agreement = (PowerSaleAgreement) msg.getContentObject();
             } catch (UnreadableException e){
                 LogError("Did not find and accepted prop, exception thrown");
-                return;}
+                return;
+            }
             if (agreement.getAmount() > (_max_production - _current_production)) {
                 // Cant sell that much electricity, send back error message.
                 quoteNoLongerValid(msg);
