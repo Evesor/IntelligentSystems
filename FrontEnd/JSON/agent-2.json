@@ -9,3 +9,5 @@
     {"source": "message3", "target": "agent", "value": 20}
   ]
 }
+
+// Remove agent node, each node becomes and agent and the value becomes the message.
