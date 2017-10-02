@@ -1,12 +1,9 @@
 package edu.swin.hets.agent;
 
-import java.util.Iterator;
-
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -46,7 +43,6 @@ public class ApplianceAgent extends BaseAgent
 		}
 		watt = 10;
 		ucb = new UsageCounterBehaviour(this,1000);
-//		updateWeather();//automatically updated by GlobalValuesAgent
 		updateForecastUsage();
 	}
 
@@ -78,12 +74,12 @@ public class ApplianceAgent extends BaseAgent
 		{
 			//example message : electricity request,1
 			//0=declined, 1=approved
-			System.out.println("electricity message");
+			System.out.println(getLocalName() + " gets permission to use electricity");
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-			if(value==0){System.out.println("Request declined by HomeAgent");}
+			if(value==0){System.out.println(getLocalName() + " electricity request declined");}
 			else if(value==1)
 			{
-				System.out.println("turning it on");
+				System.out.println(getLocalName() + " is now on");
 				on = true;
 				counterOn();
 			}
@@ -96,43 +92,6 @@ public class ApplianceAgent extends BaseAgent
 		ucb = new UsageCounterBehaviour(this,1000);
 		addBehaviour(ucb);
 	}
-
-//	handled by GlobalValuesAgent
-//	private void updateWeather()
-//	{
-//		//send request for weather forecast
-//		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-//		msg.setContent("Weather Forecast");
-//		msg.addReceiver(new AID("WeatherAgent",AID.ISLOCALNAME));
-//		send(msg);
-//		//wait for result
-//		addBehaviour(new weatherForecastReceiver());
-//	}
-
-// handled by GlobalValuesAgent
-//	private class weatherForecastReceiver extends Behaviour
-//	{
-//		boolean finish=false;
-//
-//		@Override
-//		public void action()
-//		{
-//			ACLMessage msg = blockingReceive();
-//			if(msg!=null)
-//			{
-//				//example message : weather,0
-//				//0=sunny, 1=cloudy
-//				weather[_current_globals.getTime()] = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-//				//exit the behaviour
-//				finish = true;
-//			}
-//		}
-//		@Override
-//		public boolean done()
-//		{
-//			return finish;
-//		}
-//	}
 
 	private void sendCurrentUsage()
 	{
@@ -165,32 +124,8 @@ public class ApplianceAgent extends BaseAgent
 		send(msg);
 	}
 
-//	private class electricityReceiver extends Behaviour
-//	{
-//		boolean finish=false;
-//
-//		@Override
-//		public void action()
-//		{
-//			ACLMessage msg = blockingReceive();
-//			if(msg!=null)
-//			{
-//				//example message : electricity request,1
-//				//0=declined, 1=approved
-//				int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-//				if(value==0){System.out.println("Request declined by HomeAgent");}
-//				else if(value==1){on = true;}
-//				//exit the behaviour
-//				finish = true;
-//			}
-//		}
-//		@Override
-//		public boolean done(){return finish;}
-//	}
-
 	private void turn(boolean on)
 	{
-		System.out.println("IN WITH VALUE : " + on);
 		if(this.on!=on)
 		{
 			if(on==true)
@@ -199,13 +134,14 @@ public class ApplianceAgent extends BaseAgent
 				//home agent check current usage with max usage
 				//if current + request < max usage, approve
 				sendElectricityRequest();
-				System.out.println("electricity request sent!");
+				System.out.println(getLocalName() + " sent an electricity request");
 			}
 			else if(on==false)
 			{
 				this.on = false;
 				//stop current usage increment
 				ucb.stop();
+				System.out.println(getLocalName() + " is now off");
 			}
 		}
 	}
@@ -224,29 +160,6 @@ public class ApplianceAgent extends BaseAgent
 			System.out.println("current : " + current[_current_globals.getTime()]);
 		}
 	}
-
-//	@Override
-//	protected void UnhandledMessage(ACLMessage msg)
-//	{
-//		String senderName = msg.getSender().getLocalName();
-//
-//		if(msg.getPerformative()==ACLMessage.REQUEST)
-//		{
-//			//UserAgent or HomeAgent turn on / off
-//			if(msg.getContent().contains("turn"))
-//			{
-//				//example message : turn,0
-//				//0=off, 1=on
-//				int intValue = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-//				boolean booleanValue = false;
-//				if(intValue==0){booleanValue = false;}
-//				else if(intValue==1){booleanValue = true;}
-//				turn(booleanValue);
-//			}
-//			else{sendNotUnderstood(msg,"Sorry?");}
-//		}
-//		else{sendNotUnderstood(msg,"Sorry?");}
-//	}
 
 	//TODO Override TimeExpired
 	@Override

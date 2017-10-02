@@ -2,12 +2,18 @@ package edu.swin.hets.agent;
 
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
+import edu.swin.hets.helper.PowerSaleAgreement;
+import edu.swin.hets.helper.PowerSaleProposal;
 import jade.core.AID;
 import jade.core.behaviours.OneShotBehaviour;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 
+import java.io.IOException;
 import java.lang.*;
+import java.util.Vector;
 
 public class HomeAgent extends BaseAgent
 {
@@ -22,8 +28,12 @@ public class HomeAgent extends BaseAgent
 	private int[] watt;
 	//list of appliance agent name, should be vector
 	private String[] applianceName;
-	//max watt of a house
+	//max watt threshold  of a house
 	private int maxWatt;
+	private double _next_purchased_amount;
+	private Vector<PowerSaleAgreement> _current_buy_agreements;
+	private double _next_required_amount;
+	private double _current_by_price;
 
 	private MessageTemplate electricityCurrentMT = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.INFORM),
@@ -36,6 +46,10 @@ public class HomeAgent extends BaseAgent
 	private MessageTemplate electricityRequestMT = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
 		GoodMessageTemplates.ContatinsString("electricity"));
+
+	private MessageTemplate PropMessageTemplate = MessageTemplate.and(
+			MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
+			GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
 	
 	//init all variable value
 	//TODO init function
@@ -48,12 +62,16 @@ public class HomeAgent extends BaseAgent
 		for(int i = 0; i < args.length; i++)
 		{
 			applianceName[i] =  args[i].toString();
-			watt[i] = 10;
-			System.out.println(args[i]);
+			watt[i] = 10;//TODO get watt from appliance agent
+			System.out.println(args[i] + " has been added to " + getLocalName());
 		}
 		electricityUsage = new int[24][n];
 		electricityForecast = new int[24][n];
 		maxWatt = 10000;
+		_current_buy_agreements = new Vector<PowerSaleAgreement>();
+		_next_purchased_amount = 200;
+		_current_by_price = 10;
+		System.out.println(getLocalName() + " init is complete!");
 	}
 	
 	private int getApplianceID(String name)
@@ -74,9 +92,9 @@ public class HomeAgent extends BaseAgent
 		addBehaviour(new welcomeMessage());
 		addMessageHandler(electricityCurrentMT, new HomeAgent.CurrentHandler());
 		addMessageHandler(electricityForecastMT, new HomeAgent.ForecastHandler());
-
 		addMessageHandler(electricityRequestMT, new HomeAgent.electricityRequestHandler());
-		System.out.println(getLocalName() + " setup is completed!");
+		addMessageHandler(PropMessageTemplate, new ProposalHandler());
+		System.out.println(getLocalName() + " setup is complete!");
 		turn("lamp1",true);
 	}
 
@@ -113,7 +131,7 @@ public class HomeAgent extends BaseAgent
 	{
 		public void Handler(ACLMessage msg)
 		{
-			System.out.println("electricity request delivered");
+			System.out.println(getLocalName() + " received electricity request");
 			//should check against maxWatt and decide
 			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
 			reply.setContent("electricity request,1");
@@ -167,7 +185,7 @@ public class HomeAgent extends BaseAgent
 
 	private void turn(String name, boolean on)
 	{
-		System.out.println("OSHU");
+		System.out.println(getLocalName() + " is trying to turn " + name + " " + on);
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 		if(on==true){msg.setContent("on");}
 		else if(on==false){msg.setContent("off");}
@@ -175,47 +193,97 @@ public class HomeAgent extends BaseAgent
 		send(msg);
 	}
 
-//	@Override
-//	protected void UnhandledMessage(ACLMessage msg)
-//	{
-//		String senderName = msg.getSender().getLocalName();
-//
-//		if(msg.getPerformative()==ACLMessage.INFORM)
-//		{
-//			if(msg.getContent().contains("electricity"))
-//			{
-//				int applianceID = getApplianceID(senderName);
-//				int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-//				if(msg.getContent().contains("current"))
-//				{
-//					//example message : electricity current,10
-//					//store in electricityUsage
-//					electricityUsage[_current_time][applianceID] = value;
-//				}
-//				else if(msg.getContent().contains("forecast"))
-//				{
-//					//example message : electricity forecast,12
-//					//store in electricity
-//					electricityForecast[_current_time][applianceID] = value;
-//				}
-//			}
-//			else
-//				{sendNotUndersood(msg,"Sorry?");}
-//		}
-//	}
-
 	//TODO Override TimeExpired
 	@Override
-	protected void TimeExpired(){}
+	protected void TimeExpired()
+	{
+		System.out.println("OSSU");
+		_next_purchased_amount = 0;
+		_next_required_amount = forecast(1);
+		Vector<PowerSaleAgreement> toRemove = new Vector<>();
+		for (PowerSaleAgreement agreement : _current_buy_agreements) {
+			if (agreement.getEndTime() < _current_globals.getTime()) {
+				// No longer valid
+				toRemove.add(agreement);
+			}
+		}
+		for (PowerSaleAgreement rem: toRemove) {
+			LogDebug("Removing a contract");
+			_current_buy_agreements.removeElement(rem);
+		}
+		for (PowerSaleAgreement agreement : _current_buy_agreements) {
+			// We have purchased this electricty.
+			_next_purchased_amount += agreement.getAmount();
+		}
+		if (_next_required_amount - _next_purchased_amount > 0.1) {
+			sendCFP();
+		}
+	}
 
 	//TODO Override TimePush
 	@Override
-	protected void TimePush(int ms_left){}
+	protected void TimePush(int ms_left)
+	{
+		_next_required_amount = forecast(1);
+		if (_next_required_amount - _next_purchased_amount > 0.1) {
+			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
+			sendCFP(); // We need to buy more electricity
+		}
+		// We have enough electricity do nothing.
+	}
 
 	//TODO Override getJSON
 	@Override
 	protected String getJSON(){return null;}
+
+	private void sendCFP()
+	{
+		ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+		DFAgentDescription[] resellers = getService("reseller");
+		for (DFAgentDescription reseller : resellers) {
+			cfp.addReceiver(reseller.getName()); //CFP to each reseller
+		}
+		//TODO make more complicated logic.
+		/*_next_required_amount - _next_purchased_amount*/
+		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,4);
+		prop.setBuyerAID(getAID());
+		try {
+			cfp.setContentObject(prop);
+		} catch (IOException e) {
+			LogError("Could not attach a proposal to a message, exception thrown");
+		}
+		send(cfp);
+	}
+
+	// Someone is offering to sell us electricity
+	private class ProposalHandler implements IMessageHandler {
+		public void Handler(ACLMessage msg) {
+			PowerSaleProposal proposed;
+			try {
+				proposed = (PowerSaleProposal) msg.getContentObject();
+			} catch (UnreadableException e) {
+				sendNotUndersood(msg, "no proposal found");
+				return;
+			}
+			if (proposed.getCost() <= (_current_by_price * proposed.getAmount())) {
+				LogVerbose(getName() + " agreed to buy " + proposed.getAmount() + " electricity for " +
+						proposed.getDuration() + " time slots");
+				PowerSaleAgreement contract = new PowerSaleAgreement(proposed, _current_globals.getTime());
+				_current_buy_agreements.add(contract);
+				_next_purchased_amount += contract.getAmount();
+				ACLMessage acceptMsg = msg.createReply();
+				acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+				try {
+					acceptMsg.setContentObject(contract);
+				} catch (IOException e) {
+					LogError("Could not add a contract to message, exception thrown");
+				}
+				send(acceptMsg);
+			}
+		}
+	}
 }
+
 
 //TODO behaviour to negotiate price for buy & sell
 //TODO receive request from user to turn on/off an appliance
