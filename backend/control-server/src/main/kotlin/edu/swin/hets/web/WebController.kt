@@ -23,18 +23,12 @@ class WebController(private val systemConfig: SystemConfig, private val jadeCont
                 "hello world!"
             }
 
-            get("/api/hello") { req, res ->
-                logger.info("Hello world!")
-                res.status(200)
-                "Hello world!"
-            }
-
-            get("/api/hostAddress") { req, res ->
+            get("/hostAddress") { req, res ->
                 res.status(200)
                 systemConfig.hostMachineAddress
             }
 
-            post("/api/shutdown") { req, res ->
+            post("/shutdown") { req, res ->
                 logger.info("Stop Requested!")
                 res.status(200)
                 jadeController.stop()
