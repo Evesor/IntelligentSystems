@@ -41,9 +41,9 @@ class SystemConfig(args: Array<String>) {
 
     init {
         logger.info("Setting up system config...")
-        loadConfig()?.let {
-            (it.getProperty(HOST_MACHINE_ADDRESS) as? String)?.apply { hostMachineAddress = this }
-            (it.getProperty(WEB_ENDPOINT_ADDRESS) as? String)?.apply { endpointAddress = this }
+        loadConfig()?.apply {
+            (getProperty(HOST_MACHINE_ADDRESS) as? String)?.let { hostMachineAddress = it }
+            (getProperty(WEB_ENDPOINT_ADDRESS) as? String)?.let { endpointAddress = it }
         }
 
         connectionList = readServers()
