@@ -169,7 +169,7 @@ public class HomeAgent extends BaseAgent
 		//next week forecast
 		else if(x==3){return result*168;}
 		//error
-		else{return -1;}
+		else{return 100;}
 	}
 	
 	//when use too much electricity, Home agent could turn off unimportant appliances to prevent overload
@@ -217,6 +217,7 @@ public class HomeAgent extends BaseAgent
 		}
 		if (_next_required_amount - _next_purchased_amount > 0.1) {
 			sendCFP();
+			System.out.println("CFP sent");
 		}
 	}
 
