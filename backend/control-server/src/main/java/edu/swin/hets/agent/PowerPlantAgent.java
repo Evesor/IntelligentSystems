@@ -74,11 +74,10 @@ public class PowerPlantAgent extends BaseAgent {
                 _current_production += agreement.getAmount(); //Update current production values.
             }
         }
-        LogDebug("Producing: " + _current_production);
+        LogVerbose(getName() + " is producing: " + _current_production);
     }
 
     protected String getJSON() {
-
         //TODO Implement
         return "Not implemented";
     }
@@ -102,8 +101,10 @@ public class PowerPlantAgent extends BaseAgent {
             else if (proposed.getCost() < _current_sell_price) {
                 // To low a price, don't bother agreeing.
                 //TODO Add negotiation here to try and make a more agreeable price.
+                sendRejectProposalMessage(msg);
                 return;
             }
+            proposed.setSellerAID(getAID());
             ACLMessage response = msg.createReply();
             response.setPerformative(ACLMessage.PROPOSE);
             addPowerSaleProposal(response, proposed);
@@ -129,24 +130,12 @@ public class PowerPlantAgent extends BaseAgent {
                 return;
             }
             _current_contracts.add(agreement);
-            // Inform other about sale
-            ACLMessage InformMessage = new ACLMessage(ACLMessage.INFORM);
-            InformMessage.setSender(getAID());
-            // Inform everyone about the sale.
-            AMSAgentDescription[] agents = getAgentList();
-            for (AMSAgentDescription agent: agents) {
-                if (agent.getName() != getAID()) {
-                    msg.addReceiver(agent.getName());
-                }
-            }
-            addPowerSaleAgreement(InformMessage, agreement);
-            send(InformMessage);
-            _current_production += agreement.getAmount();
         }
     }
 
     private void quoteNoLongerValid(ACLMessage msg) {
         //TODO : Needs implementation
+        sendRejectProposalMessage(msg);
     }
 
 }
