@@ -188,20 +188,33 @@ public class ResellerAgent extends BaseAgent {
     // Someone is wanting to buy electricity off us
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
+
+        //Varian
             // A request for a price on electricity
-            PowerSaleProposal proposed = getPowerSalePorposal(msg);
-            if (_next_required_amount > _next_purchased_amount) {
-                //TODO, by more electricity and then sell, use prediciton?
+            PowerSaleProposal proposed;
+            try{
+                proposed = (PowerSaleProposal) msg.getContentObject();
+            } catch (UnreadableException e){
+                sendNotUndersood(msg, "no proposal found");
+                return;
+            }
+            _next_required_amount += proposed.getAmount();
+            if (_next_required_amount - _next_purchased_amount > 0.1) {
+                LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
+                sendCFP(); // We need to buy more electricity
             }
             else {
-                //Send response to home
-                proposed.setCost(_current_sell_price);
+                //give electricity to home
+                proposed.setCost(_current_sell_price * proposed.getAmount());
                 ACLMessage response = msg.createReply();
                 response.setPerformative(ACLMessage.PROPOSE);
-                addPowerSaleProposal(response, proposed);
+                try {
+                    response.setContentObject(proposed);
+                } catch (java.io.IOException e) { return; }
                 send(response);
                 LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
             }
+        //Varian
         }
     }
 
