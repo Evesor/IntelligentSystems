@@ -74,6 +74,12 @@ public abstract class BaseAgent extends Agent{
         send(response);
     }
 
+    protected void sendRejectProposalMessage(ACLMessage origionalMsg) {
+        ACLMessage response = origionalMsg.createReply();
+        response.setPerformative(ACLMessage.REJECT_PROPOSAL);
+        send(response);
+    }
+
     // Used by the agent at construction to make sure that it get a time at initialization.
     private GlobalValues getCurrentGlobalValuesBlocking() {
         ACLMessage msg = blockingReceive(globalValuesChangedTemplate);

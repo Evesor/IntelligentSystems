@@ -44,6 +44,7 @@ public class LoggingAgent extends BaseAgent{
 
     protected void TimeExpired() {
         // Dump an update to the file
+        System.out.println("Time slice : " + _current_globals.getTime() + " is starting.");
         //TODO Add a file dump here.
         //TODO Append time to end of each message
     }
