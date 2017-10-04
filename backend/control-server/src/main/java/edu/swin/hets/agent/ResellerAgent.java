@@ -1,6 +1,5 @@
 package edu.swin.hets.agent;
 
-import com.hierynomus.msdtyp.ACL;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;
@@ -48,8 +47,7 @@ public class ResellerAgent extends BaseAgent {
     private double _min_purchase_amount;
     private double _next_purchased_amount;
     private double _next_required_amount;
-    //private Vector<Double> _future_needs;
-    //private Vector<Double> _future_purchases;
+    private Vector<Double> _future_needs;
     private Vector<PowerSaleAgreement> _current_buy_agrements;
     private Vector<PowerSaleAgreement> _current_sell_agrements;
     private Vector<PowerSaleProposal> _awaitingProposals;
@@ -120,7 +118,7 @@ public class ResellerAgent extends BaseAgent {
     }
 
     protected void TimePush(int ms_left) {
-        if (_next_required_amount > _next_purchased_amount) {
+        if (_next_required_amount - _next_purchased_amount > 0.1) {
             LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
             sendCFP(); // We need to buy more electricity
         }
@@ -135,7 +133,7 @@ public class ResellerAgent extends BaseAgent {
         }
         //TODO make more complicated logic.
         PowerSaleProposal prop = new PowerSaleProposal(
-                _next_required_amount - _next_purchased_amount,1);
+                _next_required_amount - _next_purchased_amount,4);
         prop.setBuyerAID(getAID());
         try {
             cfp.setContentObject(prop);
@@ -176,13 +174,7 @@ public class ResellerAgent extends BaseAgent {
     // Someone is buying electricity off us
     private class ProposalAcceptedHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            PowerSaleAgreement agreement;
-            try {
-                agreement = (PowerSaleAgreement) msg.getContentObject();
-            } catch (UnreadableException e) {
-                LogError("No agreement found in accepted message, exception thrown");
-                return;
-            }
+            PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _current_sell_agrements.add(agreement);
         }
     }
@@ -196,31 +188,19 @@ public class ResellerAgent extends BaseAgent {
     // Someone is wanting to buy electricity off us
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            if (_next_purchased_amount > _next_required_amount) {
-                // Try and sell some electricity we have to much
-                PowerSaleProposal prop = null;
-                try {
-                    prop = (PowerSaleProposal) msg.getContentObject();
-                }
-                catch (UnreadableException e) {
-                    LogError("Asked to quote, no quote object attached");
-                    return;
-                }
-                if (prop.getCost() < 0) {
-                    prop.setCost(_current_sell_price);
-                }
-                else if (prop.getCost() < _current_sell_price) {
-                    // Wanting to buy for less than we sell for, ignore it.
-                    //TODO, Add negotiating.
-                    return;
-                }
-                ACLMessage reply = msg.createReply();
-                reply.setPerformative(ACLMessage.PROPOSE);
-                addPowerSaleProposal(reply, prop);
-                send(reply);
+            // A request for a price on electricity
+            PowerSaleProposal proposed = getPowerSalePorposal(msg);
+            if (_next_required_amount > _next_purchased_amount) {
+                //TODO, by more electricity and then sell, use prediciton?
             }
             else {
-                // TODO, deal with making offers to buy more electricity.
+                //Send response to home
+                proposed.setCost(_current_sell_price);
+                ACLMessage response = msg.createReply();
+                response.setPerformative(ACLMessage.PROPOSE);
+                addPowerSaleProposal(response, proposed);
+                send(response);
+                LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
             }
         }
     }
