@@ -90,13 +90,7 @@ public class PowerPlantAgent extends BaseAgent {
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             // A request for a price on electricity
-            PowerSaleProposal proposed;
-            try{
-                proposed = (PowerSaleProposal) msg.getContentObject();
-            } catch (UnreadableException e){
-                sendNotUndersood(msg, "no proposal found");
-                return;
-            }
+            PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (proposed.getAmount() > (_max_production - _current_production)) {
                 // Cant sell that much electricity, don't bother putting a bit in.
                 return;
@@ -112,9 +106,7 @@ public class PowerPlantAgent extends BaseAgent {
             }
             ACLMessage response = msg.createReply();
             response.setPerformative(ACLMessage.PROPOSE);
-            try {
-                response.setContentObject(proposed);
-            } catch (java.io.IOException e) { return; }
+            addPowerSaleProposal(response, proposed);
             send(response);
             LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
         }
@@ -123,19 +115,14 @@ public class PowerPlantAgent extends BaseAgent {
     private class QuoteRejectedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
             // Don't care ATM
+            //TODO add a rect message
         }
     }
 
     private class QuoteAcceptedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
             // A quote we have previously made has been accepted.
-            PowerSaleAgreement agreement;
-            try{
-                agreement = (PowerSaleAgreement) msg.getContentObject();
-            } catch (UnreadableException e){
-                LogError("Did not find and accepted prop, exception thrown");
-                return;
-            }
+            PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             if (agreement.getAmount() > (_max_production - _current_production)) {
                 // Cant sell that much electricity, send back error message.
                 quoteNoLongerValid(msg);
@@ -152,9 +139,7 @@ public class PowerPlantAgent extends BaseAgent {
                     msg.addReceiver(agent.getName());
                 }
             }
-            try {
-                InformMessage.setContentObject(agreement);
-            } catch (java.io.IOException e) { return; }
+            addPowerSaleAgreement(InformMessage, agreement);
             send(InformMessage);
             _current_production += agreement.getAmount();
         }
