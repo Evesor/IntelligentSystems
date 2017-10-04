@@ -10,14 +10,16 @@ import spark.Spark.*
 /**
  * Configuration for Web Services API, including websockets.
  */
-class WebController(private val systemConfig: SystemConfig, private val jadeController: JadeController) {
+class WebController(private val systemConfig: SystemConfig,
+                    private val jadeController: JadeController,
+                    private val clientWebSocketHandler: ClientWebSocketHandler) {
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(WebController::class.java)
     }
 
     fun start() {
         logger.info("Starting up Web Services...")
-        webSocket("/ws", WebSocketHandler())
+        webSocket(ClientWebSocketHandler.PATH, clientWebSocketHandler)
         path("/api") {
             get("/hello") { req, res ->
                 "hello world!"

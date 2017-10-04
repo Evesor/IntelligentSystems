@@ -7,6 +7,7 @@ import edu.swin.hets.controller.distributor.ContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
 import edu.swin.hets.controller.gateway.ContainerListRetriever
 import edu.swin.hets.controller.gateway.JadeTerminator
+import edu.swin.hets.web.ClientWebSocketHandler
 import jade.core.*
 import jade.util.leap.Properties
 import jade.wrapper.ContainerController
@@ -17,14 +18,15 @@ import org.slf4j.LoggerFactory
 /**
  * Responsible for the JADE platform's lifecycle.
  */
-class JadeController(private val runtime: Runtime, private val containerDistributor: ContainerDistributor) {
+class JadeController(private val runtime: Runtime,
+                     private val containerDistributor: ContainerDistributor,
+                     private val clientWebSocketHandler: ClientWebSocketHandler) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(JadeController::class.java)
     }
 
     private val profile: Profile = ProfileImpl(true)
     var mainContainer: ContainerController? = null
-
 
     init {
         profile.setParameter(Profile.GUI, "true")
@@ -34,7 +36,7 @@ class JadeController(private val runtime: Runtime, private val containerDistribu
         logger.info("Spinning up the JADE platform...")
         mainContainer = runtime.createMainContainer(profile).also {
             it.createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
-            it.createNewAgent("WebServer", WebAgent::class.java.name, arrayOf()).start()
+            it.createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
             it.createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf()).start()
         }
         JadeGateway.init(null,
