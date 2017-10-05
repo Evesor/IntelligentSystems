@@ -228,3 +228,7 @@ gradle-app.setting
 **/servers.properties
 **/system.properties
 **/system-definition.json
+
+# Keystore
+**/control-server/keystore/
+**/*.pem

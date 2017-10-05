@@ -7,11 +7,11 @@ import com.xebialabs.overthere.ssh.SshConnectionBuilder
 import com.xebialabs.overthere.ssh.SshConnectionType
 import com.xebialabs.overthere.util.OverthereFileCopier
 import edu.swin.hets.configuration.SystemConfig
-import org.apache.commons.configuration2.Configuration
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.File
+import java.io.IOException
 import java.io.InputStreamReader
 
 
@@ -67,7 +67,13 @@ class SlaveConnection(val connectionDetails: ConnectionDetails, val configuratio
         options.set(ConnectionOptions.OPERATING_SYSTEM, OperatingSystemFamily.UNIX)
         options.set(SshConnectionBuilder.CONNECTION_TYPE, SshConnectionType.SCP)
 
-        connection = Overthere.getConnection(SshConnectionBuilder.SSH_PROTOCOL, options)
+
+        //Actual connection gets tested here
+        try {
+            connection = Overthere.getConnection(SshConnectionBuilder.SSH_PROTOCOL, options)
+        } catch (rie: RuntimeIOException) {
+            println(rie.toString())
+        }
     }
 
     fun stop() {
