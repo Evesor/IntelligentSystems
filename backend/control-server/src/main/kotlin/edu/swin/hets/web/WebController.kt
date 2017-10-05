@@ -19,6 +19,7 @@ class WebController(private val systemConfig: SystemConfig,
 
     fun start() {
         logger.info("Starting up Web Services...")
+        port(if (!systemConfig.devMode) 80 else 4567)
         webSocket(ClientWebSocketHandler.PATH, clientWebSocketHandler)
         path("/api") {
             get("/hello") { req, res ->

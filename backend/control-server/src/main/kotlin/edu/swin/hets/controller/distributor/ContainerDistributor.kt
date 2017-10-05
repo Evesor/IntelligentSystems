@@ -4,6 +4,7 @@ import edu.swin.hets.agent.ApplianceAgent
 import edu.swin.hets.agent.HomeAgent
 import edu.swin.hets.agent.PowerPlantAgent
 import edu.swin.hets.agent.ResellerAgent
+import edu.swin.hets.configuration.SystemConfig
 import jade.core.Agent
 import jade.core.Runtime
 import java.io.Serializable
@@ -59,4 +60,11 @@ fun validateContainerDefinition(containerDefinition: ContainerDefinition): Boole
 
 fun validateAgentDefinition(agentDefinition: AgentDefinition): Boolean {
     return Agent::class.java.isAssignableFrom(Class.forName(agentDefinition.className))
+}
+
+/**
+ * ContainerDistributor Factory Method
+ */
+fun getContainerDistributor(runtime: Runtime, config: SystemConfig): ContainerDistributor {
+    return LocalContainerDistributor(runtime, config.containerConfiguration)
 }

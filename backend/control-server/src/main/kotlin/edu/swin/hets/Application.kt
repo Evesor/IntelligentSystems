@@ -2,7 +2,7 @@ package edu.swin.hets
 
 import edu.swin.hets.configuration.SystemConfig
 import edu.swin.hets.controller.JadeController
-import edu.swin.hets.controller.distributor.LocalContainerDistributor
+import edu.swin.hets.controller.distributor.getContainerDistributor
 import edu.swin.hets.web.ClientWebSocketHandler
 import edu.swin.hets.web.WebController
 import jade.core.Runtime
@@ -18,7 +18,7 @@ class Application(args: Array<String>) {
     private val configuration = SystemConfig(args)
 
     //TODO add a DI library
-    private val containerDistributor = LocalContainerDistributor(Runtime.instance(), configuration.containerConfiguration)
+    private val containerDistributor = getContainerDistributor(Runtime.instance(), configuration)
     private val clientWebSocketHandler = ClientWebSocketHandler()
 
     private val jadeController = JadeController(Runtime.instance(), containerDistributor, clientWebSocketHandler)
