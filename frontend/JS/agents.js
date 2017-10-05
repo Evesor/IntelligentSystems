@@ -1,19 +1,19 @@
-function drawAgent2() {
+function drawAgents() {
   var svg = d3.select("svg"),
       width = +svg.attr("width"),
       height = +svg.attr("height");
 
-  var color = d3.scaleOrdinal(d3.schemeCategory20b);
+  var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-  var randomWidth  = getRandomInt(50, width-50);
-  var randomHeight = getRandomInt(50, height-50);
+  // var randomWidth  = getRandomInt(50, width-50);
+  // var randomHeight = getRandomInt(50, height-50);
 
   var simulation = d3.forceSimulation()
       .force("link", d3.forceLink().id(function(d) { return d.id; }))
       .force("charge", d3.forceManyBody())
-      .force("center", d3.forceCenter(randomWidth, randomHeight));
+      .force("center", d3.forceCenter(width/2, height/2));
 
-  d3.json("../JSON/agent-2.json", function(error, graph) {
+  d3.json("../JSON/agent-log.json", function(error, graph) {
     if (error) throw error;
 
     var link = svg.append("g")
@@ -42,8 +42,32 @@ function drawAgent2() {
               d3.select(this).attr('r', 5)
                 .style("stroke","black");
             })
-            .on("click", function() {
-              getApplianceAgent();
+            .on("click", getAttribute)
+            .getAttribute(function (r) {
+
+              //d3.select(this).attr('r', 5);
+              // FIX THIS
+              // d3.select(this).attr('r', 5) << to get the current object.
+
+              a = r.agent;
+
+              switch (a.type) {
+                case "Power Plant":
+                  alert("Power Plant!!!");
+                  break;
+                case "Reseller Agent":
+                  alert("Reseller Agent!!!");
+                  break;
+                case "Home Agent":
+                  getHomeAgent(a.type, a.currentPowerUsage, a.predictedPowerUsage, a.appliances);
+                  break;
+                case "Appliance Agent":
+                  getApplianceAgent(a.type, a.currentPowerUsage, a.predictedPowerUsage, a.switch);
+                  break;
+                default:
+                  alert();
+                  break;
+              }
             });
 
     node.append("title")

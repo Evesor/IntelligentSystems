@@ -1,9 +1,9 @@
-function drawAgent1() {
+function drawAgent2() {
   var svg = d3.select("svg"),
       width = +svg.attr("width"),
       height = +svg.attr("height");
 
-  var color = d3.scaleOrdinal(d3.schemeCategory20);
+  var color = d3.scaleOrdinal(d3.schemeCategory20b);
 
   var randomWidth  = getRandomInt(50, width-50);
   var randomHeight = getRandomInt(50, height-50);
@@ -13,7 +13,7 @@ function drawAgent1() {
       .force("charge", d3.forceManyBody())
       .force("center", d3.forceCenter(randomWidth, randomHeight));
 
-  d3.json("../JSON/agent-1.json", function(error, graph) {
+  d3.json("../JSON/agent-2.json", function(error, graph) {
     if (error) throw error;
 
     var link = svg.append("g")
@@ -43,7 +43,7 @@ function drawAgent1() {
                 .style("stroke","black");
             })
             .on("click", function() {
-              getHomeAgent();
+              getApplianceAgent();
             });
 
     node.append("title")
@@ -86,3 +86,7 @@ function drawAgent1() {
     d.fy = null;
   }
 }
+
+// Remove agent node, each node becomes and agent and the value becomes the message.
+// Agent will have a list of spoken to agent.
+// list of number of messages. (Agent name and number of messages)

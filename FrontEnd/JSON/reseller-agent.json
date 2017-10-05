@@ -2,9 +2,9 @@
 	"Agents": {
 		"resellerAgent" : [
 		{
-			"currentSellPrice" : 14,
-      		"currentBuyPrice" : 10,
-      		"currentCustomers" : ["agent1", "agent2", "agent3"]
+                  "currentSellPrice" : 14,
+                  "currentBuyPrice" : 10,
+                  "currentCustomers" : ["agent1", "agent2", "agent3"]
 		},
 		{
 			"currentSellPrice" : 16,
