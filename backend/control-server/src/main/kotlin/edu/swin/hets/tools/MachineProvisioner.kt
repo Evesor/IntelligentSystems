@@ -7,16 +7,16 @@ import org.apache.commons.configuration2.Configuration
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class MachineProvisioner() {
+class MachineProvisioner(args: Array<String>) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(MachineProvisioner::class.java)
     }
 
-    private var configuration: Configuration = SystemConfig().loadConfig()
+    private val configuration = SystemConfig(args)
 
     fun provisionHosts() {
         logger.info("Loading system config...")
-        val collection = configuration.getCollection(ConnectionDetails::class.java, SystemConfig.CONNECTION_LIST, null)
+        val collection = configuration.connectionList
 
         logger.info("Updating JRE...")
         collection.parallelStream().forEach({
@@ -26,5 +26,5 @@ class MachineProvisioner() {
 }
 
 fun main(args: Array<String>) {
-    MachineProvisioner().provisionHosts()
+    MachineProvisioner(args).provisionHosts()
 }

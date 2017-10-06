@@ -9,7 +9,7 @@ import java.util.Arrays
 class ContainerApplication(args: Array<String>) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ContainerApplication::class.java)
-        const val PORT: Int = 7777
+        const val PORT: Int = 1099
     }
 
     private var mainHost: String = "localhost"

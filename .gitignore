@@ -223,3 +223,8 @@ gradle-app.setting
 # JADE Runtime Configuration
 **/APDescription.txt
 **/MTPs-Main-Container.txt
+
+# Backend-specific configuration
+**/servers.properties
+**/system.properties
+**/system-definition.json

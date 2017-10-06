@@ -1,0 +1,39 @@
+{
+  "containers" : [ {
+    "name" : "Power Plant Container",
+    "agents" : [ {
+      "name" : "PowerPlant1",
+      "className" : "edu.swin.hets.agent.PowerPlantAgent"
+    }, {
+      "name" : "PowerPlant2",
+      "className" : "edu.swin.hets.agent.PowerPlantAgent"
+    } ]
+  }, {
+    "name" : "Appliance Container",
+    "agents" : [ {
+      "name" : "Appliance1",
+      "className" : "edu.swin.hets.agent.ApplianceAgent"
+    }, {
+      "name" : "Appliance2",
+      "className" : "edu.swin.hets.agent.ApplianceAgent"
+    } ]
+  }, {
+    "name" : "Home Container",
+    "agents" : [ {
+      "name" : "Home1",
+      "className" : "edu.swin.hets.agent.HomeAgent"
+    }, {
+      "name" : "Home2",
+      "className" : "edu.swin.hets.agent.HomeAgent"
+    } ]
+  }, {
+    "name" : "Reseller Container",
+    "agents" : [ {
+      "name" : "Reseller1",
+      "className" : "edu.swin.hets.agent.ResellerAgent"
+    }, {
+      "name" : "Reseller2",
+      "className" : "edu.swin.hets.agent.ResellerAgent"
+    } ]
+  } ]
+}

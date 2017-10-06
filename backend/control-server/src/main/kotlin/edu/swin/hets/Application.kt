@@ -1,43 +1,35 @@
 package edu.swin.hets
 
-import jade.core.Runtime
 import edu.swin.hets.configuration.SystemConfig
 import edu.swin.hets.controller.JadeController
-import edu.swin.hets.network.ConnectionDetails
-import edu.swin.hets.network.SlaveConnection
-import org.apache.commons.configuration2.Configuration
+import edu.swin.hets.controller.distributor.LocalContainerDistributor
+import edu.swin.hets.web.ClientWebSocketHandler
+import edu.swin.hets.web.WebController
+import jade.core.Runtime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class Application {
+
+class Application(args: Array<String>) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(Application::class.java.name)
     }
 
-    private var configuration: Configuration = SystemConfig().loadConfig()
+    private val configuration = SystemConfig(args)
+
+    //TODO add a DI library
+    private val containerDistributor = LocalContainerDistributor(Runtime.instance(), configuration.containerConfiguration)
+    private val clientWebSocketHandler = ClientWebSocketHandler()
+
+    private val jadeController = JadeController(Runtime.instance(), containerDistributor, clientWebSocketHandler)
+    private val webController = WebController(configuration, jadeController, clientWebSocketHandler)
 
     fun start() {
-        logger.info("Loading connectionDetails")
-        logger.info("Starting JADE deployment server...")
-        val jadeController = JadeController(Runtime.instance())
         jadeController.start()
-
-        val collection = configuration.getCollection(ConnectionDetails::class.java, SystemConfig.CONNECTION_LIST, null)
-
-        // TODO: conditionally change to local container deployment in dev env
-        startUpRemotes(collection)
-        //jadeController.configureAgents()
-    }
-
-    private fun startUpRemotes(serverList: Collection<ConnectionDetails>) {
-        serverList.stream().forEach({
-            SlaveConnection(it, configuration).start()
-        })
+        webController.start()
     }
 }
 
-
 fun main(args: Array<String>) {
-    val app = Application()
-    app.start()
+    val app = Application(args).apply { start() }
 }

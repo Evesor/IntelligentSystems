@@ -1,8 +1,7 @@
 package edu.swin.hets.agent;
 
-import edu.swin.hets.helper.GlobalValues;
-import edu.swin.hets.helper.GoodMessageTemplates;
-import edu.swin.hets.helper.IMessageHandler;
+import com.hierynomus.msdtyp.ACL;
+import edu.swin.hets.helper.*;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -16,6 +15,8 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+
+import java.io.IOException;
 import java.util.*;
 /******************************************************************************
  *  Use: An abstract base agent class used to provide all of the default global
@@ -73,6 +74,12 @@ public abstract class BaseAgent extends Agent{
         send(response);
     }
 
+    protected void sendRejectProposalMessage(ACLMessage origionalMsg) {
+        ACLMessage response = origionalMsg.createReply();
+        response.setPerformative(ACLMessage.REJECT_PROPOSAL);
+        send(response);
+    }
+
     // Used by the agent at construction to make sure that it get a time at initialization.
     private GlobalValues getCurrentGlobalValuesBlocking() {
         ACLMessage msg = blockingReceive(globalValuesChangedTemplate);
@@ -103,7 +110,7 @@ public abstract class BaseAgent extends Agent{
                         }
                     }
                     if (!message_handled) {
-                        sendNotUndersood(msg, "no handlers found");
+                        sendNotUndersood(msg, "no handlers found for " + msg.getPerformative());
                     }
                 }
                 block();
@@ -117,6 +124,7 @@ public abstract class BaseAgent extends Agent{
                 GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
+                        //SendAgentDetailsToServer(getJSON()); //TODO Uncomment when we get the WS stuff up and running.
                         TimeExpired();
                     } else {
                         TimePush(_current_globals.getTimeLeft() * 1000);
@@ -127,6 +135,14 @@ public abstract class BaseAgent extends Agent{
                 sendNotUndersood(msg, "invalid globals attached");
             }
         }
+    }
+
+    // Used to send the server the object details as a JSON string
+    private void SendAgentDetailsToServer (String detailsAsJSON) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.addReceiver(new AID("WebServer", AID.ISLOCALNAME));
+        msg.setContent(detailsAsJSON);
+        send(msg);
     }
 
     private class MessageNotUnderstoodHandler implements IMessageHandler{
@@ -189,6 +205,42 @@ public abstract class BaseAgent extends Agent{
             e.printStackTrace();
         }
         return agents;
+    }
+
+    protected void addPowerSaleAgreement(ACLMessage msg, PowerSaleAgreement ag) {
+        try {
+            msg.setContentObject(ag);
+        }catch (IOException e) {
+            LogError("Tried to attach a power sale agreement to message, error thrown");
+            return;
+        }
+    }
+
+    protected void addPowerSaleProposal(ACLMessage msg, PowerSaleProposal prop) {
+        try {
+            msg.setContentObject(prop);
+        }catch (IOException e) {
+            LogError("Tried to attach a power sale agreement to message, error thrown");
+            return;
+        }
+    }
+
+    protected PowerSaleProposal getPowerSalePorposal(ACLMessage msg) {
+        try {
+            return (PowerSaleProposal)msg.getContentObject();
+        }catch (UnreadableException e) {
+            LogError("Tried to read a power sale agreement from message, error thrown");
+            return null;
+        }
+    }
+
+    protected PowerSaleAgreement getPowerSaleAgrement (ACLMessage msg) {
+        try {
+            return (PowerSaleAgreement) msg.getContentObject();
+        }catch (UnreadableException e) {
+            LogError("Tried to read a power sale agreement from message, error thrown");
+            return null;
+        }
     }
 
     protected void LogError (String toLog) {

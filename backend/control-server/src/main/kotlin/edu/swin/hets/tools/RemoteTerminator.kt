@@ -7,16 +7,16 @@ import org.apache.commons.configuration2.Configuration
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class ShutdownRemotes {
+class ShutdownRemotes(args: Array<String>) {
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ShutdownRemotes::class.java)
     }
 
-    private var configuration: Configuration = SystemConfig().loadConfig()
+    private var configuration = SystemConfig(args)
 
     fun terminateRemotes() {
         logger.info("Loading system config...")
-        val collection = configuration.getCollection(ConnectionDetails::class.java, SystemConfig.CONNECTION_LIST, null)
+        val collection = configuration.connectionList
 
 
         logger.info("Terminating remote instances...")
@@ -27,5 +27,5 @@ class ShutdownRemotes {
 }
 
 fun main(args: Array<String>) {
-    ShutdownRemotes().terminateRemotes()
+    ShutdownRemotes(args).terminateRemotes()
 }

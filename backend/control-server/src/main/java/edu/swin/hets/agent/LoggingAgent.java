@@ -33,7 +33,6 @@ public class LoggingAgent extends BaseAgent{
 
     @Override
     protected void setup() {
-        System.out.println("Making logging");
         super.setup();
         _logged_debug = new Vector<String>();
         _logged_errors = new Vector<String>();
@@ -45,15 +44,16 @@ public class LoggingAgent extends BaseAgent{
 
     protected void TimeExpired() {
         // Dump an update to the file
+        System.out.println("Time slice : " + _current_globals.getTime() + " is starting.");
         //TODO Add a file dump here.
         //TODO Append time to end of each message
     }
 
-    protected void TimePush(int ms_left) {
-    }
+    protected void TimePush(int ms_left) { }
 
     protected String getJSON() {
         return "Not implemented";
+        //TODO Maybe send stats on error logging.
     }
 
     private class ErrorMessageHandler implements IMessageHandler {
