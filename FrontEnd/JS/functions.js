@@ -1,43 +1,62 @@
 // Random range bcuz javascript doesn't have one?
+// Might not even be needed anymore...
 function getRandomInt(min, max) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function getPowerplantAgent(type, currentSellPrice, maximumProduction, minimumPrice, currentProduction) {
-		alert(type + "\n" + currentSellPrice + "\n" + maximumProduction + "\n" + minimumPrice + "\n" + currentProduction);
+function getPowerplantAgent(a) {
+	var link = document.getElementById("agent-data");
+
+
+	var node = document.createElement("pre");
+	var textNode = document.createTextNode( a.type 				   + "\n" +
+											"Current Sell Price: " + a.currentSellPrice   + "\n" +
+											"Maximum Production: " + a.maximumProduction  + "\n" +
+											"Minimum Price: "      + a.minimumPrice       + "\n" +
+											"Current Production: " + a.currentProduction);
+
+	node.appendChild(textNode);
+	link.appendChild(node);
 }
 
-function getResellerAgent() {
-	$.getJSON( "../JSON/reseller-agent.json", function( data ) {
-		alert( "Reseller Agent\n" +
-			data.resellerAgent.currentSellPrice + "\n" +
-			data.resellerAgent.currentBuyPrice	+ "\n" +
-			data.resellerAgent.currentCustomers
-		);
-	});
+function getResellerAgent(a) {
+	var link = document.getElementById("agent-data");
+
+
+	var node = document.createElement("pre");
+	var textNode = document.createTextNode( a.type 				   + "\n" +
+											"Current Sell Price: " + a.currentSellPrice + "\n" +
+											"Current Buy Price: "  + a.currentBuyPrice  + "\n" +
+											"Current Customers: "  + a.currentCustomers + "\n" );
+
+	node.appendChild(textNode);
+	link.appendChild(node);
 }
 
-function getHomeAgent(type, currentPowerUsage, predictedPowerUsage, appliances) {
-	alert(type + "\n" + currentPowerUsage + "\n" + predictedPowerUsage + "\n" + appliances);
+function getHomeAgent(a) {
+	var link = document.getElementById("agent-data");
+
+
+	var node = document.createElement("pre");
+	var textNode = document.createTextNode( a.type 				       + "\n" +
+											"Current Power Usage: "    + a.currentPowerUsage   + "\n" +
+											"Predicted Power Usage: "  + a.predictedPowerUsage + "\n" +
+											"Current Customers: "      + a.appliances          + "\n" );
+
+	node.appendChild(textNode);
+	link.appendChild(node);
 }
 
-function getApplianceAgent(type, currentPowerUsage, predictedPowerUsage, switch) {
-	alert(type + "\n" + currentPowerUsage + "\n" + predictedPowerUsage + "\n" + switch);
-}
+function getApplianceAgent(a) {
+	var link = document.getElementById("agent-data");
 
-function LoadResellerAgents() {
-	$.getJSON( "../JSON/reseller-agent.json", function( data ) {
-		var link = document.getElementById("agent-data");
 
-		for (var i = 0; i < data.Agents.resellerAgent.length; i++) { 
-			var node = document.createElement("pre");
-			var textNode = document.createTextNode( "Reseller Agent\n"     +
-													"Current Sell Price: " + data.Agents.resellerAgent[i].currentSellPrice + "\n" +
-													"Current Buy Price: "  + data.Agents.resellerAgent[i].currentBuyPrice  + "\n" +
-													"Current Customers: "  + data.Agents.resellerAgent[i].currentCustomers + "\n" );
+	var node = document.createElement("pre");
+	var textNode = document.createTextNode( a.type 				      + "\n" +
+											"Current Power Usage: "   + a.currentPowerUsage   + "\n" +
+											"Predicted Power Usage: " + a.predictedPowerUsage + "\n" +
+											"Switch: "  			  + a.switch 			  + "\n" );
 
-			node.appendChild(textNode);
-			link.appendChild(node);
-		}
-	});
+	node.appendChild(textNode);
+	link.appendChild(node);
 }

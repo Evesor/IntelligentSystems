@@ -42,30 +42,25 @@ function drawAgents() {
               d3.select(this).attr('r', 5)
                 .style("stroke","black");
             })
-            .on("click", getAttribute)
-            .getAttribute(function (r) {
-
-              //d3.select(this).attr('r', 5);
-              // FIX THIS
-              // d3.select(this).attr('r', 5) << to get the current object.
+            .on("click", function(r) {
 
               a = r.agent;
 
               switch (a.type) {
                 case "Power Plant":
-                  alert("Power Plant!!!");
+                  getPowerplantAgent(a)
                   break;
                 case "Reseller Agent":
-                  alert("Reseller Agent!!!");
+                  getResellerAgent(a)
                   break;
                 case "Home Agent":
-                  getHomeAgent(a.type, a.currentPowerUsage, a.predictedPowerUsage, a.appliances);
+                  getHomeAgent(a);
                   break;
                 case "Appliance Agent":
-                  getApplianceAgent(a.type, a.currentPowerUsage, a.predictedPowerUsage, a.switch);
+                  getApplianceAgent(a);
                   break;
                 default:
-                  alert();
+                  alert("Something went wrong! :(");
                   break;
               }
             });
