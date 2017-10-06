@@ -1,8 +1,0 @@
-{
-  "homeAgent": {
-    "type" : "Home Agent",
-    "currentPowerUsage" : 6,
-    "predictedPowerUsage" : [7, 8, 2, 4],
-    "appliances" : ["kitchen", "stove", "lights"]
-  }
-}
