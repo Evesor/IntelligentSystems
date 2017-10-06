@@ -234,7 +234,7 @@ public class HomeAgent extends BaseAgent
 
 	//TODO Override getJSON
 	@Override
-	protected String getJSON(){return null;}
+	protected String getJSON(){return "Not implemented";}
 
 	private void sendCFP()
 	{
@@ -245,7 +245,8 @@ public class HomeAgent extends BaseAgent
 		}
 		//TODO make more complicated logic.
 		/*_next_required_amount - _next_purchased_amount*/
-		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,4);
+		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,
+				1, getAID(), false);
 		prop.setBuyerAID(getAID());
 		LogDebug("Sending a CFP to reseller for: " + prop.getAmount());
 		try {

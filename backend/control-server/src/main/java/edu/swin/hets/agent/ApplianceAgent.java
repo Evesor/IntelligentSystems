@@ -171,5 +171,7 @@ public class ApplianceAgent extends BaseAgent
 
     //TODO Override getJSON
     @Override
-    protected String getJSON(){return null;}
+    protected String getJSON(){
+    	return "Not implimented";
+    }
 }

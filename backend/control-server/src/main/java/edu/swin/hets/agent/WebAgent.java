@@ -1,5 +1,6 @@
 package edu.swin.hets.agent;
 
+import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.web.NoOpWebSocketHandler;
 import edu.swin.hets.web.WebSocketHandler;
@@ -20,10 +21,11 @@ import java.util.Vector;
  *****************************************************************************/
 public class WebAgent extends BaseAgent {
     private static final Logger logger = LoggerFactory.getLogger(WebAgent.class);
-
     private Vector<String> messages;
 
-    private MessageTemplate InformMessageTemplate = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+    private MessageTemplate InformMessageTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            MessageTemplate.not(GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.GlobalValues")));
     private WebSocketHandler clientWebSocketHandler = new NoOpWebSocketHandler();
 
     protected void setup() {
@@ -32,7 +34,7 @@ public class WebAgent extends BaseAgent {
         addMessageHandler(InformMessageTemplate, new InfromMessageHandler());
 
         try {
-            clientWebSocketHandler = (WebSocketHandler) getArguments()[0];
+            //clientWebSocketHandler = (WebSocketHandler) getArguments()[0];
         } catch (ClassCastException | ArrayIndexOutOfBoundsException e) {
             logger.error(e.toString());
             logger.warn("Websocket handler not found, check your agent init arguments");
@@ -58,6 +60,7 @@ public class WebAgent extends BaseAgent {
      */
     private class InfromMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
+            LogVerbose("Web agent just got \n" + msg.getContent() + "\n");
             //clientWebSocketHandler.broadcast(msg.getContent());
         }
     }
