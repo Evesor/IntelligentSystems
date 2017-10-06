@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {"id": "agent", "group": 1},
+    {"id": "message1", "group": 2},
+    {"id": "message2", "group": 2},
+    {"id": "message3", "group": 2},
+    {"id": "message4", "group": 2},
+    {"id": "message5", "group": 2}
+  ],
+  "links": [
+    {"source": "message1", "target": "agent", "value": 1},
+    {"source": "message2", "target": "message1", "value": 5},
+    {"source": "message3", "target": "message1", "value": 10},
+    {"source": "message4", "target": "agent", "value": 15},
+    {"source": "message5", "target": "agent", "value": 1}
+  ]
+}
