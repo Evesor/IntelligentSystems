@@ -42,7 +42,7 @@ public abstract class BaseAgent extends Agent{
 
     private MessageTemplate globalValuesChangedTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            GoodMessageTemplates.ContatinsString("GlobalValues"));
+            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.GlobalValues"));
     private MessageTemplate messageNotUndersoodTemplate = MessageTemplate.MatchPerformative(ACLMessage.NOT_UNDERSTOOD);
 
     @Override
@@ -124,7 +124,7 @@ public abstract class BaseAgent extends Agent{
                 GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
-                        //SendAgentDetailsToServer(getJSON()); //TODO Uncomment when we get the WS stuff up and running.
+                        SendAgentDetailsToServer(getJSON());
                         TimeExpired();
                     } else {
                         TimePush(_current_globals.getTimeLeft() * 1000);
@@ -147,8 +147,8 @@ public abstract class BaseAgent extends Agent{
 
     private class MessageNotUnderstoodHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
-            LogDebug("message not undersood reciver: " + getName() +
-                    " sender: " + msg.getSender().getName() + " content: " + msg.getContent());
+            LogDebug("message not undersood by: " + getName() +
+                    " origional message sender: " + msg.getSender().getName() + " content: " + msg.getContent());
         }
     }
 

@@ -1,13 +1,15 @@
 package edu.swin.hets.agent;
 
-import edu.swin.hets.helper.GoodMessageTemplates;
-import edu.swin.hets.helper.IMessageHandler;
-import edu.swin.hets.helper.PowerSaleAgreement;
-import edu.swin.hets.helper.PowerSaleProposal;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.swin.hets.helper.*;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.io.IOException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.Serializable;
 import java.util.Vector;
 
 /******************************************************************************
@@ -80,9 +82,20 @@ public class ResellerAgent extends BaseAgent {
     }
 
     protected String getJSON() {
-        return "Not implemented";
+        LogDebug(getName() + " is making json");
+        String json = "test";
+        try {
+            json = new ObjectMapper().writeValueAsString(
+                    new ResellerAgentData(_current_by_price, _current_sell_price,_next_required_amount,
+                            _next_purchased_amount, getName()));
+        }
+        catch (JsonProcessingException e) {
+            LogError("Error parsing data to json in " + getName() + " exeption thrown");
+        }
+        return json;
     }
 
+    // We are in a new time-slice, update bookeeping.
     protected void TimeExpired() {
         _next_purchased_amount = 0;
         Vector<PowerSaleAgreement> toRemove = new Vector<>();
@@ -114,15 +127,16 @@ public class ResellerAgent extends BaseAgent {
         }
     }
 
+    // Time is expiring, make sure we have purchased enough electricity
     protected void TimePush(int ms_left) {
-        if (_next_required_amount - _next_purchased_amount > 0.1) {
+        if (_next_required_amount > _next_purchased_amount ) {
             LogVerbose(getName() + "requires: " + _next_required_amount + " purchased: " + _next_purchased_amount);
             sendBuyCFP(); // We need to buy more electricity
         }
         // We have enough electricity do nothing.
     }
 
-    // Wanting to buy electricity
+    // We want to to buy electricity
     private void sendBuyCFP() {
         ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
         DFAgentDescription[] powerplants = getService("powerplant");
@@ -131,13 +145,9 @@ public class ResellerAgent extends BaseAgent {
         }
         //TODO make more complicated logic.
         PowerSaleProposal prop = new PowerSaleProposal(
-                _next_required_amount - _next_purchased_amount,4);
+                _next_required_amount - _next_purchased_amount,1, getAID(), false);
         prop.setBuyerAID(getAID());
-        try {
-            cfp.setContentObject(prop);
-        } catch (IOException e) {
-            LogError("Could not attach a proposal to a message, exception thrown");
-        }
+        addPowerSaleProposal(cfp, prop);
         send(cfp);
     }
 
@@ -184,27 +194,66 @@ public class ResellerAgent extends BaseAgent {
             // A request for a price on electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (_next_required_amount > _next_purchased_amount) {
-                //TODO buy more electricity and send back a quote
+                // We have sold all the electricity we have purchased.
+                if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
+                    // %75 percent of a cycle left, make an offer at increased price.
+                    if (proposed.getCost() < 0) {
+                        // No cost added, make up one at +%25
+                        proposed.setCost(_current_sell_price * 1.25);
+                    }
+                    else {
+                        if (proposed.getCost() < _current_sell_price * 1.25) {
+                            return; // There is already a price and it is to low
+                            // TODO add negotiation of price.
+                        }
+                    }
+                }
             }
             else {
                 //Make offer of electricity to home
                 if (proposed.getCost() > 0 && proposed.getCost() < _current_sell_price) {
-                    return; //TODO, re negotiate for better price.
+                    // TODO add negotiation of price.
+                    return;
                 }
                 if (proposed.getCost() < 0) {
                     proposed.setCost(_current_sell_price);
-                } // If neither of the above price set is more than we charge.
-                proposed.setSellerAID(getAID());
-                ACLMessage response = msg.createReply();
-                response.setPerformative(ACLMessage.PROPOSE);
-                addPowerSaleProposal(response, proposed);
-                send(response);
-                LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
+                }
+                // else, leave the price alone, they have offered to pay more than we charge.
             }
+            proposed.setSellerAID(getAID());
+            ACLMessage response = msg.createReply();
+            response.setPerformative(ACLMessage.PROPOSE);
+            addPowerSaleProposal(response, proposed);
+            send(response);
+            LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
         }
+    }
+
+    private void nogotiatePrice () {
+
     }
 
     private void quoteNoLongerValid(ACLMessage msg) {
 
+    }
+
+    private class ResellerAgentData implements Serializable {
+        private String Name;
+        private double current_sell_price;
+        private double current_buy_price;
+        private double current_sales_volume;
+        private double current_purchase_volume;
+        public ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases, String name) {
+            current_sell_price = sell_price;
+            current_buy_price = buy_price;
+            current_sales_volume = current_sales;
+            current_purchase_volume = current_purchases;
+            Name = name;
+        }
+        public String getName() { return Name; }
+        public double getCurrent_sell_price() { return current_sell_price; }
+        public double getCurrent_buy_price() { return current_buy_price; }
+        public double getCurrent_purchase_volume() { return current_purchase_volume; }
+        public double getCurrent_sales_volume() { return current_sales_volume; }
     }
 }

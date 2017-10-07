@@ -15,7 +15,9 @@ public class PowerSaleProposal implements Serializable {
     private AID _seller_AID;
     private AID _buyer_AID;
 
-    public PowerSaleProposal(double powerAmount, int lengthOfContract) {
+    public PowerSaleProposal(double powerAmount, int lengthOfContract, AID your_id, boolean seller) {
+        if (seller) _seller_AID = your_id;
+        else _buyer_AID = your_id;
         _power_amount = powerAmount;
         _duration = lengthOfContract;
         _cost = -1;

@@ -1,5 +1,7 @@
 package edu.swin.hets.agent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;
@@ -9,6 +11,7 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 
+import java.io.Serializable;
 import java.util.Vector;
 
 /******************************************************************************
@@ -57,6 +60,7 @@ public class PowerPlantAgent extends BaseAgent {
         RegisterAMSService(getAID().getName(),"powerplant");
     }
 
+    // Update bookkeeping.
     protected void TimeExpired (){
         // Update how much electricity we are selling.
         _current_production = 0;
@@ -66,9 +70,7 @@ public class PowerPlantAgent extends BaseAgent {
                 toRemove.add(agreement);
             }
         }
-        for (PowerSaleAgreement remove: toRemove) {
-            _current_contracts.remove(remove);
-        }
+        _current_contracts.removeAll(toRemove);
         for (PowerSaleAgreement agreement: _current_contracts) {
             if (agreement.getStartTime() <= _current_globals.getTime()) {
                 _current_production += agreement.getAmount(); //Update current production values.
@@ -78,8 +80,15 @@ public class PowerPlantAgent extends BaseAgent {
     }
 
     protected String getJSON() {
-        //TODO Implement
-        return "Not implemented";
+        String json = "";
+        try {
+            json = new ObjectMapper().writeValueAsString(
+                    new PowerPlantData(_current_sell_price, _current_production, getName()));
+        }
+        catch (JsonProcessingException e) {
+            LogError("Error parsing data to json in " + getName() + " exeption thrown");
+        }
+        return json;
     }
 
     protected void TimePush(int ms_left) {
@@ -138,4 +147,17 @@ public class PowerPlantAgent extends BaseAgent {
         sendRejectProposalMessage(msg);
     }
 
+    private class PowerPlantData implements Serializable{
+        private String Name;
+        private double current_sell_price;
+        private double current_production;
+        public PowerPlantData(double sell_price, double production, String name) {
+            current_sell_price = sell_price;
+            current_production = production;
+            Name = name;
+        }
+        public String getName() { return Name; }
+        public double getCurrent_production() { return current_production; }
+        public double getCurrent_sell_price() { return current_sell_price; }
+    }
 }
