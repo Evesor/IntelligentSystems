@@ -1,0 +1,8 @@
+{
+  "powerplantAgent": {
+    "currentSellPrice" : 20,
+    "maximumProduction" : 10,
+    "minimumPrice" : 15,
+    "currentProduction" : 5
+  }
+}

@@ -164,9 +164,8 @@ public class ApplianceAgent extends BaseAgent
 
 	//TODO Override getJSON
 	@Override
-	protected String getJSON(){return null;}
+	protected String getJSON(){return "Not implimented";}
 }
-
 //TODO other list
 //appliance send electricity request / home approve before turning it on?
 //1 day history for usage and forecast, time index??

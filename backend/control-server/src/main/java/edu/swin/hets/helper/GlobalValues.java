@@ -2,6 +2,7 @@ package edu.swin.hets.helper;
 
 import java.io.Serializable;
 
+
 public class GlobalValues implements Serializable{
     private int _time;
     private int _time_left;
@@ -20,4 +21,5 @@ public class GlobalValues implements Serializable{
         return _time;
     }
     public int getTimeLeft () { return _time_left; }
+    public static int lengthOfTimeSlice () { return 5000;}
 }

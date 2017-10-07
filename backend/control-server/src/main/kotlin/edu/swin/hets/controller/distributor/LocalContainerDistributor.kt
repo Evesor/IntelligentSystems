@@ -19,8 +19,12 @@ class LocalContainerDistributor(runtime: Runtime, systemDefinition: SystemDefini
                 setParameter(Profile.CONTAINER_NAME, it.name)
             })
 
-            it.agents.forEach{ (name, className) ->
-                containerController.createNewAgent(name, className, arrayOf()).start()
+            it.agents.forEach{ (name, className, arguments) ->
+                containerController.createNewAgent(
+                        name,
+                        className,
+                        arrayOf(arguments.split(",").toList())
+                ).start()
             }
         }
     }

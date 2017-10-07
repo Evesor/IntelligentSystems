@@ -216,7 +216,7 @@ public class HomeAgent extends BaseAgent
 			// We have purchased this electricty.
 			_next_purchased_amount += agreement.getAmount();
 		}
-		if (_next_required_amount - _next_purchased_amount > 0.1) {
+		if (_next_required_amount > _next_purchased_amount) {
 			sendCFP();
 			System.out.println("CFP sent");
 		}
@@ -227,7 +227,7 @@ public class HomeAgent extends BaseAgent
 	protected void TimePush(int ms_left)
 	{
 		_next_required_amount = forecast(1)*1.5;
-		if (_next_required_amount - _next_purchased_amount > 0.1) {
+		if (_next_required_amount  > _next_purchased_amount) {
 			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
 			sendCFP(); // We need to buy more electricity
 		}
@@ -236,7 +236,7 @@ public class HomeAgent extends BaseAgent
 
 	//TODO Override getJSON
 	@Override
-	protected String getJSON(){return null;}
+	protected String getJSON(){return "Not implemented";}
 
 	private void sendCFP()
 	{
@@ -247,8 +247,10 @@ public class HomeAgent extends BaseAgent
 		}
 		//TODO make more complicated logic.
 		/*_next_required_amount - _next_purchased_amount*/
-		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,4);
+		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,
+				1, getAID(), false);
 		prop.setBuyerAID(getAID());
+		LogDebug("Sending a CFP to reseller for: " + prop.getAmount());
 		try {
 			cfp.setContentObject(prop);
 		} catch (IOException e) {
@@ -268,7 +270,7 @@ public class HomeAgent extends BaseAgent
 				sendNotUndersood(msg, "no proposal found");
 				return;
 			}
-			if (proposed.getCost() <= (_current_by_price * proposed.getAmount())) {
+			if (proposed.getCost() <= _current_by_price) {
 				LogVerbose(getName() + " agreed to buy " + proposed.getAmount() + " electricity for " +
 						proposed.getDuration() + " time slots");
 				PowerSaleAgreement contract = new PowerSaleAgreement(proposed, _current_globals.getTime());
@@ -276,11 +278,7 @@ public class HomeAgent extends BaseAgent
 				_next_purchased_amount += contract.getAmount();
 				ACLMessage acceptMsg = msg.createReply();
 				acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-				try {
-					acceptMsg.setContentObject(contract);
-				} catch (IOException e) {
-					LogError("Could not add a contract to message, exception thrown");
-				}
+				addPowerSaleAgreement(acceptMsg, contract);
 				send(acceptMsg);
 			}
 		}
