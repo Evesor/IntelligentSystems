@@ -28,7 +28,7 @@ public class HomeAgent extends BaseAgent
 	private int[] watt;
 	//list of appliance agent name, should be vector
 	private String[] applianceName;
-	//max watt threshold  of a house
+	//max watt threshold of a house
 	private int maxWatt;
 	private double _next_purchased_amount;
 	private Vector<PowerSaleAgreement> _current_buy_agreements;
@@ -126,15 +126,16 @@ public class HomeAgent extends BaseAgent
 		}
 	}
 
-	//example message
+	//TODO electricityRequestHandler
 	private class electricityRequestHandler implements IMessageHandler
 	{
 		public void Handler(ACLMessage msg)
 		{
 			System.out.println(getLocalName() + " received electricity request");
 			//should check against maxWatt and decide
+
 			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-			reply.setContent("electricity request,1");
+			reply.setContent("electricity,1");
 			reply.addReceiver(new AID("lamp1", AID.ISLOCALNAME));
 			send(reply);
 			sleep(5000);
@@ -161,6 +162,7 @@ public class HomeAgent extends BaseAgent
 	{
 		int result=0;
 		int i;
+		//sum every appliance forecast
 		for(i=0;i<n;i++){result += electricityForecast[_current_globals.getTime()][i];}
 		//next hour forecast
 		if(x==1){return result;}
@@ -197,9 +199,8 @@ public class HomeAgent extends BaseAgent
 	@Override
 	protected void TimeExpired()
 	{
-		System.out.println("OSSU");
 		_next_purchased_amount = 0;
-		_next_required_amount = forecast(1);
+		_next_required_amount = forecast(1)*1.5;
 		Vector<PowerSaleAgreement> toRemove = new Vector<>();
 		for (PowerSaleAgreement agreement : _current_buy_agreements) {
 			if (agreement.getEndTime() < _current_globals.getTime()) {
@@ -225,7 +226,7 @@ public class HomeAgent extends BaseAgent
 	@Override
 	protected void TimePush(int ms_left)
 	{
-		_next_required_amount = forecast(1);
+		_next_required_amount = forecast(1)*1.5;
 		if (_next_required_amount - _next_purchased_amount > 0.1) {
 			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
 			sendCFP(); // We need to buy more electricity
@@ -254,6 +255,7 @@ public class HomeAgent extends BaseAgent
 			LogError("Could not attach a proposal to a message, exception thrown");
 		}
 		send(cfp);
+		System.out.println("SEND CFP DONE");
 	}
 
 	// Someone is offering to sell us electricity
