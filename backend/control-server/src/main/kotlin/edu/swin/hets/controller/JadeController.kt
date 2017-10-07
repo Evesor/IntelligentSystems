@@ -17,6 +17,10 @@ import org.slf4j.LoggerFactory
 
 /**
  * Responsible for the JADE platform's lifecycle.
+ *
+ * @param runtime Instance of the JADE runtime
+ * @param containerDistributor The container distributor to use
+ * @param clientWebSocketHandler
  */
 class JadeController(private val runtime: Runtime,
                      private val containerDistributor: ContainerDistributor,

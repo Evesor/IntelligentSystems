@@ -62,6 +62,10 @@ class ContainerDistributorFactory {
         /**
          * Factory method for ContainerDistributor.
          * Will attempt network requests to determine valid connections for Network Containers.
+         *
+         * @param runtime Instance of the JADE runtime
+         * @param config Boot System Config
+         * @return either a local or networked ContainerDistributor
          */
         fun getContainerDistributor(runtime: Runtime, config: SystemConfig): ContainerDistributor {
             with(config.connectionList) {
@@ -84,6 +88,11 @@ class ContainerDistributorFactory {
             }
         }
 
+        /**
+         * Attempts an SSH connection to determine if the connection is valid
+         * @param connectionDetails the connection to test
+         * @return connection is valid or not
+         */
         private fun validateConnection(connectionDetails: ConnectionDetails): Boolean {
             val options = ConnectionOptions()
             options.set(SshConnectionBuilder.PRIVATE_KEY_FILE, "${SlaveConnection.KEYSTORE_PATH}/${connectionDetails.privateKey}")

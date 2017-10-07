@@ -18,6 +18,8 @@ import java.nio.file.Paths
 
 /**
  * Boot-time System configuration.
+ *
+ * @param args commandline arguments
  */
 class SystemConfig(args: Array<String>) {
     companion object {

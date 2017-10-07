@@ -38,6 +38,10 @@ class ClientWebSocketHandler: WebSocketHandler {
         logger.error(error.toString())
     }
 
+    /**
+     * Broadcasts a message to all Websocket sessions currently connected
+     * @param message the string message to broadcast
+     */
     override fun broadcast(message: String) {
         val invalidSessions: MutableList<Session> = mutableListOf()
         sessionList.forEach {
