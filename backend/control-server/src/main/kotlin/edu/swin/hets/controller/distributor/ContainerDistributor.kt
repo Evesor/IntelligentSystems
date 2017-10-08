@@ -3,6 +3,7 @@ package edu.swin.hets.controller.distributor
 import com.xebialabs.overthere.ConnectionOptions
 import com.xebialabs.overthere.OperatingSystemFamily
 import com.xebialabs.overthere.Overthere
+import com.xebialabs.overthere.OverthereConnection
 import com.xebialabs.overthere.ssh.SshConnectionBuilder
 import com.xebialabs.overthere.ssh.SshConnectionType
 import edu.swin.hets.agent.ApplianceAgent
@@ -81,7 +82,12 @@ class ContainerDistributorFactory {
                     }
                     false -> {
                         logger.info("${validConnections.size} connections found, starting network containers")
-                        NetworkContainerDistributor(runtime, config.containerConfiguration, validConnections)
+                        NetworkContainerDistributor(
+                                runtime,
+                                config.containerConfiguration,
+                                config,
+                                validConnections.map { SlaveConnection(it) }
+                        )
                     }
                 }
 
@@ -94,6 +100,7 @@ class ContainerDistributorFactory {
          * @return connection is valid or not
          */
         private fun validateConnection(connectionDetails: ConnectionDetails): Boolean {
+            var connection: OverthereConnection? = null
             val options = ConnectionOptions()
             options.set(SshConnectionBuilder.PRIVATE_KEY_FILE, "${SlaveConnection.KEYSTORE_PATH}/${connectionDetails.privateKey}")
             options.set(ConnectionOptions.CONNECTION_TIMEOUT_MILLIS, SlaveConnection.DEFAULT_CONNECTION_TIMEOUT)
@@ -104,7 +111,7 @@ class ContainerDistributorFactory {
 
             //Actual connection gets tested here
             return try {
-                Overthere.getConnection(SshConnectionBuilder.SSH_PROTOCOL, options)
+                connection = Overthere.getConnection(SshConnectionBuilder.SSH_PROTOCOL, options)
                 true
             } catch (e: Exception) {
                 with(connectionDetails) {
@@ -112,6 +119,8 @@ class ContainerDistributorFactory {
                     logger.warn(e.toString())
                 }
                 false
+            } finally {
+                connection?.close()
             }
         }
     }
