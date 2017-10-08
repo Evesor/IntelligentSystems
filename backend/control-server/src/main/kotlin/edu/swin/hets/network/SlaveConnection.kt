@@ -34,13 +34,13 @@ class SlaveConnection(private val connectionDetails: ConnectionDetails) {
 
     /**
      * Determines if the executable container exists on the host by comparing an md5 hash to the local file
-     *
+     * TODO finish this
      * @return Whether the file exists on the remote host
      */
     fun remoteFileExists(): Boolean {
         try {
             startConnection()
-            logger.info("File does not exist.")
+            logger.info("File does not exist on host ${connectionDetails.address.hostAddress}")
             return false
         } finally {
             stopConnection()
@@ -53,7 +53,6 @@ class SlaveConnection(private val connectionDetails: ConnectionDetails) {
     fun uploadExecutable() {
         try {
             startConnection()
-
             val file = File(HOST_PATHNAME)
             val srcFile: OverthereFile = LocalFile(LocalConnection("local", ConnectionOptions()), file)
             val destFile: OverthereFile? = connection?.getFile(REMOTE_PATHNAME)
@@ -87,7 +86,6 @@ class SlaveConnection(private val connectionDetails: ConnectionDetails) {
 
             //val stdout = BufferedReader(InputStreamReader(process?.stdout))
             val exitCode = process?.waitFor()
-            System.err.println("Exit code: " + exitCode)
             return exitCode ?: 1 //deal with this better
         } finally {
             stopConnection()
