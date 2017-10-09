@@ -128,7 +128,7 @@ public class ResellerAgent extends BaseAgent {
     // Time is expiring, make sure we have purchased enough electricity
     protected void TimePush(int ms_left) {
         if (_next_required_amount > _next_purchased_amount ) {
-            LogVerbose(getName() + "requires: " + _next_required_amount + " purchased: " + _next_purchased_amount);
+            LogVerbose(getName() + " requires: " + _next_required_amount + " purchased: " + _next_purchased_amount);
             sendBuyCFP(); // We need to buy more electricity
         }
         // We have enough electricity do nothing.

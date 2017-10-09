@@ -58,7 +58,6 @@ public class WebAgent extends BaseAgent {
      */
     private class InformMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            LogVerbose("Web agent just got \n" + msg.getContent() + "\n");
             LogVerbose("Web agent just got: " + msg.getContent());
             clientWebSocketHandler.broadcast(msg.getContent());
         }
