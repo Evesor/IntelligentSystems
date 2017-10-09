@@ -6,12 +6,8 @@ import edu.swin.hets.helper.*;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import java.io.IOException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.Serializable;
 import java.util.Vector;
-
 /******************************************************************************
  *  Use: A simple example of a reseller agent class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -42,6 +38,8 @@ import java.util.Vector;
  *             content Object: A PowerSaleProposal object
  *****************************************************************************/
 public class ResellerAgent extends BaseAgent {
+    private static final int GROUP_ID = 2;
+    private static final String TYPE = "Reseller Agent";
     private double _current_sell_price;
     private double _current_by_price;
     private double _min_purchase_amount;
@@ -54,16 +52,16 @@ public class ResellerAgent extends BaseAgent {
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement"));
+            GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
     private MessageTemplate PropMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
 
     protected void setup() {
         super.setup();
@@ -148,6 +146,7 @@ public class ResellerAgent extends BaseAgent {
                 _next_required_amount - _next_purchased_amount,1, getAID(), false);
         prop.setBuyerAID(getAID());
         addPowerSaleProposal(cfp, prop);
+        cfp.setSender(getAID());
         send(cfp);
     }
 
@@ -165,6 +164,7 @@ public class ResellerAgent extends BaseAgent {
                 ACLMessage acceptMsg = msg.createReply();
                 acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                 addPowerSaleAgreement(acceptMsg, contract);
+                acceptMsg.setSender(getAID());
                 send(acceptMsg);
             } else {
                 // To expensive
@@ -181,10 +181,39 @@ public class ResellerAgent extends BaseAgent {
         }
     }
 
-    // Someone is not buying electricity off us
-    private class ProposalRejectedHandler implements IMessageHandler {
+    // Someone has rejected a quote
+    private class ProposalRejectedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
-            //TODO, maybe make counter offer.
+            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement").match(msg)) {
+                // Someone is rejecting a contract, remove it.
+                PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
+                PowerSaleAgreement toRemove = null;
+                // Try and find agreement.
+                for (PowerSaleAgreement agg : _current_buy_agrements) {
+                    if (agg.equalValues(agreement)) {
+                        toRemove = agg;
+                        break;
+                    }
+                }
+                if (toRemove != null) {
+                    _current_buy_agrements.remove(toRemove);
+                }
+                toRemove = null;
+                // Try and find agreement.
+                for (PowerSaleAgreement agg : _current_buy_agrements) {
+                    if (agg.equalValues(agreement)) {
+                        toRemove = agg;
+                        break;
+                    }
+                }
+                if (toRemove != null) {
+                    _current_buy_agrements.remove(toRemove);
+                }
+            }
+            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal").match(msg)) {
+                // Don't care at the moment.
+                // TODO, send back a better proposal maybe?
+            }
         }
     }
 
@@ -224,6 +253,7 @@ public class ResellerAgent extends BaseAgent {
             ACLMessage response = msg.createReply();
             response.setPerformative(ACLMessage.PROPOSE);
             addPowerSaleProposal(response, proposed);
+            response.setSender(getAID());
             send(response);
             LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
         }
@@ -237,12 +267,14 @@ public class ResellerAgent extends BaseAgent {
 
     }
 
+    // Used by getJson to output data to server.
     private class ResellerAgentData implements Serializable {
         private String Name;
         private double current_sell_price;
         private double current_buy_price;
         private double current_sales_volume;
         private double current_purchase_volume;
+        private Integer groupNumber = 2;
         public ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases, String name) {
             current_sell_price = sell_price;
             current_buy_price = buy_price;
@@ -251,9 +283,11 @@ public class ResellerAgent extends BaseAgent {
             Name = name;
         }
         public String getName() { return Name; }
+        public String gettype () { return TYPE; }
         public double getCurrent_sell_price() { return current_sell_price; }
         public double getCurrent_buy_price() { return current_buy_price; }
         public double getCurrent_purchase_volume() { return current_purchase_volume; }
         public double getCurrent_sales_volume() { return current_sales_volume; }
+        public int getgroup() { return GROUP_ID; }
     }
 }

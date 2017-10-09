@@ -24,6 +24,8 @@ public class GoodMessageTemplates extends MessageTemplate{
         }
 
         public boolean match(ACLMessage aclMessage) {
+            if (aclMessage == null) return false;
+            if (aclMessage.getContent() == null) return false;
             return aclMessage.getContent().contains(_str);
         }
     }
