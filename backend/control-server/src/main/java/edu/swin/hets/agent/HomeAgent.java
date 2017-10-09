@@ -68,7 +68,7 @@ public class HomeAgent extends BaseAgent
 			applianceName[i] =  args[i].toString();
 			watt[i] = 10;//TODO get watt from appliance agent
 			on[i] = false;
-			System.out.println(args[i] + " has been added to " + getLocalName());
+			LogVerbose(args[i] + " has been added to " + getLocalName());
 		}
 		electricityUsage = new int[24][n];
 		electricityForecast = new int[24][n];
@@ -77,7 +77,7 @@ public class HomeAgent extends BaseAgent
 		_current_buy_agreements = new Vector<PowerSaleAgreement>();
 		_next_purchased_amount = 0;
 		_current_by_price = 10;
-		System.out.println(getLocalName() + " init is complete!");
+		LogDebug(getLocalName() + " init is complete!");
 	}
 	
 	private int getApplianceID(String name)
@@ -100,7 +100,7 @@ public class HomeAgent extends BaseAgent
 		addMessageHandler(electricityForecastMT, new HomeAgent.ForecastHandler());
 		addMessageHandler(electricityRequestMT, new HomeAgent.electricityRequestHandler());
 		addMessageHandler(PropMessageTemplate, new ProposalHandler());
-		System.out.println(getLocalName() + " setup is complete!");
+		LogDebug(getLocalName() + " setup is complete!");
 		turn("lamp1",true);
 	}
 
@@ -114,7 +114,7 @@ public class HomeAgent extends BaseAgent
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
 			//store in electricityUsage
 			electricityUsage[_current_globals.getTime()][applianceID] = value;
-			System.out.println("current = " + value);
+			LogDebug("current = " + value);
 		}
 	}
 
@@ -128,7 +128,7 @@ public class HomeAgent extends BaseAgent
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
 			//store in electricityUsage
 			electricityForecast[_current_globals.getTime()][applianceID] = value;
-			System.out.println("forecast = " + forecast(1));
+			LogDebug("forecast = " + forecast(1));
 		}
 	}
 
@@ -137,7 +137,7 @@ public class HomeAgent extends BaseAgent
 	{
 		public void Handler(ACLMessage msg)
 		{
-			System.out.println(getLocalName() + " received electricity request");
+			LogDebug(getLocalName() + " received electricity request");
 			//should check against maxWatt and decide
 			boolean approve = true;
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
@@ -170,7 +170,7 @@ public class HomeAgent extends BaseAgent
 	private class welcomeMessage extends OneShotBehaviour
 	{
 		@Override
-		public void action(){System.out.println(getLocalName() + " is now up and running!");}
+		public void action(){LogVerbose(getLocalName() + " is now up and running!");}
 	}
 	
 	private void sleep(int duration)
@@ -179,8 +179,8 @@ public class HomeAgent extends BaseAgent
 		catch(InterruptedException e){e.printStackTrace();}
 	}
 	
-	//forecast electricity needs for next hour(x=1), next day(x=2), or next week(x=3)
-	//for now, next day forecast = 24 * next hour forecast
+	//forecast electricity needs for the next x hour
+	//for now, next x hour forecast = x * next hour forecast
 	//TODO calculate forecast
 	private int forecast(int x)
 	{
@@ -188,14 +188,8 @@ public class HomeAgent extends BaseAgent
 		int i;
 		//sum every appliance forecast
 		for(i=0;i<n;i++){result += electricityForecast[_current_globals.getTime()][i];}
-		//next hour forecast
-		if(x==1){return result;}
-		//next day forecast
-		else if(x==2){return result*24;}
-		//next week forecast
-		else if(x==3){return result*168;}
-		//error
-		else{return 100;}
+		result *= x;
+		return result;
 	}
 	
 	//when use too much electricity, Home agent could turn off unimportant appliances to prevent overload
@@ -203,7 +197,7 @@ public class HomeAgent extends BaseAgent
 	//TODO energySaverMode function
 	private void energySaverMode()
 	{
-		System.out.println("initiating energy saver mode " + _current_globals.getTimeLeft());
+		LogVerbose("initiating energy saver mode");
 		turn("lamp1",true);
 		//turn("heater",false);
 		//turn("fridge",true);
@@ -211,7 +205,7 @@ public class HomeAgent extends BaseAgent
 
 	private void turn(String name, boolean on)
 	{
-		System.out.println(getLocalName() + " is trying to turn " + name + " " + on);
+		LogDebug(getLocalName() + " is trying to turn " + name + " " + on);
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 		if(on==true){msg.setContent("on");}
 		else if(on==false)
@@ -245,7 +239,6 @@ public class HomeAgent extends BaseAgent
 		}
 		if (_next_required_amount > _next_purchased_amount) {
 			sendCFP();
-			System.out.println("CFP sent");
 		}
 	}
 
@@ -253,6 +246,7 @@ public class HomeAgent extends BaseAgent
 	@Override
 	protected void TimePush(int ms_left)
 	{
+		LogDebug("Time Left : " + _current_globals.getTimeLeft());
 		_next_purchased_amount -= sumWatt();
 		//energySaverMode();
 		if(sumWatt() > _next_purchased_amount)
@@ -293,14 +287,14 @@ public class HomeAgent extends BaseAgent
 		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,
 				1, getAID(), false);
 		prop.setBuyerAID(getAID());
-		LogDebug("Sending a CFP to reseller for: " + prop.getAmount());
+		LogVerbose("Sending a CFP to reseller for: " + prop.getAmount());
 		try {
 			cfp.setContentObject(prop);
 		} catch (IOException e) {
 			LogError("Could not attach a proposal to a message, exception thrown");
 		}
 		send(cfp);
-		System.out.println("SEND CFP DONE");
+		LogDebug("SEND CFP DONE");
 	}
 
 	// Someone is offering to sell us electricity

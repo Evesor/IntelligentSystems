@@ -79,11 +79,10 @@ public class ApplianceAgent extends BaseAgent
 		public void Handler(ACLMessage msg)
 		{
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-			if(value==0){System.out.println(getLocalName() + " electricity request declined");}
+			if(value==0){LogDebug(getLocalName() + " electricity request declined");}
 			else if(value==1)
 			{
-				System.out.println(getLocalName() + " electricity request approved");
-				System.out.println(getLocalName() + " is now on");
+				LogVerbose(getLocalName() + " electricity request approved. " + getLocalName() + " is now on");
 				on = true;
 			}
 		}
@@ -129,12 +128,13 @@ public class ApplianceAgent extends BaseAgent
 				//home agent check current usage with max usage
 				//if current + request < max usage, approve
 				sendElectricityRequest();
-				System.out.println(getLocalName() + " sent an electricity request");
+
+				LogDebug(getLocalName() + " sent an electricity request");
 			}
 			else if(on==false)
 			{
 				this.on = false;
-				System.out.println(getLocalName() + " is now off");
+				LogVerbose(getLocalName() + " is now off");
 			}
 		}
 	}
@@ -146,7 +146,7 @@ public class ApplianceAgent extends BaseAgent
 		if(on == true)
 		{
 			current[_current_globals.getTime()] += watt;
-			System.out.println("current : " + current[_current_globals.getTime()]);
+			LogDebug("current : " + current[_current_globals.getTime()]);
 			sendForecastUsage();
 		}
 	}
@@ -158,7 +158,7 @@ public class ApplianceAgent extends BaseAgent
 		if(on == true)
 		{
 			current[_current_globals.getTime()] += watt;
-			System.out.println("current : " + current[_current_globals.getTime()]);
+			LogDebug("current : " + current[_current_globals.getTime()]);
 		}
 	}
 
