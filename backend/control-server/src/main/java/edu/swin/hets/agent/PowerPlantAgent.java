@@ -23,7 +23,8 @@ import java.util.Vector;
  *             content Object: A PowerSaleProposal object
  *       - ACCEPT_PROPOSAL : Used to signify a proposal has been accepted.
  *             content Object: A PowerSaleAgreement object
- *       - REJECT_PROPOSAL : Used to signify failed proposal
+ *       - REJECT_PROPOSAL : Used to signify failed proposal, can also be used
+ *                           invalidate an agreement that came back to late
  *             content Object: A PowerSaleProposal object
  *   Messages Sent:
  *       - NOT-UNDERSTOOD : Used to signal that there was no attached prop obj
@@ -32,6 +33,8 @@ import java.util.Vector;
  *              content Object : A power sale proposal obj
  *****************************************************************************/
 public class PowerPlantAgent extends BaseAgent {
+    private static final int GROUP_ID = 1;
+    private static String TYPE = "Power Plant";
     private double _current_sell_price;
     private double _max_production;
     private double _current_production;
@@ -39,13 +42,13 @@ public class PowerPlantAgent extends BaseAgent {
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement"));
+            GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
 
     @Override
     protected void setup() {
@@ -95,6 +98,7 @@ public class PowerPlantAgent extends BaseAgent {
 
     }
 
+    // Someone buying from us.
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             // A request for a price on electricity
@@ -117,18 +121,37 @@ public class PowerPlantAgent extends BaseAgent {
             ACLMessage response = msg.createReply();
             response.setPerformative(ACLMessage.PROPOSE);
             addPowerSaleProposal(response, proposed);
+            response.setSender(getAID());
             send(response);
             LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
         }
     }
 
+    // Someone has rejected a quote
     private class QuoteRejectedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
-            // Don't care ATM
-            //TODO add a rect message
+            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement").match(msg)) {
+                // Someone is rejecting a contract, remove it.
+                PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
+                PowerSaleAgreement toRemove = null;
+                // Try and find agreement.
+                for (PowerSaleAgreement agg : _current_contracts) {
+                    if (agg.equalValues(agreement)) {
+                        toRemove = agg;
+                        break;
+                    }
+                }
+                if (toRemove != null) {
+                    _current_contracts.remove(toRemove);
+                }
+            }
+            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal").match(msg)) {
+                // TODO, send back a better quote maybe?
+            }
         }
     }
 
+    // Someone agreeing to buy electricity from us.
     private class QuoteAcceptedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
             // A quote we have previously made has been accepted.
@@ -143,7 +166,6 @@ public class PowerPlantAgent extends BaseAgent {
     }
 
     private void quoteNoLongerValid(ACLMessage msg) {
-        //TODO : Needs implementation
         sendRejectProposalMessage(msg);
     }
 
@@ -157,7 +179,9 @@ public class PowerPlantAgent extends BaseAgent {
             Name = name;
         }
         public String getName() { return Name; }
+        public String gettype () { return TYPE; }
         public double getCurrent_production() { return current_production; }
         public double getCurrent_sell_price() { return current_sell_price; }
+        public int getgroup() { return GROUP_ID; }
     }
 }

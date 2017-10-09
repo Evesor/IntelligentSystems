@@ -321,8 +321,6 @@ public class HomeAgent extends BaseAgent
 		}
 	}
 }
-
-
 //TODO behaviour to negotiate price for buy & sell
 //TODO receive request from user to turn on/off an appliance
 //TODO receive request from user to initiate energy saver mode

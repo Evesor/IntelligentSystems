@@ -28,6 +28,16 @@ public class PowerSaleAgreement implements Serializable{
                 prop.getCost(), prop.getBuyerAID(), prop.getSellerAID());
     }
 
+    public boolean equalValues(PowerSaleAgreement agg) {
+        if (!agg._buyer_AID.getName().equals(_buyer_AID.getName())) return false;
+        if (!agg._seller_AID.getName().equals(_seller_AID.getName())) return false;
+        if (agg._cost != _cost) return false;
+        if (agg._end_time != _end_time) return false;
+        if (agg._start_time != _start_time) return false;
+        if (agg._power_amount != _power_amount) return false;
+        return true;
+    }
+
     public double getAmount() { return _power_amount; }
     public int getEndTime() { return _end_time; }
     public int getStartTime() { return _start_time; }

@@ -1,6 +1,9 @@
 package edu.swin.hets.agent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hierynomus.msdtyp.ACL;
+import com.xebialabs.overthere.winrm.soap.KeyValuePair;
 import edu.swin.hets.helper.*;
 import jade.core.AID;
 import jade.core.Agent;
@@ -17,6 +20,7 @@ import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 /******************************************************************************
  *  Use: An abstract base agent class used to provide all of the default global
@@ -39,10 +43,11 @@ import java.util.*;
 public abstract class BaseAgent extends Agent{
     protected GlobalValues _current_globals;
     private HashMap<MessageTemplate, IMessageHandler> _msg_handlers;
+    private Vector<ACLMessage> _messages_this_timeslice;
 
     private MessageTemplate globalValuesChangedTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.GlobalValues"));
+            GoodMessageTemplates.ContatinsString(GlobalValues.class.getName()));
     private MessageTemplate messageNotUndersoodTemplate = MessageTemplate.MatchPerformative(ACLMessage.NOT_UNDERSTOOD);
 
     @Override
@@ -51,6 +56,7 @@ public abstract class BaseAgent extends Agent{
         _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
         addMessageHandler(globalValuesChangedTemplate, new GlobalsChangedHandler());
         addMessageHandler(messageNotUndersoodTemplate, new MessageNotUnderstoodHandler());
+        _messages_this_timeslice = new Vector<ACLMessage>();
         this.addMessageHandlingBehavior();
         _current_globals = getCurrentGlobalValuesBlocking();
     }
@@ -71,12 +77,14 @@ public abstract class BaseAgent extends Agent{
         ACLMessage response = originalMsg.createReply();
         response.setPerformative(ACLMessage.NOT_UNDERSTOOD);
         response.setContent(content);
+        response.setSender(getAID());
         send(response);
     }
 
     protected void sendRejectProposalMessage(ACLMessage origionalMsg) {
         ACLMessage response = origionalMsg.createReply();
         response.setPerformative(ACLMessage.REJECT_PROPOSAL);
+        response.setSender(getAID());
         send(response);
     }
 
@@ -98,6 +106,7 @@ public abstract class BaseAgent extends Agent{
             @Override
             public void action() {
                 ACLMessage msg = receive();
+                _messages_this_timeslice.add(msg);
                 if (msg != null) {
                     boolean message_handled = false;
                     Iterator keys = _msg_handlers.keySet().iterator();
@@ -124,7 +133,8 @@ public abstract class BaseAgent extends Agent{
                 GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
-                        SendAgentDetailsToServer(getJSON());
+                        SendAgentDetailsToServer(getJSON() +
+                                new MessageHistory(_messages_this_timeslice, getName()).getMessages());
                         TimeExpired();
                     } else {
                         TimePush(_current_globals.getTimeLeft() * 1000);
@@ -142,6 +152,7 @@ public abstract class BaseAgent extends Agent{
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.addReceiver(new AID("WebServer", AID.ISLOCALNAME));
         msg.setContent(detailsAsJSON);
+        msg.setSender(getAID());
         send(msg);
     }
 
@@ -212,7 +223,6 @@ public abstract class BaseAgent extends Agent{
             msg.setContentObject(ag);
         }catch (IOException e) {
             LogError("Tried to attach a power sale agreement to message, error thrown");
-            return;
         }
     }
 
@@ -221,7 +231,6 @@ public abstract class BaseAgent extends Agent{
             msg.setContentObject(prop);
         }catch (IOException e) {
             LogError("Tried to attach a power sale agreement to message, error thrown");
-            return;
         }
     }
 
@@ -247,6 +256,7 @@ public abstract class BaseAgent extends Agent{
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("error: ".concat(toLog));
         msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.setSender(getAID());
         send(msg);
     }
 
@@ -254,6 +264,7 @@ public abstract class BaseAgent extends Agent{
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("debug: ".concat(toLog));
         msg.addReceiver( new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.setSender(getAID());
         send(msg);
     }
 
@@ -261,6 +272,7 @@ public abstract class BaseAgent extends Agent{
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("verbose: ".concat(toLog));
         msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.setSender(getAID());
         send(msg);
     }
 }
