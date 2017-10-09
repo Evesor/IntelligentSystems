@@ -30,6 +30,9 @@ public class HomeAgent extends BaseAgent
 	private String[] applianceName;
 	//max watt threshold of a house
 	private int maxWatt;
+	//current state of all appliance
+	private boolean[] on;
+	private int energySaverWatt;
 	private double _next_purchased_amount;
 	private Vector<PowerSaleAgreement> _current_buy_agreements;
 	private double _next_required_amount;
@@ -57,19 +60,22 @@ public class HomeAgent extends BaseAgent
 	{
 		Object[] args = getArguments();
 		n = args.length;
-		applianceName = new String[9];
+		applianceName = new String[n];
 		watt = new int[n];
+		on = new boolean[n];
 		for(int i = 0; i < args.length; i++)
 		{
 			applianceName[i] =  args[i].toString();
 			watt[i] = 10;//TODO get watt from appliance agent
+			on[i] = false;
 			System.out.println(args[i] + " has been added to " + getLocalName());
 		}
 		electricityUsage = new int[24][n];
 		electricityForecast = new int[24][n];
 		maxWatt = 10000;
+		energySaverWatt = 10;//TODO calculate energySaverWatt
 		_current_buy_agreements = new Vector<PowerSaleAgreement>();
-		_next_purchased_amount = 200;
+		_next_purchased_amount = 0;
 		_current_by_price = 10;
 		System.out.println(getLocalName() + " init is complete!");
 	}
@@ -133,14 +139,32 @@ public class HomeAgent extends BaseAgent
 		{
 			System.out.println(getLocalName() + " received electricity request");
 			//should check against maxWatt and decide
-
+			boolean approve = true;
+			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
+			if((sumWatt()+value > maxWatt) || (sumWatt()+value > _next_purchased_amount))
+				{approve = false;}
 			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-			reply.setContent("electricity,1");
-			reply.addReceiver(new AID("lamp1", AID.ISLOCALNAME));
+			if(approve == true)
+				{on[getApplianceID(msg.getSender().getLocalName())] = true;
+				reply.setContent("electricity,1");}
+			else{reply.setContent("electricity,0");}
+			reply.addReceiver(new AID(msg.getSender().getLocalName(), AID.ISLOCALNAME));
 			send(reply);
-			sleep(5000);
-			energySaverMode();
+			//TODO below are just for simulation purposes, delete this later
+			//sleep(5000);
+			//energySaverMode();
 		}
+	}
+
+	//sum of every on appliance watt
+	private int sumWatt()
+	{
+		int sum = 0;
+		int i;
+		for(i=0;i<n;i++)
+			{if(on[i]==true)
+				{sum += watt[i];}}
+		return sum;
 	}
 	
 	private class welcomeMessage extends OneShotBehaviour
@@ -179,8 +203,8 @@ public class HomeAgent extends BaseAgent
 	//TODO energySaverMode function
 	private void energySaverMode()
 	{
-		System.out.println("initiating energy saver mode");
-		turn("lamp1",false);
+		System.out.println("initiating energy saver mode " + _current_globals.getTimeLeft());
+		turn("lamp1",true);
 		//turn("heater",false);
 		//turn("fridge",true);
 	}
@@ -190,7 +214,9 @@ public class HomeAgent extends BaseAgent
 		System.out.println(getLocalName() + " is trying to turn " + name + " " + on);
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 		if(on==true){msg.setContent("on");}
-		else if(on==false){msg.setContent("off");}
+		else if(on==false)
+			{this.on[getApplianceID(name)] = false;
+			msg.setContent("off");}
 		msg.addReceiver(new AID(name,AID.ISLOCALNAME));
 		send(msg);
 	}
@@ -199,6 +225,7 @@ public class HomeAgent extends BaseAgent
 	@Override
 	protected void TimeExpired()
 	{
+		_next_purchased_amount -= sumWatt();
 		_next_purchased_amount = 0;
 		_next_required_amount = forecast(1)*1.5;
 		Vector<PowerSaleAgreement> toRemove = new Vector<>();
@@ -226,7 +253,23 @@ public class HomeAgent extends BaseAgent
 	@Override
 	protected void TimePush(int ms_left)
 	{
-		_next_required_amount = forecast(1)*1.5;
+		_next_purchased_amount -= sumWatt();
+		//energySaverMode();
+		if(sumWatt() > _next_purchased_amount)
+		{
+			if(energySaverWatt < _next_purchased_amount){energySaverMode();}
+			else
+			{
+				int i;
+				for(i=0;i<n;i++){turn(applianceName[i],false);}
+			}
+		}
+		else
+		{
+			energySaverMode();
+		}
+
+		//_next_required_amount = forecast(1)*1.5;
 		if (_next_required_amount  > _next_purchased_amount) {
 			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
 			sendCFP(); // We need to buy more electricity
