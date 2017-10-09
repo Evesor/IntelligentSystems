@@ -17,6 +17,10 @@ import org.slf4j.LoggerFactory
 
 /**
  * Responsible for the JADE platform's lifecycle.
+ *
+ * @param runtime Instance of the JADE runtime
+ * @param containerDistributor The container distributor to use
+ * @param clientWebSocketHandler
  */
 class JadeController(private val runtime: Runtime,
                      private val containerDistributor: ContainerDistributor,
@@ -34,10 +38,10 @@ class JadeController(private val runtime: Runtime,
 
     fun start() {
         logger.info("Spinning up the JADE platform...")
-        mainContainer = runtime.createMainContainer(profile).also {
-            it.createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
-            it.createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
-            it.createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf()).start()
+        mainContainer = runtime.createMainContainer(profile).apply {
+            createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
+            createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
+            createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf()).start()
         }
         JadeGateway.init(null,
                 Properties().apply {

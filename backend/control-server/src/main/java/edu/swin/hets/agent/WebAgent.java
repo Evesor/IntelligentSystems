@@ -34,7 +34,7 @@ public class WebAgent extends BaseAgent {
         addMessageHandler(InformMessageTemplate, new InfromMessageHandler());
 
         try {
-            //clientWebSocketHandler = (WebSocketHandler) getArguments()[0];
+            clientWebSocketHandler = (WebSocketHandler) getArguments()[0];
         } catch (ClassCastException | ArrayIndexOutOfBoundsException e) {
             logger.error(e.toString());
             logger.warn("Websocket handler not found, check your agent init arguments");
@@ -44,7 +44,7 @@ public class WebAgent extends BaseAgent {
     }
 
     protected void TimeExpired() {
-        clientWebSocketHandler.broadcast("wow");
+        //clientWebSocketHandler.broadcast("wow");
     }
 
     protected String getJSON() {
@@ -61,7 +61,7 @@ public class WebAgent extends BaseAgent {
     private class InfromMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             LogVerbose("Web agent just got \n" + msg.getContent() + "\n");
-            //clientWebSocketHandler.broadcast(msg.getContent());
+            clientWebSocketHandler.broadcast(msg.getContent());
         }
     }
 }

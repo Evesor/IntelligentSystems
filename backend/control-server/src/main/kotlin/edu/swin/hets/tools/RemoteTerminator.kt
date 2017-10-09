@@ -8,24 +8,24 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class ShutdownRemotes(args: Array<String>) {
-    companion object {
-        val logger: Logger = LoggerFactory.getLogger(ShutdownRemotes::class.java)
-    }
-
-    private var configuration = SystemConfig(args)
-
-    fun terminateRemotes() {
-        logger.info("Loading system config...")
-        val collection = configuration.connectionList
-
-
-        logger.info("Terminating remote instances...")
-        collection.stream().forEach({
-            SlaveConnection(it, configuration).shutdownJava()
-        })
-    }
+//    companion object {
+//        val logger: Logger = LoggerFactory.getLogger(ShutdownRemotes::class.java)
+//    }
+//
+//    private var configuration = SystemConfig(args)
+//
+//    fun terminateRemotes() {
+//        logger.info("Loading system config...")
+//        val collection = configuration.connectionList
+//
+//
+//        logger.info("Terminating remote instances...")
+//        collection.stream().forEach({
+//            SlaveConnection(it, configuration).shutdownJava()
+//        })
+//    }
 }
 
 fun main(args: Array<String>) {
-    ShutdownRemotes(args).terminateRemotes()
+//    ShutdownRemotes(args).terminateRemotes()
 }

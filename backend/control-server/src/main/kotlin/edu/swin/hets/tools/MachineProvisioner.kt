@@ -8,23 +8,23 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class MachineProvisioner(args: Array<String>) {
-    companion object {
-        val logger: Logger = LoggerFactory.getLogger(MachineProvisioner::class.java)
-    }
-
-    private val configuration = SystemConfig(args)
-
-    fun provisionHosts() {
-        logger.info("Loading system config...")
-        val collection = configuration.connectionList
-
-        logger.info("Updating JRE...")
-        collection.parallelStream().forEach({
-            SlaveConnection(it, configuration).provisionJRE()
-        })
-    }
+//    companion object {
+//        val logger: Logger = LoggerFactory.getLogger(MachineProvisioner::class.java)
+//    }
+//
+//    private val configuration = SystemConfig(args)
+//
+//    fun provisionHosts() {
+//        logger.info("Loading system config...")
+//        val collection = configuration.connectionList
+//
+//        logger.info("Updating JRE...")
+//        collection.parallelStream().forEach({
+//            SlaveConnection(it, configuration).provisionJRE()
+//        })
+//    }
 }
 
 fun main(args: Array<String>) {
-    MachineProvisioner(args).provisionHosts()
+//    MachineProvisioner(args).provisionHosts()
 }
