@@ -18,7 +18,6 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
@@ -133,11 +132,10 @@ public abstract class BaseAgent extends Agent{
                 GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
+                        TimeExpired();
                         SendAgentDetailsToServer(getJSON() +
                                 new MessageHistory(_messages_this_timeslice, getName()).getMessages());
-                        TimeExpired();
                     } else {
-                        LogDebug("Time left: " + newGlobals.getTimeLeft());
                         TimePush(_current_globals.getTimeLeft() * 1000);
                     }
                     _current_globals = newGlobals;

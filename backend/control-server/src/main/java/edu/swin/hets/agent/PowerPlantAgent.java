@@ -6,14 +6,10 @@ import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.PowerSaleProposal;
-import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
-
 import java.io.Serializable;
 import java.util.Vector;
-
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -56,29 +52,16 @@ public class PowerPlantAgent extends BaseAgent {
         _current_production = 10;
         _max_production = 300;
         _current_sell_price = 0.6;
+        _current_contracts = new Vector<>();
+        RegisterAMSService(getAID().getName(),"powerplant");
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
         addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
-        _current_contracts = new Vector<PowerSaleAgreement>();
-        RegisterAMSService(getAID().getName(),"powerplant");
     }
 
     // Update bookkeeping.
     protected void TimeExpired (){
-        // Update how much electricity we are selling.
-        _current_production = 0;
-        Vector<PowerSaleAgreement> toRemove = new Vector<>();
-        for (PowerSaleAgreement agreement: _current_contracts) {
-            if (agreement.getEndTime() < _current_globals.getTime()) {
-                toRemove.add(agreement);
-            }
-        }
-        _current_contracts.removeAll(toRemove);
-        for (PowerSaleAgreement agreement: _current_contracts) {
-            if (agreement.getStartTime() <= _current_globals.getTime()) {
-                _current_production += agreement.getAmount(); //Update current production values.
-            }
-        }
+        updateContracts();
         LogVerbose(getName() + " is producing: " + _current_production);
     }
 
@@ -96,6 +79,23 @@ public class PowerPlantAgent extends BaseAgent {
 
     protected void TimePush(int ms_left) {
 
+    }
+
+    private void updateContracts() {
+        // Update how much electricity we are selling.
+        _current_production = 0;
+        Vector<PowerSaleAgreement> toRemove = new Vector<>();
+        for (PowerSaleAgreement agreement: _current_contracts) {
+            if (agreement.getEndTime() < _current_globals.getTime()) {
+                toRemove.add(agreement);
+            }
+        }
+        _current_contracts.removeAll(toRemove);
+        for (PowerSaleAgreement agreement: _current_contracts) {
+            if (agreement.getStartTime() <= _current_globals.getTime()) {
+                _current_production += agreement.getAmount(); //Update current production values.
+            }
+        }
     }
 
     // Someone buying from us.
