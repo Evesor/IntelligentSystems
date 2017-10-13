@@ -137,6 +137,7 @@ public abstract class BaseAgent extends Agent{
                                 new MessageHistory(_messages_this_timeslice, getName()).getMessages());
                         TimeExpired();
                     } else {
+                        LogDebug("Time left: " + newGlobals.getTimeLeft());
                         TimePush(_current_globals.getTimeLeft() * 1000);
                     }
                     _current_globals = newGlobals;
