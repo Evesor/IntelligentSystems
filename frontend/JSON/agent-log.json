@@ -119,7 +119,7 @@
     }}
   ],
   "links": [
-    {"source": "PowerPlant-1", "target": "Reseller-1", "value": 1},
+    {"source": "PowerPlant-1", "target": "Reseller-1", "value": 20},
     {"source": "PowerPlant-1", "target": "Reseller-2", "value": 20},
     {"source": "PowerPlant-2", "target": "Reseller-1", "value": 13},
     {"source": "PowerPlant-2", "target": "Reseller-2", "value": 1},

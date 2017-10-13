@@ -1,9 +1,17 @@
+// var data = readAgentJSON
+// d3
+// websocket handler -> update central with messages
+// call d3 callback to update the graph view
+
 function drawAgents() {
   var svg = d3.select("svg"),
       width = +svg.attr("width"),
       height = +svg.attr("height");
+}
 
+function update(graph) {
   var color = d3.scaleOrdinal(d3.schemeCategory20);
+  var size = 7;
 
   // var randomWidth  = getRandomInt(50, width-50);
   // var randomHeight = getRandomInt(50, height-50);
@@ -13,8 +21,8 @@ function drawAgents() {
       .force("charge", d3.forceManyBody())
       .force("center", d3.forceCenter(width/2, height/2));
 
-  d3.json("../JSON/agent-log.json", function(error, graph) {
-    if (error) throw error;
+  //d3.json("../JSON/agent-log.json", function(error, graph) {
+    //if (error) throw error;
 
     var link = svg.append("g")
         .attr("class", "links")
@@ -26,24 +34,23 @@ function drawAgents() {
     var node = svg.append("g")
         .attr("class", "nodes")
         .selectAll("circle")
-        .data(graph.nodes)
+        .data(data.nodes)
         .enter().append("circle")
-        .attr("r", 5)
+        .attr("r", size)
         .attr("fill", function(d) { return color(d.group); })
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
             .on("mouseover", function() {
-              d3.select(this).attr('r', 5)
+              d3.select(this).attr('r', size)
                 .style("stroke","red");
             })
             .on("mouseleave", function() {
-              d3.select(this).attr('r', 5)
+              d3.select(this).attr('r', size)
                 .style("stroke","black");
             })
             .on("click", function(r) {
-
               a = r.agent;
 
               switch (a.type) {
@@ -86,7 +93,7 @@ function drawAgents() {
         .attr("cx", function(d) { return d.x; })
         .attr("cy", function(d) { return d.y; });
     }
-  });
+  }
 
   function dragstarted(d) {
     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
