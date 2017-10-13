@@ -28,8 +28,11 @@ public class HomeAgent extends BaseAgent
 	private int[] watt;
 	//list of appliance agent name, should be vector
 	private String[] applianceName;
-	//max watt threshold  of a house
+	//max watt threshold of a house
 	private int maxWatt;
+	//current state of all appliance
+	private boolean[] on;
+	private int energySaverWatt;
 	private double _next_purchased_amount;
 	private Vector<PowerSaleAgreement> _current_buy_agreements;
 	private double _next_required_amount;
@@ -57,21 +60,24 @@ public class HomeAgent extends BaseAgent
 	{
 		Object[] args = getArguments();
 		n = args.length;
-		applianceName = new String[9];
+		applianceName = new String[n];
 		watt = new int[n];
+		on = new boolean[n];
 		for(int i = 0; i < args.length; i++)
 		{
 			applianceName[i] =  args[i].toString();
 			watt[i] = 10;//TODO get watt from appliance agent
-			System.out.println(args[i] + " has been added to " + getLocalName());
+			on[i] = false;
+			LogVerbose(args[i] + " has been added to " + getLocalName());
 		}
 		electricityUsage = new int[24][n];
 		electricityForecast = new int[24][n];
 		maxWatt = 10000;
+		energySaverWatt = 10;//TODO calculate energySaverWatt
 		_current_buy_agreements = new Vector<PowerSaleAgreement>();
-		_next_purchased_amount = 200;
+		_next_purchased_amount = 0;
 		_current_by_price = 10;
-		System.out.println(getLocalName() + " init is complete!");
+		LogDebug(getLocalName() + " init is complete!");
 	}
 	
 	private int getApplianceID(String name)
@@ -94,7 +100,7 @@ public class HomeAgent extends BaseAgent
 		addMessageHandler(electricityForecastMT, new HomeAgent.ForecastHandler());
 		addMessageHandler(electricityRequestMT, new HomeAgent.electricityRequestHandler());
 		addMessageHandler(PropMessageTemplate, new ProposalHandler());
-		System.out.println(getLocalName() + " setup is complete!");
+		LogDebug(getLocalName() + " setup is complete!");
 		turn("lamp1",true);
 	}
 
@@ -108,7 +114,7 @@ public class HomeAgent extends BaseAgent
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
 			//store in electricityUsage
 			electricityUsage[_current_globals.getTime()][applianceID] = value;
-			System.out.println("current = " + value);
+			LogDebug("current = " + value);
 		}
 	}
 
@@ -122,30 +128,49 @@ public class HomeAgent extends BaseAgent
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
 			//store in electricityUsage
 			electricityForecast[_current_globals.getTime()][applianceID] = value;
-			System.out.println("forecast = " + forecast(1));
+			LogDebug("forecast = " + forecast(1));
 		}
 	}
 
-	//example message
+	//TODO electricityRequestHandler
 	private class electricityRequestHandler implements IMessageHandler
 	{
 		public void Handler(ACLMessage msg)
 		{
-			System.out.println(getLocalName() + " received electricity request");
+			LogDebug(getLocalName() + " received electricity request");
 			//should check against maxWatt and decide
+			boolean approve = true;
+			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
+			if((sumWatt()+value > maxWatt) || (sumWatt()+value > _next_purchased_amount))
+				{approve = false;}
 			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-			reply.setContent("electricity request,1");
-			reply.addReceiver(new AID("lamp1", AID.ISLOCALNAME));
+			if(approve == true)
+				{on[getApplianceID(msg.getSender().getLocalName())] = true;
+				reply.setContent("electricity,1");}
+			else{reply.setContent("electricity,0");}
+			reply.addReceiver(new AID(msg.getSender().getLocalName(), AID.ISLOCALNAME));
 			send(reply);
-			sleep(5000);
-			energySaverMode();
+			//TODO below are just for simulation purposes, delete this later
+			//sleep(5000);
+			//energySaverMode();
 		}
+	}
+
+	//sum of every on appliance watt
+	private int sumWatt()
+	{
+		int sum = 0;
+		int i;
+		for(i=0;i<n;i++)
+			{if(on[i]==true)
+				{sum += watt[i];}}
+		return sum;
 	}
 	
 	private class welcomeMessage extends OneShotBehaviour
 	{
 		@Override
-		public void action(){System.out.println(getLocalName() + " is now up and running!");}
+		public void action(){LogVerbose(getLocalName() + " is now up and running!");}
 	}
 	
 	private void sleep(int duration)
@@ -154,22 +179,17 @@ public class HomeAgent extends BaseAgent
 		catch(InterruptedException e){e.printStackTrace();}
 	}
 	
-	//forecast electricity needs for next hour(x=1), next day(x=2), or next week(x=3)
-	//for now, next day forecast = 24 * next hour forecast
+	//forecast electricity needs for the next x hour
+	//for now, next x hour forecast = x * next hour forecast
 	//TODO calculate forecast
 	private int forecast(int x)
 	{
 		int result=0;
 		int i;
+		//sum every appliance forecast
 		for(i=0;i<n;i++){result += electricityForecast[_current_globals.getTime()][i];}
-		//next hour forecast
-		if(x==1){return result;}
-		//next day forecast
-		else if(x==2){return result*24;}
-		//next week forecast
-		else if(x==3){return result*168;}
-		//error
-		else{return -1;}
+		result *= x;
+		return result;
 	}
 	
 	//when use too much electricity, Home agent could turn off unimportant appliances to prevent overload
@@ -177,18 +197,20 @@ public class HomeAgent extends BaseAgent
 	//TODO energySaverMode function
 	private void energySaverMode()
 	{
-		System.out.println("initiating energy saver mode");
-		turn("lamp1",false);
+		LogVerbose("initiating energy saver mode");
+		turn("lamp1",true);
 		//turn("heater",false);
 		//turn("fridge",true);
 	}
 
 	private void turn(String name, boolean on)
 	{
-		System.out.println(getLocalName() + " is trying to turn " + name + " " + on);
+		LogDebug(getLocalName() + " is trying to turn " + name + " " + on);
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 		if(on==true){msg.setContent("on");}
-		else if(on==false){msg.setContent("off");}
+		else if(on==false)
+			{this.on[getApplianceID(name)] = false;
+			msg.setContent("off");}
 		msg.addReceiver(new AID(name,AID.ISLOCALNAME));
 		send(msg);
 	}
@@ -197,9 +219,9 @@ public class HomeAgent extends BaseAgent
 	@Override
 	protected void TimeExpired()
 	{
-		System.out.println("OSSU");
+		_next_purchased_amount -= sumWatt();
 		_next_purchased_amount = 0;
-		_next_required_amount = forecast(1);
+		_next_required_amount = forecast(1)*1.5;
 		Vector<PowerSaleAgreement> toRemove = new Vector<>();
 		for (PowerSaleAgreement agreement : _current_buy_agreements) {
 			if (agreement.getEndTime() < _current_globals.getTime()) {
@@ -224,7 +246,24 @@ public class HomeAgent extends BaseAgent
 	@Override
 	protected void TimePush(int ms_left)
 	{
-		_next_required_amount = forecast(1);
+		LogDebug("Time Left : " + _current_globals.getTimeLeft());
+		_next_purchased_amount -= sumWatt();
+		//energySaverMode();
+		if(sumWatt() > _next_purchased_amount)
+		{
+			if(energySaverWatt < _next_purchased_amount){energySaverMode();}
+			else
+			{
+				int i;
+				for(i=0;i<n;i++){turn(applianceName[i],false);}
+			}
+		}
+		else
+		{
+			energySaverMode();
+		}
+
+		//_next_required_amount = forecast(1)*1.5;
 		if (_next_required_amount  > _next_purchased_amount) {
 			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
 			sendCFP(); // We need to buy more electricity
@@ -248,13 +287,14 @@ public class HomeAgent extends BaseAgent
 		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,
 				1, getAID(), false);
 		prop.setBuyerAID(getAID());
-		LogDebug("Sending a CFP to reseller for: " + prop.getAmount());
+		LogVerbose("Sending a CFP to reseller for: " + prop.getAmount());
 		try {
 			cfp.setContentObject(prop);
 		} catch (IOException e) {
 			LogError("Could not attach a proposal to a message, exception thrown");
 		}
 		send(cfp);
+		LogDebug("SEND CFP DONE");
 	}
 
 	// Someone is offering to sell us electricity
@@ -281,8 +321,6 @@ public class HomeAgent extends BaseAgent
 		}
 	}
 }
-
-
 //TODO behaviour to negotiate price for buy & sell
 //TODO receive request from user to turn on/off an appliance
 //TODO receive request from user to initiate energy saver mode

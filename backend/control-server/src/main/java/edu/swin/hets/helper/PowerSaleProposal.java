@@ -22,6 +22,15 @@ public class PowerSaleProposal implements Serializable {
         _duration = lengthOfContract;
         _cost = -1;
     }
+
+    public boolean equalValues(PowerSaleProposal prop) {
+        if (!prop._buyer_AID.getName().equals(_buyer_AID.getName())) return false;
+        if (!prop._seller_AID.getName().equals(_seller_AID.getName())) return false;
+        if (prop._cost != _cost) return false;
+        if (prop._duration != _duration) return false;
+        if (prop._power_amount != _power_amount) return false;
+        return true;
+    }
     // Getters
     public double getAmount() { return _power_amount; }
     public int getDuration() { return _duration; }

@@ -15,7 +15,8 @@
       "className" : "edu.swin.hets.agent.ApplianceAgent"
     }, {
       "name" : "Appliance2",
-      "className" : "edu.swin.hets.agent.ApplianceAgent"
+      "className" : "edu.swin.hets.agent.ApplianceAgent",
+      "arguments" : "asd,asda,sda,hhjh"
     } ]
   }, {
     "name" : "Home Container",

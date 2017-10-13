@@ -1,5 +1,6 @@
 package edu.swin.hets.agent;
 
+import edu.swin.hets.helper.GlobalValues;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.web.NoOpWebSocketHandler;
@@ -25,13 +26,13 @@ public class WebAgent extends BaseAgent {
 
     private MessageTemplate InformMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            MessageTemplate.not(GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.GlobalValues")));
+            MessageTemplate.not(GoodMessageTemplates.ContatinsString(GlobalValues.class.getName())));
     private WebSocketHandler clientWebSocketHandler = new NoOpWebSocketHandler();
 
     protected void setup() {
         super.setup();
         messages = new Vector<>();
-        addMessageHandler(InformMessageTemplate, new InfromMessageHandler());
+        addMessageHandler(InformMessageTemplate, new InformMessageHandler());
 
         try {
             clientWebSocketHandler = (WebSocketHandler) getArguments()[0];
@@ -51,16 +52,13 @@ public class WebAgent extends BaseAgent {
         return "Not implemented";
     }
 
-    protected void TimePush(int ms_left) {
-
-    }
-
+    protected void TimePush(int ms_left) {     }
     /**
      * Incoming message handling implementation here
      */
-    private class InfromMessageHandler implements IMessageHandler {
+    private class InformMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            LogVerbose("Web agent just got \n" + msg.getContent() + "\n");
+            LogVerbose("Web agent just got: " + msg.getContent());
             clientWebSocketHandler.broadcast(msg.getContent());
         }
     }

@@ -10,26 +10,32 @@ import jade.lang.acl.MessageTemplate;
 
 public class ApplianceAgent extends BaseAgent
 {
-	//should be vector, should store enumeration instead of int
-//	int[] weather = new int[24];//_current_globals.getWeather();
 	boolean on;
-	int[] current = new int[24];
-	int[] forecast = new int[24];
+	//TODO current array
+	//should be vector
+	int[] current = new int[48];
+	//TODO forecast array
+	//should be vector, should store enumeration instead of int
+	int[] forecast = new int[48];
 	int watt;
-	UsageCounterBehaviour ucb;
 
-	private MessageTemplate onMessageTemplate = MessageTemplate.and(
+	//turn on this appliance
+	//ACLMessage.REQUEST, "on"
+	private MessageTemplate R_On = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
 		GoodMessageTemplates.ContatinsString("on"));
 
-	private MessageTemplate offMessageTemplate = MessageTemplate.and(
+	//turn off this appliance
+	//ACLMessage.REQUEST, "off"
+	private MessageTemplate R_Off = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
 		GoodMessageTemplates.ContatinsString("off"));
 
-
-	private MessageTemplate electricityReceiverMT = MessageTemplate.and(
+	//electricity request accepted || declined
+	//ACLMessage.INFORM, "electricity,1" || "electricity,0"
+	private MessageTemplate I_Electricity = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-		GoodMessageTemplates.ContatinsString("electricity request"));
+		GoodMessageTemplates.ContatinsString("electricity"));
 
 	//initialize variables
 	private void init()
@@ -41,8 +47,8 @@ public class ApplianceAgent extends BaseAgent
 			current[i] = 0;
 			forecast[i] = 0;
 		}
-		watt = 10;
-		ucb = new UsageCounterBehaviour(this,1000);
+		Object[] args = getArguments();
+		watt = Integer.parseInt(args[0].toString());
 		updateForecastUsage();
 	}
 
@@ -51,9 +57,9 @@ public class ApplianceAgent extends BaseAgent
 	{
 		super.setup();
 		init();
-		addMessageHandler(onMessageTemplate, new ApplianceAgent.OnHandler());
-		addMessageHandler(offMessageTemplate, new ApplianceAgent.OffHandler());
-		addMessageHandler(electricityReceiverMT, new ApplianceAgent.ElectricityHandler());
+		addMessageHandler(R_On, new ApplianceAgent.OnHandler());
+		addMessageHandler(R_Off, new ApplianceAgent.OffHandler());
+		addMessageHandler(I_Electricity, new ApplianceAgent.ElectricityHandler());
 		sendCurrentUsage();
 		sendForecastUsage();
 	}
@@ -72,30 +78,18 @@ public class ApplianceAgent extends BaseAgent
 	{
 		public void Handler(ACLMessage msg)
 		{
-			//example message : electricity request,1
-			//0=declined, 1=approved
-			System.out.println(getLocalName() + " gets permission to use electricity");
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-			if(value==0){System.out.println(getLocalName() + " electricity request declined");}
+			if(value==0){LogDebug(getLocalName() + " electricity request declined");}
 			else if(value==1)
 			{
-				System.out.println(getLocalName() + " is now on");
+				LogVerbose(getLocalName() + " electricity request approved. " + getLocalName() + " is now on");
 				on = true;
-				counterOn();
 			}
 		}
 	}
 
-	//start usage counter
-	private void counterOn()
-	{
-		ucb = new UsageCounterBehaviour(this,1000);
-		addBehaviour(ucb);
-	}
-
 	private void sendCurrentUsage()
 	{
-		//send
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		msg.setContent("electricity current," + current[_current_globals.getTime()]);
 		msg.addReceiver(new AID("home1", AID.ISLOCALNAME));
@@ -111,13 +105,12 @@ public class ApplianceAgent extends BaseAgent
 		send(msg);
 	}
 
-	//TODO updateForestUsage function
+	//TODO updateForcastUsage function
 	//calculate forecast usage and update variable
-	private void updateForecastUsage(){forecast[_current_globals.getTime()] = 50;}
+	private void updateForecastUsage(){forecast[_current_globals.getTime()] = watt*5;}
 
 	private void sendElectricityRequest()
 	{
-		//send request for weather forecast
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 		msg.setContent("electricity," + watt);
 		msg.addReceiver(new AID("home1",AID.ISLOCALNAME));
@@ -126,6 +119,7 @@ public class ApplianceAgent extends BaseAgent
 
 	private void turn(boolean on)
 	{
+		//compare with current state
 		if(this.on!=on)
 		{
 			if(on==true)
@@ -134,44 +128,45 @@ public class ApplianceAgent extends BaseAgent
 				//home agent check current usage with max usage
 				//if current + request < max usage, approve
 				sendElectricityRequest();
-				System.out.println(getLocalName() + " sent an electricity request");
+
+				LogDebug(getLocalName() + " sent an electricity request");
 			}
 			else if(on==false)
 			{
 				this.on = false;
-				//stop current usage increment
-				ucb.stop();
-				System.out.println(getLocalName() + " is now off");
+				LogVerbose(getLocalName() + " is now off");
 			}
 		}
 	}
 
-	//TODO usageCounterBehaviour function
-	//?use parallel behaviour to count time?
-	//update current usage every real second
-	private class UsageCounterBehaviour extends TickerBehaviour
+	@Override
+	protected void TimeExpired()
 	{
-		public UsageCounterBehaviour(Agent a, long period){super(a, period);}
-
-		@Override
-		protected void onTick()
+		//count electricity usage
+		if(on == true)
 		{
 			current[_current_globals.getTime()] += watt;
-			System.out.println("current : " + current[_current_globals.getTime()]);
+			LogDebug("current : " + current[_current_globals.getTime()]);
+			sendForecastUsage();
 		}
 	}
 
-	//TODO Override TimeExpired
 	@Override
-	protected void TimeExpired(){}
+	protected void TimePush(int ms_left)
+	{
+		//count electricity usage
+		if(on == true)
+		{
+			current[_current_globals.getTime()] += watt;
+			LogDebug("current : " + current[_current_globals.getTime()]);
+		}
+	}
 
-	//TODO Override TimePush
-    @Override
-    protected void TimePush(int ms_left){}
-
-    //TODO Override getJSON
-    @Override
-    protected String getJSON(){
-    	return "Not implimented";
-    }
+	//TODO Override getJSON
+	@Override
+	protected String getJSON(){return "Not implimented";}
 }
+//TODO other list
+//appliance send electricity request / home approve before turning it on?
+//1 day history for usage and forecast, time index??
+//send electricity usage for each time push / home calculate electricity usage?
