@@ -104,7 +104,7 @@ public abstract class BaseAgent extends Agent{
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
-                ACLMessage msg = receive();
+                ACLMessage msg = blockingReceive();
                 _messages_this_timeslice.add(msg);
                 if (msg != null) {
                     boolean message_handled = false;
@@ -121,7 +121,6 @@ public abstract class BaseAgent extends Agent{
                         sendNotUndersood(msg, "no handlers found for " + msg.getPerformative());
                     }
                 }
-                block();
             }
         });
     }
