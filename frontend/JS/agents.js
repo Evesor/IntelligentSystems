@@ -7,34 +7,36 @@ function drawAgents() {
   var svg = d3.select("svg"),
       width = +svg.attr("width"),
       height = +svg.attr("height");
-}
 
-function update(graph) {
+//function update(graph) {
   var color = d3.scaleOrdinal(d3.schemeCategory20);
   var size = 7;
-
-  // var randomWidth  = getRandomInt(50, width-50);
-  // var randomHeight = getRandomInt(50, height-50);
 
   var simulation = d3.forceSimulation()
       .force("link", d3.forceLink().id(function(d) { return d.id; }))
       .force("charge", d3.forceManyBody())
       .force("center", d3.forceCenter(width/2, height/2));
 
-  //d3.json("../JSON/agent-log.json", function(error, graph) {
-    //if (error) throw error;
+  d3.json("../JSON/agent-log.json", function(error, graph) {
+    if (error) throw error;
+
+    var linksArray = [];
+
+    for (var i = graph.nodes.length - 1; i >= 0; i--) {
+      linksArray = linksArray.concat(graph.nodes[i].links);
+    }
 
     var link = svg.append("g")
         .attr("class", "links")
         .selectAll("line")
-        .data(graph.links)
+        .data(linksArray)
         .enter().append("line")
         .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
     var node = svg.append("g")
         .attr("class", "nodes")
         .selectAll("circle")
-        .data(data.nodes)
+        .data(graph.nodes)
         .enter().append("circle")
         .attr("r", size)
         .attr("fill", function(d) { return color(d.group); })
@@ -52,24 +54,7 @@ function update(graph) {
             })
             .on("click", function(r) {
               a = r.agent;
-
-              switch (a.type) {
-                case "Power Plant":
-                  getPowerplantAgent(a)
-                  break;
-                case "Reseller Agent":
-                  getResellerAgent(a)
-                  break;
-                case "Home Agent":
-                  getHomeAgent(a);
-                  break;
-                case "Appliance Agent":
-                  getApplianceAgent(a);
-                  break;
-                default:
-                  alert("Something went wrong! :(");
-                  break;
-              }
+              getAgentsFromNodes(a);
             });
 
     node.append("title")
@@ -80,7 +65,7 @@ function update(graph) {
         .on("tick", ticked);
 
     simulation.force("link")
-        .links(graph.links);
+        .links(linksArray);
 
     function ticked() {
       link
@@ -93,7 +78,7 @@ function update(graph) {
         .attr("cx", function(d) { return d.x; })
         .attr("cy", function(d) { return d.y; });
     }
-  }
+  });
 
   function dragstarted(d) {
     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
