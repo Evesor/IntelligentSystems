@@ -11,6 +11,7 @@ ws.onmessage = function(data)
 	try {
 		var jsonData = JSON.parse(data.data);
 		console.log(jsonData);
+		console.log(update);
 		update(jsonData);
 	} catch (err) {}
 };

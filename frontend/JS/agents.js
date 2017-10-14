@@ -7,8 +7,9 @@ function drawAgents() {
   var svg = d3.select("svg"),
       width = +svg.attr("width"),
       height = +svg.attr("height");
+}
 
-//function update(graph) {
+function update(graph) {
   var color = d3.scaleOrdinal(d3.schemeCategory20);
   var size = 7;
 
@@ -17,8 +18,8 @@ function drawAgents() {
       .force("charge", d3.forceManyBody())
       .force("center", d3.forceCenter(width/2, height/2));
 
-  d3.json("../JSON/agent-log.json", function(error, graph) {
-    if (error) throw error;
+  //d3.json("../JSON/agent-log.json", function(error, graph) {
+    //if (error) throw error;
 
     var linksArray = [];
 
@@ -66,34 +67,34 @@ function drawAgents() {
 
     simulation.force("link")
         .links(linksArray);
-
-    function ticked() {
-      link
-        .attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
-
-      node
-        .attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; });
-    }
-  });
-
-  function dragstarted(d) {
-    if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-    d.fx = d.x;
-    d.fy = d.y;
-  }
-
-  function dragged(d) {
-    d.fx = d3.event.x;
-    d.fy = d3.event.y;
-  }
-
-  function dragended(d) {
-    if (!d3.event.active) simulation.alphaTarget(0);
-    d.fx = null;
-    d.fy = null;
-  }
 }
+
+function ticked() {
+  link
+    .attr("x1", function(d) { return d.source.x; })
+    .attr("y1", function(d) { return d.source.y; })
+    .attr("x2", function(d) { return d.target.x; })
+    .attr("y2", function(d) { return d.target.y; });
+
+  node
+    .attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; });
+}
+
+function dragstarted(d) {
+  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x;
+  d.fy = d.y;
+}
+
+function dragged(d) {
+  d.fx = d3.event.x;
+  d.fy = d3.event.y;
+}
+
+function dragended(d) {
+  if (!d3.event.active) simulation.alphaTarget(0);
+  d.fx = null;
+  d.fy = null;
+}
+//}
