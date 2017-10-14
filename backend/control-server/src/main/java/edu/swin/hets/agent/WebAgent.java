@@ -23,7 +23,6 @@ import java.util.Vector;
 public class WebAgent extends BaseAgent {
     private static final Logger logger = LoggerFactory.getLogger(WebAgent.class);
     private Vector<String> messages;
-
     private MessageTemplate InformMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
             MessageTemplate.not(GoodMessageTemplates.ContatinsString(GlobalValues.class.getName())));
@@ -46,6 +45,15 @@ public class WebAgent extends BaseAgent {
 
     protected void TimeExpired() {
         //clientWebSocketHandler.broadcast("wow");
+        String output = "{\"nodes\":[";
+        for (String message : messages) {
+            output = output.concat(message + ",");
+        }
+        // Remove last comma
+        output = output.substring(0, output.length()-1);
+        output = output.concat("]}");
+        LogVerbose(output);
+        clientWebSocketHandler.broadcast(output);
     }
 
     protected String getJSON() {
@@ -58,8 +66,12 @@ public class WebAgent extends BaseAgent {
      */
     private class InformMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            LogVerbose("Web agent just got: " + msg.getContent());
-            clientWebSocketHandler.broadcast(msg.getContent());
+            //LogVerbose("Web agent just got: " + msg.getContent());
+            if (msg.getSender().getName().contains("Reseller1@10.1.21.39:1099/JADE")
+                    || msg.getSender().getName().contains("Reseller2@10.1.21.39:1099/JADE")) {
+                messages.add(msg.getContent());
+            }
+            //clientWebSocketHandler.broadcast(msg.getContent());
         }
     }
 }

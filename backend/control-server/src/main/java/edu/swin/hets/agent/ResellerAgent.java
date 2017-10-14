@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
 import jade.core.AID;
+import jade.core.Agent;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -282,26 +283,35 @@ public class ResellerAgent extends BaseAgent {
      *  Use: Used by getJson to output data to server.
      *****************************************************************************/
     private class ResellerAgentData implements Serializable {
-        private String Name;
-        private double current_sell_price;
-        private double current_buy_price;
-        private double current_sales_volume;
-        private double current_purchase_volume;
-        private Integer groupNumber = 2;
-        ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases, String name) {
-            current_sell_price = sell_price;
-            current_buy_price = buy_price;
-            current_sales_volume = current_sales;
-            current_purchase_volume = current_purchases;
-            Name = name;
+            private AgentData data;
+            private String Name;
+            ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases, String name) {
+                Name = name;
+                data = new AgentData(buy_price, sell_price,current_sales, current_purchases, name);
+            }
+            public int getgroup() { return GROUP_ID; }
+            public AgentData getagentdata() {return data; }
+            public String getid() {return Name;}
+            private class AgentData implements Serializable{
+                private String Name;
+                private double current_sell_price;
+                private double current_buy_price;
+                private double current_sales_volume;
+                private double current_purchase_volume;
+                AgentData (double buy_price, double sell_price, double current_sales, double current_purchases, String name){
+                    current_sell_price = sell_price;
+                    current_buy_price = buy_price;
+                    current_sales_volume = current_sales;
+                    current_purchase_volume = current_purchases;
+                    Name = name;
+                }
+                public String getname () { return Name.split("@")[0];}
+                public String gettype () { return TYPE; }
+                public double getcurrentSellPrice() { return current_sell_price; }
+                public double getCurrentBuyPrice() { return current_buy_price; }
+                public double getCurrentPurchaseVolume() { return current_purchase_volume; }
+                public double getCurrentSalesVolume() { return current_sales_volume; }
         }
-        public String getName() { return Name; }
-        public String gettype () { return TYPE; }
-        public double getCurrent_sell_price() { return current_sell_price; }
-        public double getCurrent_buy_price() { return current_buy_price; }
-        public double getCurrent_purchase_volume() { return current_purchase_volume; }
-        public double getCurrent_sales_volume() { return current_sales_volume; }
-        public int getgroup() { return GROUP_ID; }
     }
 
     /******************************************************************************
