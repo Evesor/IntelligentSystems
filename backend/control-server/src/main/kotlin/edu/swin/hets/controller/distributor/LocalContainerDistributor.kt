@@ -26,17 +26,11 @@ class LocalContainerDistributor(
                 setParameter(Profile.CONTAINER_NAME, it.name)
             })
 
-            it.agents.forEach { (name, className, arguments) ->
-                containerController.createNewAgent(
-                        name,
-                        className,
-                        arrayOf(arguments.split(",").toList())
-                ).start()
-            }
+            startUpAgents(containerController, it.agents)
         }
     }
 
-    fun startUpAgents(containerController: ContainerController, agentDefinition: List<AgentDefinition>) {
+    private fun startUpAgents(containerController: ContainerController, agentDefinition: List<AgentDefinition>) {
         val applianceAgents = agentDefinition.filter {
             ApplianceAgent::class.java.isAssignableFrom(Class.forName(it.className))
         }
@@ -44,6 +38,9 @@ class LocalContainerDistributor(
         val homeAgents = agentDefinition.filter {
             HomeAgent::class.java.isAssignableFrom(Class.forName(it.className))
         }
+        //<Home, Appliance>
+        val homeAgentMap = mutableMapOf<String, List<String>>()
+
 
         // Ensure all agents have an owner defined
         if (applianceAgents.any { it.owner.isBlank() }) {
@@ -60,8 +57,25 @@ class LocalContainerDistributor(
         while (!(applianceAgents as Stack).empty()) {
             val appliance = applianceAgents.pop()
 
-//            val owner = agentDefinition.first { appliance.owner == it.name }
+            homeAgentMap.computeIfPresent(appliance.owner, { _, value -> value.plus(appliance.name) })
+            homeAgentMap.computeIfAbsent(appliance.owner, { listOf(appliance.name) })
         }
 
+        agentDefinition.forEach { (name, className, arguments) ->
+            val argumentList = arguments.split(",").toList()
+            val argumentMap: MutableMap<String, Any> = mutableMapOf()
+            val ownerList: MutableList<String> = mutableListOf()
+
+            if (className == HomeAgent::class.java.name) {
+                ownerList.addAll(homeAgentMap[name] as ArrayList)
+            }
+            argumentMap.put("Appliances", ownerList)
+
+            containerController.createNewAgent(
+                    name,
+                    className,
+                    arrayOf(argumentList, argumentMap)
+            ).start()
+        }
     }
 }
