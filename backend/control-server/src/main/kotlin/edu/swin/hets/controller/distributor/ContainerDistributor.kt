@@ -36,8 +36,8 @@ abstract class ContainerDistributor(val runtime: Runtime, val systemDefinition: 
                                 AgentDefinition("PowerPlant2", PowerPlantAgent::class.java.name)
                         )),
                         ContainerDefinition("Appliance Container", listOf(
-                                AgentDefinition("Appliance1", ApplianceAgent::class.java.name),
-                                AgentDefinition("Appliance2", ApplianceAgent::class.java.name)
+                                AgentDefinition(name = "Appliance1", className = ApplianceAgent::class.java.name, owner = "Home1"),
+                                AgentDefinition(name = "Appliance2", className = ApplianceAgent::class.java.name, owner = "Home2")
                         )),
                         ContainerDefinition("Home Container", listOf(
                                 AgentDefinition("Home1", HomeAgent::class.java.name),
