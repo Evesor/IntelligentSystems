@@ -6,14 +6,10 @@ import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.PowerSaleProposal;
-import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
-
 import java.io.Serializable;
 import java.util.Vector;
-
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -23,7 +19,8 @@ import java.util.Vector;
  *             content Object: A PowerSaleProposal object
  *       - ACCEPT_PROPOSAL : Used to signify a proposal has been accepted.
  *             content Object: A PowerSaleAgreement object
- *       - REJECT_PROPOSAL : Used to signify failed proposal
+ *       - REJECT_PROPOSAL : Used to signify failed proposal, can also be used
+ *                           invalidate an agreement that came back to late
  *             content Object: A PowerSaleProposal object
  *   Messages Sent:
  *       - NOT-UNDERSTOOD : Used to signal that there was no attached prop obj
@@ -32,6 +29,8 @@ import java.util.Vector;
  *              content Object : A power sale proposal obj
  *****************************************************************************/
 public class PowerPlantAgent extends BaseAgent {
+    private static final int GROUP_ID = 1;
+    private static String TYPE = "Power Plant";
     private double _current_sell_price;
     private double _max_production;
     private double _current_production;
@@ -39,13 +38,13 @@ public class PowerPlantAgent extends BaseAgent {
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement"));
+            GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
+            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
 
     @Override
     protected void setup() {
@@ -53,29 +52,16 @@ public class PowerPlantAgent extends BaseAgent {
         _current_production = 10;
         _max_production = 300;
         _current_sell_price = 0.6;
+        _current_contracts = new Vector<>();
+        RegisterAMSService(getAID().getName(),"powerplant");
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
         addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
-        _current_contracts = new Vector<PowerSaleAgreement>();
-        RegisterAMSService(getAID().getName(),"powerplant");
     }
 
     // Update bookkeeping.
     protected void TimeExpired (){
-        // Update how much electricity we are selling.
-        _current_production = 0;
-        Vector<PowerSaleAgreement> toRemove = new Vector<>();
-        for (PowerSaleAgreement agreement: _current_contracts) {
-            if (agreement.getEndTime() < _current_globals.getTime()) {
-                toRemove.add(agreement);
-            }
-        }
-        _current_contracts.removeAll(toRemove);
-        for (PowerSaleAgreement agreement: _current_contracts) {
-            if (agreement.getStartTime() <= _current_globals.getTime()) {
-                _current_production += agreement.getAmount(); //Update current production values.
-            }
-        }
+        updateContracts();
         LogVerbose(getName() + " is producing: " + _current_production);
     }
 
@@ -95,6 +81,24 @@ public class PowerPlantAgent extends BaseAgent {
 
     }
 
+    private void updateContracts() {
+        // Update how much electricity we are selling.
+        _current_production = 0;
+        Vector<PowerSaleAgreement> toRemove = new Vector<>();
+        for (PowerSaleAgreement agreement: _current_contracts) {
+            if (agreement.getEndTime() < _current_globals.getTime()) {
+                toRemove.add(agreement);
+            }
+        }
+        _current_contracts.removeAll(toRemove);
+        for (PowerSaleAgreement agreement: _current_contracts) {
+            if (agreement.getStartTime() <= _current_globals.getTime()) {
+                _current_production += agreement.getAmount(); //Update current production values.
+            }
+        }
+    }
+
+    // Someone buying from us.
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             // A request for a price on electricity
@@ -117,18 +121,37 @@ public class PowerPlantAgent extends BaseAgent {
             ACLMessage response = msg.createReply();
             response.setPerformative(ACLMessage.PROPOSE);
             addPowerSaleProposal(response, proposed);
+            response.setSender(getAID());
             send(response);
             LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
         }
     }
 
+    // Someone has rejected a quote
     private class QuoteRejectedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
-            // Don't care ATM
-            //TODO add a rect message
+            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement").match(msg)) {
+                // Someone is rejecting a contract, remove it.
+                PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
+                PowerSaleAgreement toRemove = null;
+                // Try and find agreement.
+                for (PowerSaleAgreement agg : _current_contracts) {
+                    if (agg.equalValues(agreement)) {
+                        toRemove = agg;
+                        break;
+                    }
+                }
+                if (toRemove != null) {
+                    _current_contracts.remove(toRemove);
+                }
+            }
+            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal").match(msg)) {
+                // TODO, send back a better quote maybe?
+            }
         }
     }
 
+    // Someone agreeing to buy electricity from us.
     private class QuoteAcceptedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
             // A quote we have previously made has been accepted.
@@ -143,7 +166,6 @@ public class PowerPlantAgent extends BaseAgent {
     }
 
     private void quoteNoLongerValid(ACLMessage msg) {
-        //TODO : Needs implementation
         sendRejectProposalMessage(msg);
     }
 
@@ -157,7 +179,9 @@ public class PowerPlantAgent extends BaseAgent {
             Name = name;
         }
         public String getName() { return Name; }
-        public double getCurrent_production() { return current_production; }
+        public String getType () { return TYPE; }
+        public double getCurrentProduction() { return current_production; }
         public double getCurrent_sell_price() { return current_sell_price; }
+        public int getgroup() { return GROUP_ID; }
     }
 }
