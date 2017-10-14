@@ -6,6 +6,7 @@ import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.PowerSaleProposal;
+import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
@@ -171,17 +172,27 @@ public class PowerPlantAgent extends BaseAgent {
 
     private class PowerPlantData implements Serializable{
         private String Name;
-        private double current_sell_price;
-        private double current_production;
+        private AgentData dat;
         public PowerPlantData(double sell_price, double production, String name) {
-            current_sell_price = sell_price;
-            current_production = production;
+            dat = new AgentData(sell_price, production, name);
             Name = name;
+
         }
-        public String getName() { return Name; }
-        public String getType () { return TYPE; }
-        public double getCurrentProduction() { return current_production; }
-        public double getCurrent_sell_price() { return current_sell_price; }
+        public String getid() { return Name; }
         public int getgroup() { return GROUP_ID; }
+        public AgentData getagent() { return dat; }
+        private class AgentData implements Serializable {
+            private String Name;
+            private double current_sell_price;
+            private double current_production;
+            AgentData (double sell_price, double production, String name) {
+                current_sell_price = sell_price;
+                current_production = production;
+                Name = name;
+            }
+            public double getCurrent_Production() { return current_production; }
+            public double getCurrent_Sell_Price() { return current_sell_price; }
+            public String getName () { return Name.split("@")[0];}
+        }
     }
 }

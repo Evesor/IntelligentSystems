@@ -290,7 +290,7 @@ public class ResellerAgent extends BaseAgent {
                 data = new AgentData(buy_price, sell_price,current_sales, current_purchases, name);
             }
             public int getgroup() { return GROUP_ID; }
-            public AgentData getagentdata() {return data; }
+            public AgentData getagent() {return data; }
             public String getid() {return Name;}
             private class AgentData implements Serializable{
                 private String Name;
@@ -305,12 +305,12 @@ public class ResellerAgent extends BaseAgent {
                     current_purchase_volume = current_purchases;
                     Name = name;
                 }
-                public String getname () { return Name.split("@")[0];}
-                public String gettype () { return TYPE; }
-                public double getcurrentSellPrice() { return current_sell_price; }
-                public double getCurrentBuyPrice() { return current_buy_price; }
-                public double getCurrentPurchaseVolume() { return current_purchase_volume; }
-                public double getCurrentSalesVolume() { return current_sales_volume; }
+                public String getName () { return Name.split("@")[0];}
+                public String getType () { return TYPE; }
+                public double getCurrent_Sell_Price() { return current_sell_price; }
+                public double getCurrent_Buy_Price() { return current_buy_price; }
+                public double getCurrent_Purchase_Volume() { return current_purchase_volume; }
+                public double getCurrent_Sales_Volume() { return current_sales_volume; }
         }
     }
 
