@@ -179,8 +179,8 @@ public class PowerPlantAgent extends BaseAgent {
             Name = name;
         }
         public String getName() { return Name; }
-        public String gettype () { return TYPE; }
-        public double getCurrent_production() { return current_production; }
+        public String getType () { return TYPE; }
+        public double getCurrentProduction() { return current_production; }
         public double getCurrent_sell_price() { return current_sell_price; }
         public int getgroup() { return GROUP_ID; }
     }

@@ -307,10 +307,10 @@ public class ResellerAgent extends BaseAgent {
                 }
                 public String getname () { return Name.split("@")[0];}
                 public String gettype () { return TYPE; }
-                public double getcurrentsell_price() { return current_sell_price; }
-                public double getcurrentbuy_price() { return current_buy_price; }
-                public double getcurrentpurchase_volume() { return current_purchase_volume; }
-                public double getcurrentsales_volume() { return current_sales_volume; }
+                public double getcurrentSellPrice() { return current_sell_price; }
+                public double getCurrentBuyPrice() { return current_buy_price; }
+                public double getCurrentPurchaseVolume() { return current_purchase_volume; }
+                public double getCurrentSalesVolume() { return current_sales_volume; }
         }
     }
 
