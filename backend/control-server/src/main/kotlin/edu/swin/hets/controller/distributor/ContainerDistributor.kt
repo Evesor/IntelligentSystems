@@ -19,7 +19,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.Serializable
 
-data class AgentDefinition(val name: String, val className: String, val arguments: String = "") : Serializable
+data class AgentDefinition(val name: String, val className: String, val arguments: String = "", val owner: String = "") : Serializable
 data class ContainerDefinition(val name: String, val agents: List<AgentDefinition>) : Serializable
 data class SystemDefinition(val containers: List<ContainerDefinition>) : Serializable
 
