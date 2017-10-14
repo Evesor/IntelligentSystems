@@ -53,6 +53,7 @@ public class WebAgent extends BaseAgent {
         output = output.substring(0, output.length()-1);
         output = output.concat("]}");
         LogVerbose(output);
+        messages.clear();
         clientWebSocketHandler.broadcast(output);
     }
 
@@ -68,7 +69,8 @@ public class WebAgent extends BaseAgent {
         public void Handler(ACLMessage msg) {
             //LogVerbose("Web agent just got: " + msg.getContent());
             if (msg.getSender().getName().contains("Reseller1@10.1.21.39:1099/JADE")
-                    || msg.getSender().getName().contains("Reseller2@10.1.21.39:1099/JADE")) {
+                    || msg.getSender().getName().contains("Reseller2@10.1.21.39:1099/JADE")
+                    || msg.getSender().getName().contains("PowerPlant")) {
                 messages.add(msg.getContent());
             }
             //clientWebSocketHandler.broadcast(msg.getContent());
