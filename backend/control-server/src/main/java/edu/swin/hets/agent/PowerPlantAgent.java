@@ -51,7 +51,7 @@ public class PowerPlantAgent extends BaseAgent {
     protected void setup() {
         super.setup();
         _current_production = 10;
-        _max_production = 300;
+        _max_production = 1000;
         _current_sell_price = 0.6;
         _current_contracts = new Vector<>();
         RegisterAMSService(getAID().getName(),"powerplant");
@@ -106,6 +106,7 @@ public class PowerPlantAgent extends BaseAgent {
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (proposed.getAmount() > (_max_production - _current_production)) {
                 // Cant sell that much electricity, don't bother putting a bit in.
+                LogVerbose(getName() + " was asked to sell electricity than it can make.");
                 return;
             }
             if (proposed.getCost() < 0) {
