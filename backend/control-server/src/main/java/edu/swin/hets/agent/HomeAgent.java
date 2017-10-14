@@ -13,6 +13,7 @@ import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
 import java.lang.*;
+import java.util.UUID;
 import java.util.Vector;
 
 public class HomeAgent extends BaseAgent
@@ -115,6 +116,8 @@ public class HomeAgent extends BaseAgent
 			//store in electricityUsage
 			electricityUsage[_current_globals.getTime()][applianceID] = value;
 			LogDebug("current = " + value);
+
+
 		}
 	}
 
