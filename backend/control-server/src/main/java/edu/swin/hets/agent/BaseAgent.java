@@ -97,7 +97,7 @@ public abstract class BaseAgent extends Agent{
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
-                ACLMessage msg = receive();
+                ACLMessage msg = blockingReceive();
                 if (msg != null) {
                     boolean message_handled = false;
                     Iterator keys = _msg_handlers.keySet().iterator();
@@ -113,7 +113,7 @@ public abstract class BaseAgent extends Agent{
                         sendNotUndersood(msg, "no handlers found for " + msg.getPerformative());
                     }
                 }
-                block();
+                //block();
             }
         });
     }
@@ -127,6 +127,7 @@ public abstract class BaseAgent extends Agent{
                         SendAgentDetailsToServer(getJSON());
                         TimeExpired();
                     } else {
+                        //System.out.println("________________________________________" + getLocalName() + " " + _current_globals.getTimeLeft());
                         TimePush(_current_globals.getTimeLeft() * 1000);
                     }
                     _current_globals = newGlobals;

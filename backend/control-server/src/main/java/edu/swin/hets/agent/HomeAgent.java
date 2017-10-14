@@ -197,7 +197,7 @@ public class HomeAgent extends BaseAgent
 	//TODO energySaverMode function
 	private void energySaverMode()
 	{
-		LogVerbose("initiating energy saver mode");
+		LogVerbose("initiating energy saver mode, " + _current_globals.getTimeLeft());
 		turn("lamp1",true);
 		//turn("heater",false);
 		//turn("fridge",true);
@@ -212,6 +212,7 @@ public class HomeAgent extends BaseAgent
 			{this.on[getApplianceID(name)] = false;
 			msg.setContent("off");}
 		msg.addReceiver(new AID(name,AID.ISLOCALNAME));
+		msg.setSender(getAID());
 		send(msg);
 	}
 
