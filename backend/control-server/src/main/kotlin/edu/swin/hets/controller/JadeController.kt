@@ -41,7 +41,6 @@ class JadeController(private val runtime: Runtime,
         mainContainer = runtime.createMainContainer(profile).apply {
             createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
             createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
-            createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf()).start()
         }
         JadeGateway.init(null,
                 Properties().apply {
@@ -50,8 +49,9 @@ class JadeController(private val runtime: Runtime,
                     setProperty(Profile.MAIN_PORT, "1099")
                 })
 
-        Thread.sleep(1000)
         containerDistributor.start()
+        Thread.sleep(1000)
+        mainContainer?.createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf())?.start()
     }
 
     fun stop() {

@@ -1,9 +1,5 @@
 package edu.swin.hets.agent;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hierynomus.msdtyp.ACL;
-import com.xebialabs.overthere.winrm.soap.KeyValuePair;
 import edu.swin.hets.helper.*;
 import jade.core.AID;
 import jade.core.Agent;
@@ -19,7 +15,6 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.*;
 /******************************************************************************
  *  Use: An abstract base agent class used to provide all of the default global
@@ -104,7 +99,7 @@ public abstract class BaseAgent extends Agent{
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
-                ACLMessage msg = receive();
+                ACLMessage msg = blockingReceive();
                 _messages_this_timeslice.add(msg);
                 if (msg != null) {
                     boolean message_handled = false;
@@ -121,7 +116,6 @@ public abstract class BaseAgent extends Agent{
                         sendNotUndersood(msg, "no handlers found for " + msg.getPerformative());
                     }
                 }
-                block();
             }
         });
     }
@@ -133,9 +127,12 @@ public abstract class BaseAgent extends Agent{
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
                         TimeExpired();
-                        SendAgentDetailsToServer(getJSON() +
-                                new MessageHistory(_messages_this_timeslice, getName()).getMessages());
+                        String deets = getJSON();
+                        String msgs = new MessageHistory(_messages_this_timeslice, getName()).getMessages();
+                        SendAgentDetailsToServer(deets.substring(0, deets.length() - 1) + ',' +
+                                msgs.substring(1, msgs.length()));
                     } else {
+                        //System.out.println("________________________________________" + getLocalName() + " " + _current_globals.getTimeLeft());
                         TimePush(_current_globals.getTimeLeft() * 1000);
                     }
                     _current_globals = newGlobals;
