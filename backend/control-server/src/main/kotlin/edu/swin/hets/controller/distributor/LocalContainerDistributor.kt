@@ -22,20 +22,20 @@ class LocalContainerDistributor(
     override fun start() {
         logger.info("Starting up secondary containers...")
         systemDefinition.containers.forEach {
-            val containerController = runtime.createAgentContainer(ProfileImpl().apply {
+            val containerController: ContainerController = runtime.createAgentContainer(ProfileImpl().apply {
                 setParameter(Profile.CONTAINER_NAME, it.name)
             })
 
-            startUpAgents(containerController, it.agents)
+            startUpAgents(containerController, it)
         }
     }
 
-    private fun startUpAgents(containerController: ContainerController, agentDefinition: List<AgentDefinition>) {
-        val applianceAgents = agentDefinition.filter {
+    fun startUpAgents(containerController: ContainerController, containerDefinition: ContainerDefinition) {
+        val applianceAgents = containerDefinition.agents.filter {
             ApplianceAgent::class.java.isAssignableFrom(Class.forName(it.className))
         }
 
-        val homeAgents = agentDefinition.filter {
+        val homeAgents = containerDefinition.agents.filter {
             HomeAgent::class.java.isAssignableFrom(Class.forName(it.className))
         }
         //<Home, Appliance>
@@ -61,7 +61,7 @@ class LocalContainerDistributor(
             homeAgentMap.computeIfAbsent(appliance.owner, { listOf(appliance.name) })
         }
 
-        agentDefinition.forEach { (name, className, arguments) ->
+        containerDefinition.agents.forEach { (name, className, arguments) ->
             val argumentList = arguments.split(",").toList()
             val argumentMap: MutableMap<String, Any> = mutableMapOf()
             val ownerList: MutableList<String> = mutableListOf()
