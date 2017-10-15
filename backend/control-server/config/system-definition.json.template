@@ -12,11 +12,13 @@
     "name" : "Appliance Container",
     "agents" : [ {
       "name" : "Appliance1",
-      "className" : "edu.swin.hets.agent.ApplianceAgent"
+      "className" : "edu.swin.hets.agent.ApplianceAgent",
+      "owner" : "Home1"
     }, {
       "name" : "Appliance2",
       "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "asd,asda,sda,hhjh"
+      "arguments" : "asd,asda,sda,hhjh",
+      "owner" : "Home2"
     } ]
   }, {
     "name" : "Home Container",

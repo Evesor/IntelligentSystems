@@ -40,15 +40,18 @@ class LocalContainerDistributor(
                 }
 
         // Ensure all agents have an owner defined
-        if (applianceAgents.any { it.owner.isBlank() }) {
-            throw IllegalStateException("All appliance agents should have an owner!")
+        applianceAgents.forEach {
+            if (it.owner.isBlank()){
+                logger.error("${it.name} has no owner!")
+                throw IllegalStateException("All appliance agents should have an owner")
+            }
         }
 
-        // Ensure that all agents have a valid owner
-        if (applianceAgents.any { appliance ->
-            homeAgents.none { (name) -> appliance.owner == name }
-        }) {
-            throw IllegalStateException("Appliance owner can't be found!")
+        applianceAgents.forEach { appliance ->
+            if (homeAgents.none {(name) -> appliance.owner == name} ) {
+                logger.error("${appliance.name} does not have a valid owner!")
+                throw IllegalStateException("Appliance owner can't be found")
+            }
         }
 
         //<Home, Appliance>
@@ -72,7 +75,7 @@ class LocalContainerDistributor(
                 if (className == HomeAgent::class.java.name) {
                     ownerList.addAll(ArrayList(homeAgentMap[name]))
                 }
-                argumentMap.put("Appliances", ownerList)
+                argumentMap.put(HomeAgent.APPLIANCE_LIST_MAP_KEY, ownerList)
 
                 containerController.createNewAgent(
                         name,

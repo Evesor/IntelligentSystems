@@ -17,6 +17,7 @@ import java.util.Vector;
 
 public class HomeAgent extends BaseAgent
 {
+	public static String APPLIANCE_LIST_MAP_KEY = "HOME_AGENT_APPLIANCE_LIST";
 	//number of appliances
 	private int n;
 	//TODO use vector
@@ -59,6 +60,11 @@ public class HomeAgent extends BaseAgent
 	private void init()
 	{
 		Object[] args = getArguments();
+		// The following commented code is an example of how to grab the list of appliances that this home agent owns.
+		//
+		//java.util.Map<String, Object> map = (java.util.Map<String, Object>) args[1];
+		//java.util.List<String> appliances = (java.util.List<String>) map.get(APPLIANCE_LIST_MAP_KEY);
+		//appliances.forEach(x -> System.out.println(getName() + ": " + x));
 		n = args.length;
 		applianceName = new String[n];
 		watt = new int[n];
