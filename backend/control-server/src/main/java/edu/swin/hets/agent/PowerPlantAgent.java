@@ -6,6 +6,7 @@ import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.PowerSaleProposal;
+import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
@@ -50,7 +51,7 @@ public class PowerPlantAgent extends BaseAgent {
     protected void setup() {
         super.setup();
         _current_production = 10;
-        _max_production = 300;
+        _max_production = 1000;
         _current_sell_price = 0.6;
         _current_contracts = new Vector<>();
         RegisterAMSService(getAID().getName(),"powerplant");
@@ -105,6 +106,7 @@ public class PowerPlantAgent extends BaseAgent {
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (proposed.getAmount() > (_max_production - _current_production)) {
                 // Cant sell that much electricity, don't bother putting a bit in.
+                LogVerbose(getName() + " was asked to sell electricity than it can make.");
                 return;
             }
             if (proposed.getCost() < 0) {
@@ -171,17 +173,27 @@ public class PowerPlantAgent extends BaseAgent {
 
     private class PowerPlantData implements Serializable{
         private String Name;
-        private double current_sell_price;
-        private double current_production;
+        private AgentData dat;
         public PowerPlantData(double sell_price, double production, String name) {
-            current_sell_price = sell_price;
-            current_production = production;
+            dat = new AgentData(sell_price, production, name);
             Name = name;
+
         }
-        public String getName() { return Name; }
-        public String gettype () { return TYPE; }
-        public double getCurrent_production() { return current_production; }
-        public double getCurrent_sell_price() { return current_sell_price; }
+        public String getid() { return Name; }
         public int getgroup() { return GROUP_ID; }
+        public AgentData getagent() { return dat; }
+        private class AgentData implements Serializable {
+            private String Name;
+            private double current_sell_price;
+            private double current_production;
+            AgentData (double sell_price, double production, String name) {
+                current_sell_price = sell_price;
+                current_production = production;
+                Name = name;
+            }
+            public double getCurrent_Production() { return current_production; }
+            public double getCurrent_Sell_Price() { return current_sell_price; }
+            public String getName () { return Name.split("@")[0];}
+        }
     }
 }

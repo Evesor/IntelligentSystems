@@ -2,15 +2,15 @@ package edu.swin.hets.agent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hierynomus.msdtyp.ACL;
 import edu.swin.hets.helper.*;
 import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Vector;
+import java.util.*;
+
 /******************************************************************************
  *  Use: A simple example of a reseller agent class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -43,6 +43,7 @@ import java.util.Vector;
 public class ResellerAgent extends BaseAgent {
     private static final int GROUP_ID = 2;
     private static final String TYPE = "Reseller Agent";
+    private double _money;
     private double _current_sell_price;
     private double _current_by_price;
     private double _min_purchase_amount;
@@ -75,6 +76,7 @@ public class ResellerAgent extends BaseAgent {
         _current_sell_price = 1.0;
         _min_purchase_amount = 100;
         _next_required_amount = 200; //TODO let home users set demand.
+        _money = 500;
         _current_buy_agrements = new Vector<PowerSaleAgreement>();
         _current_sell_agrements = new Vector<PowerSaleAgreement>();
         _customerDB = new HashMap<>();
@@ -88,7 +90,6 @@ public class ResellerAgent extends BaseAgent {
     }
 
     protected String getJSON() {
-        LogDebug(getName() + " is making json");
         String json = "test";
         try {
             json = new ObjectMapper().writeValueAsString(
@@ -103,11 +104,24 @@ public class ResellerAgent extends BaseAgent {
 
     // We are in a new time-slice, update bookeeping.
     protected void TimeExpired() {
+        balanceBooks();
         updateContracts();
         // We now know how much we have bought and how much we need to buy
         // Start making CFP's to get electricity we need.
         if (_next_required_amount > _next_purchased_amount) {
             sendBuyCFP();
+        }
+    }
+
+    private void balanceBooks() {
+        for (PowerSaleAgreement agg : _current_buy_agrements) {
+            _money +=  agg.getAmount() * agg.getCost();
+        }
+        for (PowerSaleAgreement agg : _current_sell_agrements) {
+            _money -=  agg.getAmount() * agg.getCost();
+        }
+        if (_money < 0) {
+            LogError(getName() + " has gone bankrupt!");
         }
     }
 
@@ -135,12 +149,18 @@ public class ResellerAgent extends BaseAgent {
         for (PowerSaleAgreement agreement: _current_sell_agrements) {
             _next_required_amount += agreement.getAmount();
         }
+        //TODO Remove later, for now just make random demand
+        _next_required_amount = new Random().nextInt(300) + 100;
+        if (_next_required_amount < _min_purchase_amount) {
+            _next_required_amount = _min_purchase_amount;
+        }
     }
 
     // Time is expiring, make sure we have purchased enough electricity
     protected void TimePush(int ms_left) {
         if (_next_required_amount > _next_purchased_amount ) {
-            LogVerbose(getName() + " requires: " + _next_required_amount + " purchased: " + _next_purchased_amount);
+            LogVerbose(getName() + " requires: " + _next_required_amount + " purchased: " +
+                    _next_purchased_amount  + " has " + _money + " dollars");
             sendBuyCFP(); // We need to buy more electricity
         }
         // We have enough electricity do nothing.
@@ -149,10 +169,12 @@ public class ResellerAgent extends BaseAgent {
     // We want to to buy electricity
     private void sendBuyCFP() {
         ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+        cfp.setConversationId(UUID.randomUUID().toString());
         DFAgentDescription[] powerplants = getService("powerplant");
         for (DFAgentDescription powerplant : powerplants) {
             cfp.addReceiver(powerplant.getName()); //CFP to each power plant
         }
+        LogDebug(getName() + " is sending cfp for: " + (_next_required_amount - _next_purchased_amount) );
         //TODO make more complicated logic.
         PowerSaleProposal prop = new PowerSaleProposal(
                 _next_required_amount - _next_purchased_amount,1, getAID(), false);
@@ -165,22 +187,26 @@ public class ResellerAgent extends BaseAgent {
     // Someone is offering to sell us electricity
     private class ProposalHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            PowerSaleProposal proposed = getPowerSalePorposal(msg);
-            if (proposed.getCost() <= _current_by_price ) {
-                // Accept
-                LogVerbose(getName() + " agreed to buy " + proposed.getAmount() + " electricity for " +
-                        proposed.getDuration() + " time slots from " + proposed.getSellerAID().getName());
-                PowerSaleAgreement contract = new PowerSaleAgreement(proposed, _current_globals.getTime());
-                _current_buy_agrements.add(contract);
-                updateContracts();
-                ACLMessage acceptMsg = msg.createReply();
-                acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                addPowerSaleAgreement(acceptMsg, contract);
-                acceptMsg.setSender(getAID());
-                send(acceptMsg);
-            } else {
-                // To expensive
-                sendRejectProposalMessage(msg);
+
+            if (_next_required_amount > _next_purchased_amount){
+                PowerSaleProposal proposed = getPowerSalePorposal(msg);
+                if (proposed.getCost() <= _current_by_price ) {
+                    // Accept
+                    LogVerbose(getName() + " agreed to buy " + proposed.getAmount() + " electricity for " +
+                            proposed.getDuration() + " time slots from " + proposed.getSellerAID().getName());
+                    PowerSaleAgreement contract = new PowerSaleAgreement(proposed, _current_globals.getTime());
+                    _current_buy_agrements.add(contract);
+                    updateContracts();
+                    LogDebug(getName() + " has purchased: " + _next_purchased_amount + " and needs: " + _next_required_amount);
+                    ACLMessage acceptMsg = msg.createReply();
+                    acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                    addPowerSaleAgreement(acceptMsg, contract);
+                    acceptMsg.setSender(getAID());
+                    send(acceptMsg);
+                } else {
+                    // To expensive
+                    sendRejectProposalMessage(msg);
+                }
             }
         }
     }
@@ -282,49 +308,65 @@ public class ResellerAgent extends BaseAgent {
      *  Use: Used by getJson to output data to server.
      *****************************************************************************/
     private class ResellerAgentData implements Serializable {
-        private String Name;
-        private double current_sell_price;
-        private double current_buy_price;
-        private double current_sales_volume;
-        private double current_purchase_volume;
-        private Integer groupNumber = 2;
-        ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases, String name) {
-            current_sell_price = sell_price;
-            current_buy_price = buy_price;
-            current_sales_volume = current_sales;
-            current_purchase_volume = current_purchases;
-            Name = name;
+            private AgentData data;
+            private String Name;
+            ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases, String name) {
+                Name = name;
+                data = new AgentData(buy_price, sell_price,current_sales, current_purchases, name);
+            }
+            public int getgroup() { return GROUP_ID; }
+            public AgentData getagent() {return data; }
+            public String getid() {return Name;}
+            private class AgentData implements Serializable{
+                private String Name;
+                private double current_sell_price;
+                private double current_buy_price;
+                private double current_sales_volume;
+                private double current_purchase_volume;
+                AgentData (double buy_price, double sell_price, double current_sales, double current_purchases, String name){
+                    current_sell_price = sell_price;
+                    current_buy_price = buy_price;
+                    current_sales_volume = current_sales;
+                    current_purchase_volume = current_purchases;
+                    Name = name;
+                }
+                public String getName () { return Name.split("@")[0];}
+                public String getType () { return TYPE; }
+                public double getCurrent_Sell_Price() { return current_sell_price; }
+                public double getCurrent_Buy_Price() { return current_buy_price; }
+                public double getCurrent_Purchase_Volume() { return current_purchase_volume; }
+                public double getCurrent_Sales_Volume() { return current_sales_volume; }
         }
-        public String getName() { return Name; }
-        public String gettype () { return TYPE; }
-        public double getCurrent_sell_price() { return current_sell_price; }
-        public double getCurrent_buy_price() { return current_buy_price; }
-        public double getCurrent_purchase_volume() { return current_purchase_volume; }
-        public double getCurrent_sales_volume() { return current_sales_volume; }
-        public int getgroup() { return GROUP_ID; }
     }
-
     /******************************************************************************
      *  Use: An object that is used to deal with the logic of negotiating with a
      *       potential customer or supplier.
      *****************************************************************************/
     private class NegotiationChain {
-        private ArrayList<PowerSaleAgreement> _previosAgrements;
-        private double _base;
+        private ArrayList<ACLMessage> _messageChain;
+        private ArrayList<PowerSaleAgreement> _previosAgreements;
+        private double _basePrice;
         private double _aggressiveness;
         private double _time_imperitive;
         private double _wastage_tolorance;
 
-        NegotiationChain() {
-
+        NegotiationChain(ArrayList<PowerSaleAgreement> prev_ag, double base_price, double aggressiveness ,
+                         double timeImperative, double wastageTol, ACLMessage firstMessage) {
+            _previosAgreements = prev_ag;
+            _basePrice = base_price;
+            _aggressiveness = aggressiveness;
+            _time_imperitive = timeImperative;
+            _wastage_tolorance = wastageTol;
+            _messageChain = new ArrayList<ACLMessage>();
+            _messageChain.add(firstMessage);
         }
+        public void addResponse (ACLMessage msg) { _messageChain.add(msg); }
+        public String getConversationID () { return (_messageChain.get(0).getConversationId());  }
 
-        public void addResponse (ACLMessage msg) {
+        public PowerSaleProposal makeCounterProposal () {
 
-        }
 
-        public void getConversationID () {
-
+            return null;
         }
 
     }
