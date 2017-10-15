@@ -21,26 +21,23 @@ class LocalContainerDistributor(
 
     override fun start() {
         logger.info("Starting up secondary containers...")
-        systemDefinition.containers.forEach {
-            val containerController: ContainerController = runtime.createAgentContainer(ProfileImpl().apply {
-                setParameter(Profile.CONTAINER_NAME, it.name)
-            })
 
-            startUpAgents(containerController, it)
-        }
+        startUpAgents(systemDefinition)
     }
 
-    fun startUpAgents(containerController: ContainerController, containerDefinition: ContainerDefinition) {
-        val applianceAgents = containerDefinition.agents.filter {
-            ApplianceAgent::class.java.isAssignableFrom(Class.forName(it.className))
-        }
+    fun startUpAgents(systemDefinition: SystemDefinition) {
+        val applianceAgents = systemDefinition.containers
+                .flatMap { it.agents }
+                .filter {
+                    ApplianceAgent::class.java.isAssignableFrom(Class.forName(it.className))
+                }
 
-        val homeAgents = containerDefinition.agents.filter {
-            HomeAgent::class.java.isAssignableFrom(Class.forName(it.className))
-        }
-        //<Home, Appliance>
-        val homeAgentMap = mutableMapOf<String, List<String>>()
 
+        val homeAgents = systemDefinition.containers
+                .flatMap { it.agents }
+                .filter {
+                    HomeAgent::class.java.isAssignableFrom(Class.forName(it.className))
+                }
 
         // Ensure all agents have an owner defined
         if (applianceAgents.any { it.owner.isBlank() }) {
@@ -48,34 +45,45 @@ class LocalContainerDistributor(
         }
 
         // Ensure that all agents have a valid owner
-        if (applianceAgents.any { (name) ->
-            homeAgents.none { name == it.name }
+        if (applianceAgents.any { appliance ->
+            homeAgents.none { (name) -> appliance.owner == name }
         }) {
             throw IllegalStateException("Appliance owner can't be found!")
         }
 
-        while (!(applianceAgents as Stack).empty()) {
-            val appliance = applianceAgents.pop()
+        //<Home, Appliance>
+        val homeAgentMap = mutableMapOf<String, List<String>>()
 
+        applianceAgents.forEach { appliance ->
             homeAgentMap.computeIfPresent(appliance.owner, { _, value -> value.plus(appliance.name) })
             homeAgentMap.computeIfAbsent(appliance.owner, { listOf(appliance.name) })
         }
 
-        containerDefinition.agents.forEach { (name, className, arguments) ->
-            val argumentList = arguments.split(",").toList()
-            val argumentMap: MutableMap<String, Any> = mutableMapOf()
-            val ownerList: MutableList<String> = mutableListOf()
+        systemDefinition.containers.forEach { (name, agents) ->
+            val containerController: ContainerController = runtime.createAgentContainer(ProfileImpl().apply {
+                setParameter(Profile.CONTAINER_NAME, name)
+            })
 
-            if (className == HomeAgent::class.java.name) {
-                ownerList.addAll(homeAgentMap[name] as ArrayList)
+            agents.forEach { (name, className, arguments) ->
+                val argumentList = arguments.split(",").toList()
+                val argumentMap: MutableMap<String, Any> = mutableMapOf()
+                val ownerList: MutableList<String> = mutableListOf()
+
+                if (className == HomeAgent::class.java.name) {
+                    ownerList.addAll(ArrayList(homeAgentMap[name]))
+                }
+                argumentMap.put("Appliances", ownerList)
+
+                containerController.createNewAgent(
+                        name,
+                        className,
+                        arrayOf(argumentList, argumentMap)
+                ).start()
             }
-            argumentMap.put("Appliances", ownerList)
+        }
 
-            containerController.createNewAgent(
-                    name,
-                    className,
-                    arrayOf(argumentList, argumentMap)
-            ).start()
+        fun startAgent(containerController: ContainerController, agentDefinition: AgentDefinition) {
+
         }
     }
 }
