@@ -8,6 +8,8 @@ import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
+import java.util.List;
+
 public class ApplianceAgent extends BaseAgent
 {
 	boolean on;
@@ -48,7 +50,10 @@ public class ApplianceAgent extends BaseAgent
 			forecast[i] = 0;
 		}
 		Object[] args = getArguments();
-		watt = Integer.parseInt(args[0].toString());
+		//watt = Integer.parseInt(args[0].toString());
+		List<String> argument = (List<String>) args[0];
+		watt = Integer.parseInt(argument.get(0));
+
 		updateForecastUsage();
 	}
 

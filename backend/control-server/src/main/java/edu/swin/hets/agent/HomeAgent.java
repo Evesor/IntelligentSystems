@@ -13,8 +13,7 @@ import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
 import java.lang.*;
-import java.util.UUID;
-import java.util.Vector;
+import java.util.*;
 
 public class HomeAgent extends BaseAgent
 {
@@ -25,15 +24,19 @@ public class HomeAgent extends BaseAgent
 	//electricity usage for each time slice for each appliances, should be vector for scalability
 	private int[][] electricityUsage;
 	//electricity forecast for next time slice for each appliance, should be vector for scalability
-	private int[][] electricityForecast;
+	//private int[][] electricityForecast;
+	private Map<String,Integer> electricityForecast;
 	//appliances watt
-	private int[] watt;
+	//private int[] watt;
+	private Map<String, Integer> watt;
 	//list of appliance agent name, should be vector
-	private String[] applianceName;
+	//private String[] applianceName;
+	private List<String> applianceName;
 	//max watt threshold of a house
 	private int maxWatt;
 	//current state of all appliance
-	private boolean[] on;
+	//private boolean[] on;
+	private Map<String, Boolean> on;
 	private int energySaverWatt;
 	private double _next_purchased_amount;
 	private Vector<PowerSaleAgreement> _current_buy_agreements;
@@ -67,18 +70,28 @@ public class HomeAgent extends BaseAgent
 		//java.util.List<String> appliances = (java.util.List<String>) map.get(APPLIANCE_LIST_MAP_KEY);
 		//appliances.forEach(x -> System.out.println(getName() + ": " + x));
 		n = args.length;
-		applianceName = new String[n];
-		watt = new int[n];
-		on = new boolean[n];
-		for(int i = 0; i < args.length; i++)
-		{
-			applianceName[i] =  args[i].toString();
-			watt[i] = 10;//TODO get watt from appliance agent
-			on[i] = false;
-			LogVerbose(args[i] + " has been added to " + getLocalName());
-		}
-		electricityUsage = new int[24][n];
-		electricityForecast = new int[24][n];
+		//applianceName = new String[n];
+
+		java.util.Map<String, Object> map = (java.util.Map<String, Object>) args[1];
+		applianceName = (java.util.List<String>) map.get(APPLIANCE_LIST_MAP_KEY);
+
+		//watt = new int[n];
+		on = new HashMap<String, Boolean>();
+		applianceName.forEach((appliance) -> {
+			on.put(appliance, false);
+			watt.put(appliance,10);
+			electricityForecast.put(appliance,0);
+		});
+//		on = new boolean[n];
+//		for(int i = 0; i < args.length; i++)
+//		{
+//			//applianceName[i] =  args[i].toString();
+//			watt[i] = 10;//TODO get watt from appliance agent
+//			//on[i] = false;
+//			LogVerbose(args[i] + " has been added to " + getLocalName());
+//		}
+		//electricityUsage = new int[24][n];
+		//electricityForecast = new int[24][n];
 		maxWatt = 10000;
 		energySaverWatt = 10;//TODO calculate energySaverWatt
 		_current_buy_agreements = new Vector<PowerSaleAgreement>();
@@ -87,15 +100,15 @@ public class HomeAgent extends BaseAgent
 		LogDebug(getLocalName() + " init is complete!");
 	}
 	
-	private int getApplianceID(String name)
-	{
-		int i;
-		for(i=0;i<n;i++)
-		{
-			if(name.equals(applianceName[i])){return i;}
-		}
-		return -1;
-	}
+//	private int getApplianceID(String name)
+//	{
+//		int i;
+//		for(i=0;i<n;i++)
+//		{
+//			if(name.equals(applianceName[i])){return i;}
+//		}
+//		return -1;
+//	}
 	
 	@Override
 	protected void setup()
@@ -103,7 +116,7 @@ public class HomeAgent extends BaseAgent
 		super.setup();
 		init();
 		addBehaviour(new welcomeMessage());
-		addMessageHandler(electricityCurrentMT, new HomeAgent.CurrentHandler());
+		//addMessageHandler(electricityCurrentMT, new HomeAgent.CurrentHandler());
 		addMessageHandler(electricityForecastMT, new HomeAgent.ForecastHandler());
 		addMessageHandler(electricityRequestMT, new HomeAgent.electricityRequestHandler());
 		addMessageHandler(PropMessageTemplate, new ProposalHandler());
@@ -112,20 +125,19 @@ public class HomeAgent extends BaseAgent
 	}
 
 	//example message : ACLMessage.INFORM,"electricity current,10"
-	private class CurrentHandler implements IMessageHandler
-	{
-		public void Handler(ACLMessage msg)
-		{
-			String senderName = msg.getSender().getLocalName();
-			int applianceID = getApplianceID(senderName);
-			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-			//store in electricityUsage
-			electricityUsage[_current_globals.getTime()][applianceID] = value;
-			LogDebug("current = " + value);
-
-
-		}
-	}
+//	private class CurrentHandler implements IMessageHandler
+//	{
+//		public void Handler(ACLMessage msg)
+//		{
+//			String senderName = msg.getSender().getLocalName();
+//			int applianceID = getApplianceID(senderName);
+//
+//			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
+//			//store in electricityUsage
+//			//electricityUsage[_current_globals.getTime()][applianceID] = value;
+//			LogDebug("current = " + value);
+//		}
+//	}
 
 	//example message : ACLMessage.INFORM,"electricity forecast,10"
 	private class ForecastHandler implements IMessageHandler
@@ -133,10 +145,10 @@ public class HomeAgent extends BaseAgent
 		public void Handler(ACLMessage msg)
 		{
 			String senderName = msg.getSender().getLocalName();
-			int applianceID = getApplianceID(senderName);
+			//int applianceID = getApplianceID(senderName);
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
 			//store in electricityUsage
-			electricityForecast[_current_globals.getTime()][applianceID] = value;
+			electricityForecast.put(senderName,value);
 			LogDebug("forecast = " + forecast(1));
 		}
 	}
@@ -154,7 +166,8 @@ public class HomeAgent extends BaseAgent
 				{approve = false;}
 			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
 			if(approve == true)
-				{on[getApplianceID(msg.getSender().getLocalName())] = true;
+				{//on[getApplianceID(msg.getSender().getLocalName())] = true;
+				on.put(msg.getSender().getLocalName(),true);
 				reply.setContent("electricity,1");}
 			else{reply.setContent("electricity,0");}
 			reply.addReceiver(new AID(msg.getSender().getLocalName(), AID.ISLOCALNAME));
@@ -168,12 +181,10 @@ public class HomeAgent extends BaseAgent
 	//sum of every on appliance watt
 	private int sumWatt()
 	{
-		int sum = 0;
-		int i;
-		for(i=0;i<n;i++)
-			{if(on[i]==true)
-				{sum += watt[i];}}
-		return sum;
+		return applianceName.stream()
+			.filter((appliance) -> on.get(appliance))
+			.mapToInt((appliance) -> watt.get(appliance))
+			.sum();
 	}
 	
 	private class welcomeMessage extends OneShotBehaviour
@@ -196,7 +207,14 @@ public class HomeAgent extends BaseAgent
 		int result=0;
 		int i;
 		//sum every appliance forecast
-		for(i=0;i<n;i++){result += electricityForecast[_current_globals.getTime()][i];}
+		//for(i=0;i<n;i++){result += electricityForecast[_current_globals.getTime()][i];}
+
+
+
+		result =  applianceName.stream()
+			.mapToInt((appliance) -> watt.get(appliance))
+			.sum();
+
 		result *= x;
 		return result;
 	}
@@ -218,7 +236,12 @@ public class HomeAgent extends BaseAgent
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 		if(on==true){msg.setContent("on");}
 		else if(on==false)
-			{this.on[getApplianceID(name)] = false;
+			{
+			//this.on[getApplianceID(name)] = false;
+
+			this.on.put(name,false);
+
+
 			msg.setContent("off");}
 		msg.addReceiver(new AID(name,AID.ISLOCALNAME));
 		msg.setSender(getAID());
@@ -265,7 +288,12 @@ public class HomeAgent extends BaseAgent
 			else
 			{
 				int i;
-				for(i=0;i<n;i++){turn(applianceName[i],false);}
+				//for(i=0;i<n;i++){turn(applianceName[i],false);}
+
+				applianceName.forEach((appliance) -> {
+					turn(appliance,false);
+				});
+
 			}
 		}
 		else
