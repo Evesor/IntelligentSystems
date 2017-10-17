@@ -5,12 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import edu.swin.hets.helper.PowerSaleAgreement;
-import edu.swin.hets.helper.PowerSaleProposal;
-import jade.core.Agent;
+import edu.swin.hets.helper.PowerSaleProposal;;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
-import java.util.Vector;
+import java.util.ArrayList;
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -32,10 +31,12 @@ import java.util.Vector;
 public class PowerPlantAgent extends BaseAgent {
     private static final int GROUP_ID = 1;
     private static String TYPE = "Power Plant";
+    private double _money;
+    private double _costOfProduction;
     private double _current_sell_price;
     private double _max_production;
     private double _current_production;
-    private Vector<PowerSaleAgreement> _current_contracts;
+    private ArrayList<PowerSaleAgreement> _current_contracts;
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
@@ -50,10 +51,12 @@ public class PowerPlantAgent extends BaseAgent {
     @Override
     protected void setup() {
         super.setup();
+        _money = 500;
         _current_production = 10;
         _max_production = 1000;
-        _current_sell_price = 0.6;
-        _current_contracts = new Vector<>();
+        _costOfProduction = 0.5;
+        _current_sell_price = 0.8;
+        _current_contracts = new ArrayList<>();
         RegisterAMSService(getAID().getName(),"powerplant");
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
@@ -63,6 +66,7 @@ public class PowerPlantAgent extends BaseAgent {
     // Update bookkeeping.
     protected void TimeExpired (){
         updateContracts();
+        balanceBooks();
         LogVerbose(getName() + " is producing: " + _current_production);
     }
 
@@ -82,21 +86,20 @@ public class PowerPlantAgent extends BaseAgent {
 
     }
 
+    private void balanceBooks () {
+        _current_contracts.forEach((agg) -> _money += agg.getCost() * agg.getAmount());
+        _current_contracts.forEach((agg) -> _money -= agg.getAmount() * _costOfProduction);
+    }
+
     private void updateContracts() {
-        // Update how much electricity we are selling.
         _current_production = 0;
-        Vector<PowerSaleAgreement> toRemove = new Vector<>();
-        for (PowerSaleAgreement agreement: _current_contracts) {
-            if (agreement.getEndTime() < _current_globals.getTime()) {
-                toRemove.add(agreement);
-            }
-        }
+        ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
+        // Filter out old contracts
+        _current_contracts.stream().filter(
+                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
         _current_contracts.removeAll(toRemove);
-        for (PowerSaleAgreement agreement: _current_contracts) {
-            if (agreement.getStartTime() <= _current_globals.getTime()) {
-                _current_production += agreement.getAmount(); //Update current production values.
-            }
-        }
+        // Update how much we now need to produce.
+        _current_contracts.forEach((agg) -> _current_production += agg.getAmount());
     }
 
     // Someone buying from us.
@@ -132,22 +135,14 @@ public class PowerPlantAgent extends BaseAgent {
     // Someone has rejected a quote
     private class QuoteRejectedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
-            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement").match(msg)) {
+            if (GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()).match(msg)) {
                 // Someone is rejecting a contract, remove it.
                 PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
-                PowerSaleAgreement toRemove = null;
-                // Try and find agreement.
-                for (PowerSaleAgreement agg : _current_contracts) {
-                    if (agg.equalValues(agreement)) {
-                        toRemove = agg;
-                        break;
-                    }
-                }
-                if (toRemove != null) {
-                    _current_contracts.remove(toRemove);
-                }
+                ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
+                _current_contracts.stream().filter((agg) -> agg.equalValues(agreement)).forEach(toRemove::add);
+                _current_contracts.removeAll(toRemove);
             }
-            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal").match(msg)) {
+            if (GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()).match(msg)) {
                 // TODO, send back a better quote maybe?
             }
         }
@@ -163,6 +158,7 @@ public class PowerPlantAgent extends BaseAgent {
                 quoteNoLongerValid(msg);
                 return;
             }
+            LogDebug(getName() + " has made a deal");
             _current_contracts.add(agreement);
         }
     }
@@ -170,11 +166,13 @@ public class PowerPlantAgent extends BaseAgent {
     private void quoteNoLongerValid(ACLMessage msg) {
         sendRejectProposalMessage(msg);
     }
-
+    /******************************************************************************
+     *  Use: Used by JSON serializing library to make JSON objects.
+     *****************************************************************************/
     private class PowerPlantData implements Serializable{
         private String Name;
         private AgentData dat;
-        public PowerPlantData(double sell_price, double production, String name) {
+        PowerPlantData(double sell_price, double production, String name) {
             dat = new AgentData(sell_price, production, name);
             Name = name;
 

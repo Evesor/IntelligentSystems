@@ -2,14 +2,12 @@ package edu.swin.hets.helper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.swin.hets.agent.GlobalValuesAgent;
 import jade.lang.acl.ACLMessage;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Vector;
+import java.util.ArrayList;
 /******************************************************************************
  *  Use: To create a JSON string listing the number of each communication that
  *       has happened between this agent and all the other agents.
@@ -19,16 +17,15 @@ public class MessageHistory {
     private ConversationCountList _conversations;
     private String _agent_name;
 
-    public MessageHistory (Vector<ACLMessage> msgs, String agent_name) {
+    public MessageHistory (ArrayList<ACLMessage> msgs, String agent_name) {
         _agent_name = agent_name;
-        HashMap<String, Integer> _agentsNames = new HashMap<String, Integer>();
+        HashMap<String, Integer> _agentsNames = new HashMap<>();
         for (ACLMessage msg : msgs) {
             if (msg != null) {
                 if (msg.getSender().getName().contains("GlobalValues")) continue;
                 if (msg.getSender().getName().contains("LoggingAgent")) continue;
                 if (msg.getSender().getName().contains("WebServer")) continue;
                 if (!_agentsNames.containsKey(msg.getSender().getName())) {
-
                     _agentsNames.put(msg.getSender().getName(), 0);
                 }
             }
@@ -43,9 +40,9 @@ public class MessageHistory {
     }
 
     private class ConversationCountList implements Serializable {
-        private Vector<ConversationCount> _conversation_counts ;
-        public ConversationCountList (HashMap<String, Integer> map) {
-            _conversation_counts = new Vector<>();
+        private ArrayList<ConversationCount> _conversation_counts ;
+        ConversationCountList (HashMap<String, Integer> map) {
+            _conversation_counts = new ArrayList<>();
             Iterator it = map.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry pair = (Map.Entry)it.next();
@@ -53,7 +50,7 @@ public class MessageHistory {
                         (String) pair.getKey(), _agent_name, (Integer) pair.getValue()));
             }
         }
-        public Vector<ConversationCount> getlinks() { return _conversation_counts;}
+        public ArrayList<ConversationCount> getlinks() { return _conversation_counts;}
     }
 
     private class ConversationCount implements Serializable {
