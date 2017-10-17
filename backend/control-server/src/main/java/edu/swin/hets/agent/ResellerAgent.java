@@ -2,7 +2,6 @@ package edu.swin.hets.agent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hierynomus.msdtyp.ACL;
 import edu.swin.hets.helper.*;
 import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -54,7 +53,7 @@ public class ResellerAgent extends BaseAgent {
     private Vector<PowerSaleAgreement> _current_sell_agrements;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _customerDB;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _sellerDB;
-    private ArrayList<NegotiationChain> _currentNegotiations;
+    private ArrayList<INegotiationStrategy> _currentNegotiations;
 
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
@@ -168,44 +167,64 @@ public class ResellerAgent extends BaseAgent {
 
     // We want to to buy electricity
     private void sendBuyCFP() {
-        ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-        cfp.setConversationId(UUID.randomUUID().toString());
-        DFAgentDescription[] powerplants = getService("powerplant");
-        for (DFAgentDescription powerplant : powerplants) {
-            cfp.addReceiver(powerplant.getName()); //CFP to each power plant
-        }
-        LogDebug(getName() + " is sending cfp for: " + (_next_required_amount - _next_purchased_amount) );
+        DFAgentDescription[] powerPlants = getService("powerplant");
+        IUtilityFunction currentUtil = new BasicUtility();
+        _currentNegotiations.clear(); // We have just received a push or new timeSlice, clear list.
         //TODO make more complicated logic.
         PowerSaleProposal prop = new PowerSaleProposal(
                 _next_required_amount - _next_purchased_amount,1, getAID(), false);
-        prop.setBuyerAID(getAID());
-        addPowerSaleProposal(cfp, prop);
-        cfp.setSender(getAID());
-        send(cfp);
+        for (DFAgentDescription powerPlant : powerPlants) {
+            // Make new negotiation for each powerPlant
+            INegotiationStrategy strategy = new BasicNegotiator(currentUtil, getName(), powerPlant.getName().getName()
+                    ,prop ,_current_globals.getTime());
+            _currentNegotiations.add(strategy);
+            ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+            cfp.setConversationId(UUID.randomUUID().toString());
+            cfp.addReceiver(powerPlant.getName()); //CFP to each power plant
+            prop.setBuyerAID(getAID());
+            addPowerSaleProposal(cfp, prop);
+            cfp.setSender(getAID());
+            send(cfp);
+        }
+        LogDebug(getName() + " is sending cfp for: " + (_next_required_amount - _next_purchased_amount) );
     }
 
-    // Someone is offering to sell us electricity
+    // Someone is negotiating with us.
     private class ProposalHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-
             if (_next_required_amount > _next_purchased_amount){
+                Optional<INegotiationStrategy> optional = _currentNegotiations.stream().filter(
+                        (x) -> x.getOpponentName().equals(msg.getSender().getName())).findAny();
+                if (! optional.isPresent()) {
+                    LogError("We got a message from someone we were not negotiating with");
+                    return;
+                }
+                INegotiationStrategy strategy = optional.get();
                 PowerSaleProposal proposed = getPowerSalePorposal(msg);
-                if (proposed.getCost() <= _current_by_price ) {
-                    // Accept
-                    LogVerbose(getName() + " agreed to buy " + proposed.getAmount() + " electricity for " +
-                            proposed.getDuration() + " time slots from " + proposed.getSellerAID().getName());
-                    PowerSaleAgreement contract = new PowerSaleAgreement(proposed, _current_globals.getTime());
-                    _current_buy_agrements.add(contract);
-                    updateContracts();
-                    LogDebug(getName() + " has purchased: " + _next_purchased_amount + " and needs: " + _next_required_amount);
+                strategy.addNewProposal(proposed, false);
+                IPowerSaleContract offer = strategy.getResponse();
+                if (offer instanceof PowerSaleProposal) {
+                    // Make counter offer
+                    PowerSaleProposal counterProposal = (PowerSaleProposal) offer;
+                    ACLMessage counterMsg = msg.createReply();
+                    counterMsg.setPerformative(ACLMessage.PROPOSE);
+                    addPowerSaleProposal(counterMsg, counterProposal);
+                    LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
+                            " for electricity negotiating with " + msg.getSender());
+                    send(counterMsg);
+                }
+                else {
+                    // Accept the contract
+                    PowerSaleAgreement agreement = (PowerSaleAgreement) offer;
+                    _current_buy_agrements.add(agreement);
+                    LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
+                            agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     ACLMessage acceptMsg = msg.createReply();
                     acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                    addPowerSaleAgreement(acceptMsg, contract);
-                    acceptMsg.setSender(getAID());
+                    addPowerSaleAgreement(acceptMsg, agreement);
                     send(acceptMsg);
-                } else {
-                    // To expensive
-                    sendRejectProposalMessage(msg);
+                    updateContracts();
+                    LogDebug(getName() + " has purchased: " + _next_purchased_amount + " and needs: " + _next_required_amount);
                 }
             }
         }
@@ -296,14 +315,6 @@ public class ResellerAgent extends BaseAgent {
             LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
         }
     }
-
-    private void nogotiatePrice () {
-
-    }
-
-    private void quoteNoLongerValid(ACLMessage msg) {
-
-    }
     /******************************************************************************
      *  Use: Used by getJson to output data to server.
      *****************************************************************************/
@@ -336,6 +347,34 @@ public class ResellerAgent extends BaseAgent {
                 public double getCurrent_Buy_Price() { return current_buy_price; }
                 public double getCurrent_Purchase_Volume() { return current_purchase_volume; }
                 public double getCurrent_Sales_Volume() { return current_sales_volume; }
+        }
+    }
+    /******************************************************************************
+     *  Use: A basic utility function to test new negotiation system.
+     *  Notes: For the moment is lazy and coupled to reseller, will fix later.
+     *****************************************************************************/
+    private class BasicUtility implements IUtilityFunction {
+        private double _costImperative = 5;
+        private double _supplyImperative = 5;
+        private double _timeImperative = 0.01;
+        private double _idealPrice = 1;
+        private GlobalValues _createdTime;
+
+        public BasicUtility () {
+            _createdTime = _current_globals;
+        }
+
+        @Override
+        public double evaluate(PowerSaleProposal proposal) {
+            return (
+                    Math.abs(proposal.getAmount() - (_next_required_amount - _next_purchased_amount) * _supplyImperative)
+                            + Math.abs(proposal.getCost() - _idealPrice) * _costImperative
+                            + Math.abs((GlobalValues.lengthOfTimeSlice() - _current_globals.getTimeLeft()) * _timeImperative));
+        }
+
+        @Override
+        public boolean equals(IUtilityFunction utility) {
+            return _createdTime == _current_globals;
         }
     }
     /******************************************************************************

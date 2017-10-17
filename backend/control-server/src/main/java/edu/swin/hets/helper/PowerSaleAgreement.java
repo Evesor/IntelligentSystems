@@ -6,7 +6,7 @@ import java.io.Serializable;
 /******************************************************************************
  *  Use: To hold the details of a contract agreed to by two agents.
  *****************************************************************************/
-public class PowerSaleAgreement implements Serializable{
+public class PowerSaleAgreement implements Serializable, IPowerSaleContract{
     private double _power_amount;
     private int _start_time;
     private int _end_time;
