@@ -41,6 +41,11 @@ public class PowerPlantAgent extends BaseAgent {
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
             GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
+    private MessageTemplate ProposeTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
+            MessageTemplate.or(
+                    GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()),
+                    GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName())));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
             GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
@@ -61,6 +66,7 @@ public class PowerPlantAgent extends BaseAgent {
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
         addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
+        addMessageHandler(ProposeTemplate, new ProposeHandler());
     }
 
     // Update bookkeeping.
@@ -158,8 +164,14 @@ public class PowerPlantAgent extends BaseAgent {
                 quoteNoLongerValid(msg);
                 return;
             }
-            LogDebug(getName() + " has made a deal");
             _current_contracts.add(agreement);
+        }
+    }
+
+    // Someone is being difficult and haggling.... Sigh
+    private class ProposeHandler implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+            //TODO, implement response.
         }
     }
 

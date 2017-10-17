@@ -48,9 +48,9 @@ public class ResellerAgent extends BaseAgent {
     private double _min_purchase_amount;
     private double _next_purchased_amount;
     private double _next_required_amount;
-    private Vector<Double> _future_needs;
-    private Vector<PowerSaleAgreement> _current_buy_agrements;
-    private Vector<PowerSaleAgreement> _current_sell_agrements;
+    private ArrayList<Double> _future_needs;
+    private ArrayList<PowerSaleAgreement> _currentBuyAgreements;
+    private ArrayList<PowerSaleAgreement> _currentSellAgreements;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _customerDB;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _sellerDB;
     private ArrayList<INegotiationStrategy> _currentNegotiations;
@@ -76,8 +76,8 @@ public class ResellerAgent extends BaseAgent {
         _min_purchase_amount = 100;
         _next_required_amount = 200; //TODO let home users set demand.
         _money = 500;
-        _current_buy_agrements = new Vector<PowerSaleAgreement>();
-        _current_sell_agrements = new Vector<PowerSaleAgreement>();
+        _currentBuyAgreements = new ArrayList<>();
+        _currentSellAgreements = new ArrayList<>();
         _customerDB = new HashMap<>();
         _sellerDB = new HashMap<>();
         _currentNegotiations = new ArrayList<>();
@@ -105,49 +105,36 @@ public class ResellerAgent extends BaseAgent {
     protected void TimeExpired() {
         balanceBooks();
         updateContracts();
-        // We now know how much we have bought and how much we need to buy
-        // Start making CFP's to get electricity we need.
+        // We now know how much we have bought and how much we need to buy, send out CFP's to get electricity we need.
         if (_next_required_amount > _next_purchased_amount) {
             sendBuyCFP();
         }
     }
 
     private void balanceBooks() {
-        for (PowerSaleAgreement agg : _current_buy_agrements) {
-            _money +=  agg.getAmount() * agg.getCost();
-        }
-        for (PowerSaleAgreement agg : _current_sell_agrements) {
-            _money -=  agg.getAmount() * agg.getCost();
-        }
+        for (PowerSaleAgreement agg : _currentBuyAgreements) _money +=  agg.getAmount() * agg.getCost();
+        for (PowerSaleAgreement agg : _currentSellAgreements) _money -=  agg.getAmount() * agg.getCost();
         if (_money < 0) {
             LogError(getName() + " has gone bankrupt!");
+            //TODO, send message to main container to remove agent.
         }
     }
 
     private void updateContracts() {
         _next_purchased_amount = 0;
-        Vector<PowerSaleAgreement> toRemove = new Vector<>();
-        for (PowerSaleAgreement agreement : _current_buy_agrements) {
-            if (agreement.getEndTime() < _current_globals.getTime()) {
-                // No longer valid
-                toRemove.add(agreement);
-            }
-        }
-        _current_buy_agrements.removeAll(toRemove);
-        for (PowerSaleAgreement agreement : _current_buy_agrements) {
-            // We have purchased this electricty.
-            _next_purchased_amount += agreement.getAmount();
-        }
         _next_required_amount = 0;
-        for (PowerSaleAgreement agreement: _current_sell_agrements) {
-            if (agreement.getEndTime() >= _current_globals.getTime()) {
-                toRemove.add(agreement);// No longer valid
-            }
-        }
-        _current_sell_agrements.removeAll(toRemove);
-        for (PowerSaleAgreement agreement: _current_sell_agrements) {
-            _next_required_amount += agreement.getAmount();
-        }
+        // Get rid of old contracts that are no longer valid
+        ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
+        _currentBuyAgreements.stream().filter(
+                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+        _currentBuyAgreements.removeAll(toRemove);
+        toRemove.clear();
+        _currentSellAgreements.stream().filter(
+                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+        _currentSellAgreements.removeAll(toRemove);
+        // Re calculate usage for this time slice
+        for (PowerSaleAgreement agreement : _currentBuyAgreements) _next_purchased_amount += agreement.getAmount();
+        for (PowerSaleAgreement agreement: _currentSellAgreements) _next_required_amount += agreement.getAmount();
         //TODO Remove later, for now just make random demand
         _next_required_amount = new Random().nextInt(300) + 100;
         if (_next_required_amount < _min_purchase_amount) {
@@ -170,7 +157,7 @@ public class ResellerAgent extends BaseAgent {
         DFAgentDescription[] powerPlants = getService("powerplant");
         IUtilityFunction currentUtil = new BasicUtility();
         _currentNegotiations.clear(); // We have just received a push or new timeSlice, clear list.
-        //TODO make more complicated logic.
+        //TODO make more complicated logic for initial offer.
         PowerSaleProposal prop = new PowerSaleProposal(
                 _next_required_amount - _next_purchased_amount,1, getAID(), false);
         for (DFAgentDescription powerPlant : powerPlants) {
@@ -216,7 +203,7 @@ public class ResellerAgent extends BaseAgent {
                 else {
                     // Accept the contract
                     PowerSaleAgreement agreement = (PowerSaleAgreement) offer;
-                    _current_buy_agrements.add(agreement);
+                    _currentBuyAgreements.add(agreement);
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     ACLMessage acceptMsg = msg.createReply();
@@ -233,41 +220,26 @@ public class ResellerAgent extends BaseAgent {
     // Someone is buying electricity off us
     private class ProposalAcceptedHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
+            //TODO, check this is a valid proposal still.
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
-            _current_sell_agrements.add(agreement);
+            _currentSellAgreements.add(agreement);
         }
     }
 
     // Someone has rejected a quote
     private class ProposalRejectedHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
-            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleAgreement").match(msg)) {
+            if (GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()).match(msg)) {
                 // Someone is rejecting a contract, remove it.
                 PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
-                PowerSaleAgreement toRemove = null;
-                // Try and find agreement.
-                for (PowerSaleAgreement agg : _current_buy_agrements) {
-                    if (agg.equalValues(agreement)) {
-                        toRemove = agg;
-                        break;
-                    }
-                }
-                if (toRemove != null) {
-                    _current_buy_agrements.remove(toRemove);
-                }
-                toRemove = null;
-                // Try and find agreement.
-                for (PowerSaleAgreement agg : _current_sell_agrements) {
-                    if (agg.equalValues(agreement)) {
-                        toRemove = agg;
-                        break;
-                    }
-                }
-                if (toRemove != null) {
-                    _current_sell_agrements.remove(toRemove);
-                }
+                ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
+                 _currentBuyAgreements.stream().filter((agg) -> agg.equalValues(agreement)).forEach(toRemove::add);
+                 _currentBuyAgreements.removeAll(toRemove);
+                 toRemove.clear(); //Should not be required but what the hell.
+                _currentSellAgreements.stream().filter((agg) -> agg.equalValues(agreement)).forEach(toRemove::add);
+                _currentSellAgreements.removeAll(toRemove);
             }
-            if (GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal").match(msg)) {
+            if (GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()).match(msg)) {
                 // Don't care at the moment.
                 // TODO, send back a better proposal maybe?
             }
@@ -360,7 +332,7 @@ public class ResellerAgent extends BaseAgent {
         private double _idealPrice = 1;
         private GlobalValues _createdTime;
 
-        public BasicUtility () {
+        BasicUtility () {
             _createdTime = _current_globals;
         }
 
@@ -376,37 +348,5 @@ public class ResellerAgent extends BaseAgent {
         public boolean equals(IUtilityFunction utility) {
             return _createdTime == _current_globals;
         }
-    }
-    /******************************************************************************
-     *  Use: An object that is used to deal with the logic of negotiating with a
-     *       potential customer or supplier.
-     *****************************************************************************/
-    private class NegotiationChain {
-        private ArrayList<ACLMessage> _messageChain;
-        private ArrayList<PowerSaleAgreement> _previosAgreements;
-        private double _basePrice;
-        private double _aggressiveness;
-        private double _time_imperitive;
-        private double _wastage_tolorance;
-
-        NegotiationChain(ArrayList<PowerSaleAgreement> prev_ag, double base_price, double aggressiveness ,
-                         double timeImperative, double wastageTol, ACLMessage firstMessage) {
-            _previosAgreements = prev_ag;
-            _basePrice = base_price;
-            _aggressiveness = aggressiveness;
-            _time_imperitive = timeImperative;
-            _wastage_tolorance = wastageTol;
-            _messageChain = new ArrayList<ACLMessage>();
-            _messageChain.add(firstMessage);
-        }
-        public void addResponse (ACLMessage msg) { _messageChain.add(msg); }
-        public String getConversationID () { return (_messageChain.get(0).getConversationId());  }
-
-        public PowerSaleProposal makeCounterProposal () {
-
-
-            return null;
-        }
-
     }
 }
