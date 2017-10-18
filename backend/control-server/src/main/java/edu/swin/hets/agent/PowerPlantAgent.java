@@ -60,7 +60,7 @@ public class PowerPlantAgent extends BaseAgent {
         _current_production = 10;
         _max_production = 1000;
         _costOfProduction = 0.5;
-        _current_sell_price = 0.8;
+        _current_sell_price = 1.8;
         _current_contracts = new ArrayList<>();
         RegisterAMSService(getAID().getName(),"powerplant");
         addMessageHandler(CFPMessageTemplate, new CFPHandler());

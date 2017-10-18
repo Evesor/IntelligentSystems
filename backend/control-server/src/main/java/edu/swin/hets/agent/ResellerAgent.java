@@ -7,6 +7,7 @@ import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -40,6 +41,7 @@ import java.util.*;
  *             content Object: A PowerSaleProposal object
  *****************************************************************************/
 public class ResellerAgent extends BaseAgent {
+    private static final double FINE_FOR_FAILURE = 2;
     private static final int GROUP_ID = 2;
     private static final String TYPE = "Reseller Agent";
     private double _money;
@@ -71,7 +73,7 @@ public class ResellerAgent extends BaseAgent {
 
     protected void setup() {
         super.setup();
-        _current_by_price = 10;
+        _current_by_price = 1;
         _current_sell_price = 1.0;
         _min_purchase_amount = 100;
         _next_required_amount = 200; //TODO let home users set demand.
@@ -103,6 +105,11 @@ public class ResellerAgent extends BaseAgent {
 
     // We are in a new time-slice, update bookeeping.
     protected void TimeExpired() {
+        if (_next_required_amount > _next_purchased_amount) {
+            double fine = FINE_FOR_FAILURE * (_next_required_amount- _next_purchased_amount);
+            LogError(getName() + " failed to fulfill all its contracts and was fined: " + fine);
+            _money -= fine;
+        }
         balanceBooks();
         updateContracts();
         // We now know how much we have bought and how much we need to buy, send out CFP's to get electricity we need.
@@ -197,7 +204,8 @@ public class ResellerAgent extends BaseAgent {
                     counterMsg.setPerformative(ACLMessage.PROPOSE);
                     addPowerSaleProposal(counterMsg, counterProposal);
                     LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
-                            " for electricity negotiating with " + msg.getSender());
+
+                            " for electricity negotiating with " + msg.getSender().getName());
                     send(counterMsg);
                 }
                 else {
@@ -328,8 +336,8 @@ public class ResellerAgent extends BaseAgent {
     private class BasicUtility implements IUtilityFunction {
         private double _costImperative = 5;
         private double _supplyImperative = 5;
-        private double _timeImperative = 0.01;
-        private double _idealPrice = 1;
+        private double _timeImperative = 0.05;
+        private double _idealPrice = 0.5;
         private GlobalValues _createdTime;
 
         BasicUtility () {
@@ -338,15 +346,21 @@ public class ResellerAgent extends BaseAgent {
 
         @Override
         public double evaluate(PowerSaleProposal proposal) {
-            return (
-                    Math.abs(proposal.getAmount() - (_next_required_amount - _next_purchased_amount) * _supplyImperative)
-                            + Math.abs(proposal.getCost() - _idealPrice) * _costImperative
-                            + Math.abs((GlobalValues.lengthOfTimeSlice() - _current_globals.getTimeLeft()) * _timeImperative));
+            double required = _next_required_amount - _next_purchased_amount;
+            double requiredUtil = (_supplyImperative / (required == 0 ? 0.1 : required)); //TODO, bad hack, fix
+            //System.out.println(getName() + " required is: " + required + " contributing: " + requiredUtil + " to utility");
+            double costDiffrence = (_idealPrice - proposal.getCost());
+            double costDiffrenceUtil = costDiffrence * _costImperative;
+            //System.out.println("Cost diff is: " + costDiffrence +  " Cost utility is " + costDiffrenceUtil);
+            double timeImperative =  Math.abs((GlobalValues.lengthOfTimeSlice() - _current_globals.getTimeLeft()) * _timeImperative);
+            return (requiredUtil + costDiffrenceUtil + timeImperative);
         }
+
 
         @Override
         public boolean equals(IUtilityFunction utility) {
             return _createdTime == _current_globals;
         }
+
     }
 }

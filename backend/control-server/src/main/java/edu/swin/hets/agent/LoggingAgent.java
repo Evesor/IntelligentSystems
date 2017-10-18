@@ -44,12 +44,18 @@ public class LoggingAgent extends BaseAgent{
 
     protected void TimeExpired() {
         // Dump an update to the file
+        System.out.println("--------------------------------------------------------------------------------");
         System.out.println("verbose: Time slice : " + _current_globals.getTime() + " is starting.");
+        System.out.println("--------------------------------------------------------------------------------");
         //TODO Add a file dump here.
         //TODO Append time to end of each message
     }
 
-    protected void TimePush(int ms_left) { }
+    protected void TimePush(int ms_left) {
+        System.out.println("--------------------------------------------------------------------------------");
+        System.out.println("verbose: Time slice : " + _current_globals.getTime() + " has " + _current_globals.getTimeLeft() + " ms left");
+        System.out.println("--------------------------------------------------------------------------------");
+    }
 
     protected String getJSON() {
         return "Not implemented";
@@ -58,20 +64,20 @@ public class LoggingAgent extends BaseAgent{
 
     private class ErrorMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            System.out.println(msg.getContent());
+            System.out.println(msg.getContent() + " from " + msg.getSender().getName());
             _logged_errors.add(msg.getContent());
         }
     }
 
     private class VerboseMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            System.out.println(msg.getContent());
+            System.out.println(msg.getContent() + " from " + msg.getSender().getName());
             _logged_verbose.add(msg.getContent());
         }
     }
     private class DebugMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            System.out.println(msg.getContent());
+            System.out.println(msg.getContent() + " from " + msg.getSender().getName());
             _logged_debug.add(msg.getContent());
         }
     }

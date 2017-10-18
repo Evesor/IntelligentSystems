@@ -61,6 +61,8 @@ public class BasicNegotiator implements INegotiationStrategy {
         // They have made some kind of offer.
         double thereOfferUtil = _utilityFun.evaluate(thereOffer);
         double ourOfferUtil = _utilityFun.evaluate(ourOffer);
+        //TODO, Remove
+        System.out.println(_ourName + " had initial offer of util: " + ourOfferUtil + " and was offered " + thereOfferUtil + " worth of utility");
         if (thereOfferUtil > ourOfferUtil * 0.9) {
             // We are within %90 utility of what we want. Accept the offer.
             return new PowerSaleAgreement(thereOffer, _timeSlice);
