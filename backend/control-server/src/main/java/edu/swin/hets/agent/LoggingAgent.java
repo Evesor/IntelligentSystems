@@ -1,10 +1,15 @@
 package edu.swin.hets.agent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.agent.BaseAgent;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+
+import java.io.Serializable;
+import java.util.List;
 import java.util.Vector;
 /******************************************************************************
  *  Use: An agent for dealing with development messages.
@@ -58,8 +63,15 @@ public class LoggingAgent extends BaseAgent{
     }
 
     protected String getJSON() {
-        return "Not implemented";
-        //TODO Maybe send stats on error logging.
+        String json = "test";
+        try {
+            json = new ObjectMapper().writeValueAsString(
+                    new LoggingAgentData());
+        }
+        catch (JsonProcessingException e) {
+            LogError("Error parsing data to json in " + getName() + " exeption thrown");
+        }
+        return json;
     }
 
     private class ErrorMessageHandler implements IMessageHandler {
@@ -80,5 +92,9 @@ public class LoggingAgent extends BaseAgent{
             System.out.println(msg.getContent() + ":: from:" + msg.getSender().getName());
             _logged_debug.add(msg.getContent());
         }
+    }
+
+    private class LoggingAgentData implements Serializable{
+        public List<String> getVerboseLogs () { return _logged_verbose; }
     }
 }

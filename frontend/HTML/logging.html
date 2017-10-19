@@ -13,6 +13,12 @@
     <link rel="stylesheet" href="../brower-components/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../brower-components/bootstrap/css/bootstrap-3_3_7.min.css">
 
+
+    <!-- Javascript Functions -->
+    <script src="../JS/functions.js"></script>
+    <!-- Load the java magic :D -->
+    <script src="../JS/logging.js"></script>
+
     <title>Intelligent Systems Project 3</title>
   </head>
   <body>
@@ -24,47 +30,25 @@
 
       <div class="collapse navbar-collapse" id="navigation-bar">
         <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="agents.html">Agents</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link disabled" href="#">Reference</a>
+          </li>
           <li class="nav-item active">
-            <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link " href="agents.html">Agents</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link disabled" href="#Reference">Reference</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link disabled" href="logging.html">Logs</a>
+            <a class="nav-link disabled" href="logging.html">Logs  <span class="sr-only">(current)</span></a>
           </li>
         </ul>
       </div>
     </nav>
-
-    <div class="container">
-
-      <div class="email-container">
-        <h1>Intelligent Systems Group 7</h1>
-        <br/>
-        <h4>Charles</h4>
-        101312298@student.swin.edu.au   <br/>
-
-        <h4>Varian</h4>
-        100669113@student.swin.edu.au   <br/>
-        
-        <h4>Huan</h4>
-        p.hct23@gmail.com               <br/>
-
-        <h4>Blake</h4>
-        100586937@student.swin.edu.au   <br/>
-      </div>
-
-    </div><!-- /.container -->
-
-    <!-- Jquery javascript AJAX -->
-    <script src="../brower-components/jquery/jquery-3.2.1.min.js"></script>
-
-    <!-- Bootstrap javascript -->
-    <script src="../brower-components/bootstrap/js/popper.min.js"></script>
-    <script src="../brower-components/bootstrap/js/bootstrap.min.js"></script>
+    <div>
+      <ul id="message-list">
+      <li>Test</li>
+      </ul>
+    </div>
   </body>
 </html>

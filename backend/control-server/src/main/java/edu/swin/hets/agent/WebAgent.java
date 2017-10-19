@@ -72,7 +72,9 @@ public class WebAgent extends BaseAgent {
                     || msg.getSender().getName().contains("PowerPlant")) {
                 messages.add(msg.getContent());
             }
-            //clientWebSocketHandler.broadcast(msg.getContent());
+            if (msg.getSender().getName().contains("LoggingAgent")) {
+                clientWebSocketHandler.broadcast(msg.getContent());
+            }
         }
     }
 }

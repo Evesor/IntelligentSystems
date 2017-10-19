@@ -88,6 +88,7 @@ public class ResellerAgent extends BaseAgent {
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropMessageTemplate, new ProposalHandler());
         RegisterAMSService(getAID().getName(), "reseller");
+        List<String> args = (List<String>) getArguments()[0];
     }
 
     protected String getJSON() {

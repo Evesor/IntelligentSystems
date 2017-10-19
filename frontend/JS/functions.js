@@ -11,6 +11,7 @@ ws.onmessage = function(data)
 	try {
 		var jsonData = JSON.parse(data.data);
 		console.log(jsonData);
+		drawMessages(jsonData.verboseLogs);
 		console.log(update);
 		update(jsonData);
 	} catch (err) {}
@@ -60,3 +61,16 @@ function getAgentsFromNodes(a) {
 		link.replaceChild(node, link.childNodes[0]);
 	}
 }
+
+//Draw the logging messages to the screen 
+function drawMessages(messages) {
+	var list = document.getElementById('message-list');
+
+	for (var i = 0; i < messages.length; i++) {
+		var item = document.createElement('li');
+
+		item.appendChild(document.createTextNode(messages[i]));
+
+		list.insertBefore(item, list.childNodes[0]);
+	}
+};
