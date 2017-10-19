@@ -126,15 +126,16 @@ public abstract class BaseAgent extends Agent{
                 GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
+                        _current_globals = newGlobals;
                         String deets = getJSON();
                         String msgs = new MessageHistory(_messages_this_timeslice, getName()).getMessages();
-                        SendAgentDetailsToServer(deets.substring(0, deets.length() - 1) + ',' +
-                                msgs.substring(1, msgs.length()));
+                        String toSend = deets.substring(0, deets.length() - 1) + ',' + msgs.substring(1, msgs.length());
+                        SendAgentDetailsToServer(toSend);
                         TimeExpired();
                     } else {
+                        _current_globals = newGlobals;
                         TimePush(_current_globals.getTimeLeft() * 1000);
                     }
-                    _current_globals = newGlobals;
                 }
             } catch (UnreadableException e) {
                 sendNotUndersood(msg, "invalid globals attached");

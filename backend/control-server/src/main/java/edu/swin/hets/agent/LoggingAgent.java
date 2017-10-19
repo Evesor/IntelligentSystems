@@ -64,20 +64,20 @@ public class LoggingAgent extends BaseAgent{
 
     private class ErrorMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            System.out.println(msg.getContent() + " from " + msg.getSender().getName());
+            System.out.println(msg.getContent() + ":: from:" + msg.getSender().getName());
             _logged_errors.add(msg.getContent());
         }
     }
 
     private class VerboseMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            System.out.println(msg.getContent() + " from " + msg.getSender().getName());
+            System.out.println(msg.getContent() + ":: from:" + msg.getSender().getName());
             _logged_verbose.add(msg.getContent());
         }
     }
     private class DebugMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            System.out.println(msg.getContent() + " from " + msg.getSender().getName());
+            System.out.println(msg.getContent() + ":: from:" + msg.getSender().getName());
             _logged_debug.add(msg.getContent());
         }
     }

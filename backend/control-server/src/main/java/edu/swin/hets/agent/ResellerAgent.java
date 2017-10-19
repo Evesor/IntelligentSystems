@@ -76,7 +76,7 @@ public class ResellerAgent extends BaseAgent {
         _currentByPrice = 1;
         _currentSellPrice = 1.0;
         _minPurchaseAmount = 100;
-        _nextRequiredAmount = 200; //TODO let home users set demand.
+        _nextRequiredAmount = 0;
         _money = 500;
         _currentBuyAgreements = new ArrayList<>();
         _currentSellAgreements = new ArrayList<>();
@@ -142,7 +142,7 @@ public class ResellerAgent extends BaseAgent {
         // Re calculate usage for this time slice
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
-        //TODO Remove later, for now just make random demand
+        //TODO Remove later when home agent demand is coming though, for now just make random demand
         _nextRequiredAmount = new Random().nextInt(300) + 100;
         if (_nextRequiredAmount < _minPurchaseAmount) {
             _nextRequiredAmount = _minPurchaseAmount;
@@ -169,8 +169,10 @@ public class ResellerAgent extends BaseAgent {
                 _nextRequiredAmount - _nextPurchasedAmount,1, getAID(), false);
         for (DFAgentDescription powerPlant : powerPlants) {
             // Make new negotiation for each powerPlant
-            INegotiationStrategy strategy = new LinearUtilityDecentNegotiator(currentUtil, getName(), powerPlant.getName().getName()
-                    ,prop ,_current_globals.getTime());
+            //TODO, don't use magic numbers, grab them from input or use defaults.
+            INegotiationStrategy strategy = new LinearUtilityDecentNegotiator(
+                    currentUtil, getName(), powerPlant.getName().getName()
+                    ,prop ,_current_globals.getTime(), 0.1, 0.5, 1);
             _currentNegotiations.add(strategy);
             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
             cfp.setConversationId(UUID.randomUUID().toString());
@@ -248,10 +250,6 @@ public class ResellerAgent extends BaseAgent {
                 _currentSellAgreements.stream().filter((agg) -> agg.equalValues(agreement)).forEach(toRemove::add);
                 _currentSellAgreements.removeAll(toRemove);
             }
-            if (GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()).match(msg)) {
-                // Don't care at the moment.
-                // TODO, send back a better proposal maybe?
-            }
         }
     }
 
@@ -260,31 +258,21 @@ public class ResellerAgent extends BaseAgent {
         public void Handler(ACLMessage msg) {
             // A request for a price on electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
-            if (_nextRequiredAmount > _nextPurchasedAmount) {
-                // We have sold all the electricity we have purchased.
+            if (_nextRequiredAmount > _nextPurchasedAmount) { // We have sold all the electricity we have purchased.
                 if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
                     // %75 percent of a cycle left, make an offer at increased price.
-                    if (proposed.getCost() < 0) {
-                        // No cost added, make up one at +%25
+                    if (proposed.getCost() < 0) { // No cost added, make up one at +%25
                         proposed.setCost(_currentSellPrice * 1.25);
                     }
                     else {
                         if (proposed.getCost() < _currentSellPrice * 1.25) {
                             return; // There is already a price and it is to low
-                            // TODO add negotiation of price.
                         }
                     }
                 }
             }
             else {
-                //Make offer of electricity to home
-                if (proposed.getCost() > 0 && proposed.getCost() < _currentSellPrice) {
-                    // TODO add negotiation of price.
-                    return;
-                }
-                if (proposed.getCost() < 0) {
-                    proposed.setCost(_currentSellPrice);
-                }
+                if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
             proposed.setSellerAID(getAID());
@@ -294,6 +282,10 @@ public class ResellerAgent extends BaseAgent {
             response.setSender(getAID());
             send(response);
             LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
+            // TODO, Change params to read form input, not use magic numbers
+            INegotiationStrategy strategy = new LinearUtilityDecentNegotiator(new BasicUtility(), getName(),
+                    msg.getSender().getName(), proposed, _current_globals.getTime(), 0.1, 0.5, 1);
+            _currentNegotiations.add(strategy);
         }
     }
     /******************************************************************************
