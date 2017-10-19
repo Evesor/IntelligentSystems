@@ -5,7 +5,6 @@ package edu.swin.hets.helper;
  *       uniform manner.
  *****************************************************************************/
 public interface INegotiationStrategy {
-    void changeUtilityFunction(IUtilityFunction utilFun);
     void addNewProposal(PowerSaleProposal proposal, boolean fromUs);
     IPowerSaleContract getResponse();
     String getOpponentName();

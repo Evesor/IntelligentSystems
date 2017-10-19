@@ -3,11 +3,11 @@ package edu.swin.hets.agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
+import edu.swin.hets.helper.negotiator.*;
 import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-
 import java.io.Serializable;
 import java.util.*;
 
@@ -45,11 +45,11 @@ public class ResellerAgent extends BaseAgent {
     private static final int GROUP_ID = 2;
     private static final String TYPE = "Reseller Agent";
     private double _money;
-    private double _current_sell_price;
-    private double _current_by_price;
-    private double _min_purchase_amount;
-    private double _next_purchased_amount;
-    private double _next_required_amount;
+    private double _currentSellPrice;
+    private double _currentByPrice;
+    private double _minPurchaseAmount;
+    private double _nextPurchasedAmount;
+    private double _nextRequiredAmount;
     private ArrayList<Double> _future_needs;
     private ArrayList<PowerSaleAgreement> _currentBuyAgreements;
     private ArrayList<PowerSaleAgreement> _currentSellAgreements;
@@ -73,10 +73,10 @@ public class ResellerAgent extends BaseAgent {
 
     protected void setup() {
         super.setup();
-        _current_by_price = 1;
-        _current_sell_price = 1.0;
-        _min_purchase_amount = 100;
-        _next_required_amount = 200; //TODO let home users set demand.
+        _currentByPrice = 1;
+        _currentSellPrice = 1.0;
+        _minPurchaseAmount = 100;
+        _nextRequiredAmount = 200; //TODO let home users set demand.
         _money = 500;
         _currentBuyAgreements = new ArrayList<>();
         _currentSellAgreements = new ArrayList<>();
@@ -94,8 +94,8 @@ public class ResellerAgent extends BaseAgent {
         String json = "test";
         try {
             json = new ObjectMapper().writeValueAsString(
-                    new ResellerAgentData(_current_by_price, _current_sell_price,_next_required_amount,
-                            _next_purchased_amount, getName()));
+                    new ResellerAgentData(_currentByPrice, _currentSellPrice, _nextRequiredAmount,
+                            _nextPurchasedAmount, getName()));
         }
         catch (JsonProcessingException e) {
             LogError("Error parsing data to json in " + getName() + " exeption thrown");
@@ -105,15 +105,15 @@ public class ResellerAgent extends BaseAgent {
 
     // We are in a new time-slice, update bookeeping.
     protected void TimeExpired() {
-        if (_next_required_amount > _next_purchased_amount) {
-            double fine = FINE_FOR_FAILURE * (_next_required_amount- _next_purchased_amount);
+        if (_nextRequiredAmount > _nextPurchasedAmount) {
+            double fine = FINE_FOR_FAILURE * (_nextRequiredAmount - _nextPurchasedAmount);
             LogError(getName() + " failed to fulfill all its contracts and was fined: " + fine);
             _money -= fine;
         }
         balanceBooks();
         updateContracts();
         // We now know how much we have bought and how much we need to buy, send out CFP's to get electricity we need.
-        if (_next_required_amount > _next_purchased_amount) {
+        if (_nextRequiredAmount > _nextPurchasedAmount) {
             sendBuyCFP();
         }
     }
@@ -128,8 +128,8 @@ public class ResellerAgent extends BaseAgent {
     }
 
     private void updateContracts() {
-        _next_purchased_amount = 0;
-        _next_required_amount = 0;
+        _nextPurchasedAmount = 0;
+        _nextRequiredAmount = 0;
         // Get rid of old contracts that are no longer valid
         ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
         _currentBuyAgreements.stream().filter(
@@ -140,20 +140,20 @@ public class ResellerAgent extends BaseAgent {
                 (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
         _currentSellAgreements.removeAll(toRemove);
         // Re calculate usage for this time slice
-        for (PowerSaleAgreement agreement : _currentBuyAgreements) _next_purchased_amount += agreement.getAmount();
-        for (PowerSaleAgreement agreement: _currentSellAgreements) _next_required_amount += agreement.getAmount();
+        for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
+        for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
         //TODO Remove later, for now just make random demand
-        _next_required_amount = new Random().nextInt(300) + 100;
-        if (_next_required_amount < _min_purchase_amount) {
-            _next_required_amount = _min_purchase_amount;
+        _nextRequiredAmount = new Random().nextInt(300) + 100;
+        if (_nextRequiredAmount < _minPurchaseAmount) {
+            _nextRequiredAmount = _minPurchaseAmount;
         }
     }
 
     // Time is expiring, make sure we have purchased enough electricity
     protected void TimePush(int ms_left) {
-        if (_next_required_amount > _next_purchased_amount ) {
-            LogVerbose(getName() + " requires: " + _next_required_amount + " purchased: " +
-                    _next_purchased_amount  + " has " + _money + " dollars");
+        if (_nextRequiredAmount > _nextPurchasedAmount) {
+            LogVerbose(getName() + " requires: " + _nextRequiredAmount + " purchased: " +
+                    _nextPurchasedAmount + " has " + _money + " dollars");
             sendBuyCFP(); // We need to buy more electricity
         }
         // We have enough electricity do nothing.
@@ -166,10 +166,10 @@ public class ResellerAgent extends BaseAgent {
         _currentNegotiations.clear(); // We have just received a push or new timeSlice, clear list.
         //TODO make more complicated logic for initial offer.
         PowerSaleProposal prop = new PowerSaleProposal(
-                _next_required_amount - _next_purchased_amount,1, getAID(), false);
+                _nextRequiredAmount - _nextPurchasedAmount,1, getAID(), false);
         for (DFAgentDescription powerPlant : powerPlants) {
             // Make new negotiation for each powerPlant
-            INegotiationStrategy strategy = new BasicNegotiator(currentUtil, getName(), powerPlant.getName().getName()
+            INegotiationStrategy strategy = new LinearUtilityDecentNegotiator(currentUtil, getName(), powerPlant.getName().getName()
                     ,prop ,_current_globals.getTime());
             _currentNegotiations.add(strategy);
             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
@@ -180,15 +180,16 @@ public class ResellerAgent extends BaseAgent {
             cfp.setSender(getAID());
             send(cfp);
         }
-        LogDebug(getName() + " is sending cfp for: " + (_next_required_amount - _next_purchased_amount) );
+        LogDebug(getName() + " is sending cfp for: " + (_nextRequiredAmount - _nextPurchasedAmount) );
     }
 
     // Someone is negotiating with us.
     private class ProposalHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            if (_next_required_amount > _next_purchased_amount){
+            if (_nextRequiredAmount > _nextPurchasedAmount){
                 Optional<INegotiationStrategy> optional = _currentNegotiations.stream().filter(
                         (x) -> x.getOpponentName().equals(msg.getSender().getName())).findAny();
+                //TODO, make sure we are getting the right negotiation chain for this message ID
                 if (! optional.isPresent()) {
                     LogError("We got a message from someone we were not negotiating with");
                     return;
@@ -200,26 +201,26 @@ public class ResellerAgent extends BaseAgent {
                 if (offer instanceof PowerSaleProposal) {
                     // Make counter offer
                     PowerSaleProposal counterProposal = (PowerSaleProposal) offer;
+                    strategy.addNewProposal(counterProposal, true);
                     ACLMessage counterMsg = msg.createReply();
                     counterMsg.setPerformative(ACLMessage.PROPOSE);
                     addPowerSaleProposal(counterMsg, counterProposal);
                     LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
-
                             " for electricity negotiating with " + msg.getSender().getName());
                     send(counterMsg);
                 }
                 else {
                     // Accept the contract
                     PowerSaleAgreement agreement = (PowerSaleAgreement) offer;
-                    _currentBuyAgreements.add(agreement);
-                    LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
-                            agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     ACLMessage acceptMsg = msg.createReply();
                     acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                     addPowerSaleAgreement(acceptMsg, agreement);
                     send(acceptMsg);
+                    _currentBuyAgreements.add(agreement);
+                    LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
+                            agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     updateContracts();
-                    LogDebug(getName() + " has purchased: " + _next_purchased_amount + " and needs: " + _next_required_amount);
+                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " + _nextRequiredAmount);
                 }
             }
         }
@@ -259,16 +260,16 @@ public class ResellerAgent extends BaseAgent {
         public void Handler(ACLMessage msg) {
             // A request for a price on electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
-            if (_next_required_amount > _next_purchased_amount) {
+            if (_nextRequiredAmount > _nextPurchasedAmount) {
                 // We have sold all the electricity we have purchased.
                 if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
                     // %75 percent of a cycle left, make an offer at increased price.
                     if (proposed.getCost() < 0) {
                         // No cost added, make up one at +%25
-                        proposed.setCost(_current_sell_price * 1.25);
+                        proposed.setCost(_currentSellPrice * 1.25);
                     }
                     else {
-                        if (proposed.getCost() < _current_sell_price * 1.25) {
+                        if (proposed.getCost() < _currentSellPrice * 1.25) {
                             return; // There is already a price and it is to low
                             // TODO add negotiation of price.
                         }
@@ -277,12 +278,12 @@ public class ResellerAgent extends BaseAgent {
             }
             else {
                 //Make offer of electricity to home
-                if (proposed.getCost() > 0 && proposed.getCost() < _current_sell_price) {
+                if (proposed.getCost() > 0 && proposed.getCost() < _currentSellPrice) {
                     // TODO add negotiation of price.
                     return;
                 }
                 if (proposed.getCost() < 0) {
-                    proposed.setCost(_current_sell_price);
+                    proposed.setCost(_currentSellPrice);
                 }
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
@@ -346,8 +347,8 @@ public class ResellerAgent extends BaseAgent {
 
         @Override
         public double evaluate(PowerSaleProposal proposal) {
-            double required = _next_required_amount - _next_purchased_amount;
-            double requiredUtil = (_supplyImperative / (required == 0 ? 0.1 : required)); //TODO, bad hack, fix
+            double required = _nextRequiredAmount - _nextPurchasedAmount;
+            double requiredUtil = (_supplyImperative / (Math.abs(required) < 0.1 ? 0.1 : required)); //TODO, bad hack, fix
             //System.out.println(getName() + " required is: " + required + " contributing: " + requiredUtil + " to utility");
             double costDiffrence = (_idealPrice - proposal.getCost());
             double costDiffrenceUtil = costDiffrence * _costImperative;
