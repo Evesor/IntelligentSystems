@@ -11,9 +11,8 @@ ws.onmessage = function(data)
 	try {
 		var jsonData = JSON.parse(data.data);
 		//console.log(jsonData);
-		//console.log(jsonData.verboseLogs);
-		//console.log(jsonData.verboseLogs[0].log);
 		drawMessages(jsonData);
+		drawStats(jsonData);
 		console.log(update);
 		update(jsonData);
 	} catch (err) {}
@@ -61,33 +60,6 @@ function getAgentsFromNodes(a) {
 		link.appendChild(node);
 	} else {
 		link.replaceChild(node, link.childNodes[0]);
-	}
-}
-
-//Draw the logging messages to the screen 
-function drawMessages(messages) {
-	var verboseLogs = messages.verboseLogs;
-	var errorLogs = messages.errorLogs;
-	var debugLogs = messages.debugLogs;
-	var verboseList = document.getElementById("verbose-message-list");
-	var errorList = document.getElementById("error-message-list");
-	var debugList = document.getElementById("debug-message-list");
-	addMessagesToList(verboseLogs, verboseList);
-	addMessagesToList(errorLogs, errorList);
-	addMessagesToList(debugLogs, debugList);
-	document.getElementById("number-verbose-messages").innerHTML=verboseLogs.length;
-	document.getElementById("number-error-messages").innerHTML=errorLogs.length;
-	document.getElementById("number-debug-messages").innerHTML=debugLogs.length;
-};
-
-
-function addMessagesToList(messages, list) {
-	list.innerHTML = '';
-	console.log(messages[i]);
-	for (var i = messages.length - 1; i > 0; i--) {
-		var listItem = document.createElement('li');
-		listItem.appendChild(document.createTextNode(messages[i].from + " :: " + "  @timeslice: " + messages[i].timeSlice + " :: " + messages[i].log));
-		list.appendChild(listItem);
 	}
 }
 

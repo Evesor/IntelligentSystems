@@ -75,6 +75,10 @@ public class WebAgent extends BaseAgent {
             if (msg.getSender().getName().contains("LoggingAgent")) {
                 clientWebSocketHandler.broadcast(msg.getContent());
             }
+
+            if (msg.getSender().getName().contains("StatisticsAgent")) {
+                clientWebSocketHandler.broadcast(msg.getContent());
+            }
         }
     }
 }

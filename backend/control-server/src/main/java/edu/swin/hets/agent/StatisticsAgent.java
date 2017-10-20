@@ -72,15 +72,15 @@ public class StatisticsAgent extends BaseAgent {
      *  Use: Used by getJson to output data to server.
      *****************************************************************************/
     private class StatisticsAgentData implements Serializable {
-        public List<Double> getAverage_Price () {
+        public List<Double> getAveragePrice () {
             return average((agg) -> agg.getCost());
         }
 
-        public List<Double> getAverage_Volume () {
+        public List<Double> getAverageVolume () {
             return average((agg) -> agg.getAmount());
         }
 
-        public List<Double> getAverage_Time () {
+        public List<Double> getAverageTime () {
             return average((agg) -> agg.getEndTime() - agg.getStartTime());
         }
 
