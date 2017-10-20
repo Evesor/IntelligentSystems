@@ -13,11 +13,8 @@
     <link rel="stylesheet" href="../brower-components/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../brower-components/bootstrap/css/bootstrap-3_3_7.min.css">
 
-
     <!-- Javascript Functions -->
     <script src="../JS/functions.js"></script>
-    <!-- Load the java magic :D -->
-    <script src="../JS/logging.js"></script>
 
     <title>Intelligent Systems Project 3</title>
   </head>
@@ -45,10 +42,34 @@
         </ul>
       </div>
     </nav>
-    <div>
-      <ul id="message-list">
-      <li>Test</li>
-      </ul>
-    </div>
+
+    <ul class="list-group">
+      <li class="list-group-item">
+          <span class="badge" id="number-verbose-messages">0</span>
+          <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#verbose-message-list">Verbose</button>
+          <ul id="verbose-message-list" class="collapse">
+            <li>Test</li>
+            <li> this</li>  
+          </ul>
+      </li>
+      <li class="list-group-item">
+        <span class="badge" id="number-error-messages">0</span>
+        <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#error-message-list">Error</button>
+        <ul id="error-message-list"></ul>
+      </li> 
+      <li class="list-group-item">
+        <span class="badge" id="number-debug-messages">0</span>
+        <button type="button" class="btn btn-warning" data-toggle="collapse" data-target="#debug-message-list">Debug</button>
+        <ul id="debug-message-list"></ul> 
+      </li> 
+    </ul>
+  
+
+    <!-- Jquery javascript AJAX -->
+    <script src="../brower-components/jquery/jquery-3.2.1.min.js"></script>
+    <!-- Bootstrap javascript at the end so page loads faster -->
+    <script src="../brower-components/bootstrap/js/popper.min.js"></script>
+    <script src="../brower-components/bootstrap/js/bootstrap.min.js"></script>
+
   </body>
 </html>

@@ -7,8 +7,10 @@ import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import sun.rmi.runtime.Log;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 /******************************************************************************
@@ -22,9 +24,9 @@ import java.util.Vector;
  *          - content : Information about the system.
  *****************************************************************************/
 public class LoggingAgent extends BaseAgent{
-    private Vector<String> _logged_debug;
-    private Vector<String> _logged_errors;
-    private Vector<String> _logged_verbose;
+    private ArrayList<LoggedData> _logged_debug;
+    private ArrayList<LoggedData> _logged_errors;
+    private ArrayList<LoggedData> _logged_verbose;
 
     private MessageTemplate ErrorMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
@@ -39,9 +41,9 @@ public class LoggingAgent extends BaseAgent{
     @Override
     protected void setup() {
         super.setup();
-        _logged_debug = new Vector<String>();
-        _logged_errors = new Vector<String>();
-        _logged_verbose = new Vector<String>();
+        _logged_debug = new ArrayList<>();
+        _logged_errors = new ArrayList<>();
+        _logged_verbose = new ArrayList<>();
         addMessageHandler(ErrorMessageTemplate, new ErrorMessageHandler());
         addMessageHandler(VerboseMessageTemplate, new VerboseMessageHandler());
         addMessageHandler(DebugMessageTemplate, new DebugMessageHandler());
@@ -77,24 +79,56 @@ public class LoggingAgent extends BaseAgent{
     private class ErrorMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             System.out.println(msg.getContent() + ":: from:" + msg.getSender().getName());
-            _logged_errors.add(msg.getContent());
+            _logged_errors.add(new LoggedData(msg.getContent(),
+                    _current_globals.getTime(),
+                    _current_globals.getTimeLeft(),
+                    msg.getSender().getName()));
         }
     }
 
     private class VerboseMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             System.out.println(msg.getContent() + ":: from:" + msg.getSender().getName());
-            _logged_verbose.add(msg.getContent());
+            _logged_verbose.add(new LoggedData(msg.getContent(),
+                    _current_globals.getTime(),
+                    _current_globals.getTimeLeft(),
+                    msg.getSender().getName()));
         }
     }
     private class DebugMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             System.out.println(msg.getContent() + ":: from:" + msg.getSender().getName());
-            _logged_debug.add(msg.getContent());
+            _logged_debug.add(new LoggedData(msg.getContent(),
+                    _current_globals.getTime(),
+                    _current_globals.getTimeLeft(),
+                    msg.getSender().getName()));
         }
     }
 
     private class LoggingAgentData implements Serializable{
-        public List<String> getVerboseLogs () { return _logged_verbose; }
+        public List<LoggedData> getVerboseLogs () { return _logged_verbose; }
+        public List<LoggedData> getDebugLogs() { return  _logged_debug; }
+        public List<LoggedData> getErrorLogs() { return _logged_errors; }
+    }
+    /******************************************************************************
+     *  Use: Wrapper around messages to make sure we can check when the came in.
+     *****************************************************************************/
+    private class LoggedData implements Serializable {
+        private String _message;
+        private String _from;
+        private Integer _timeSlice;
+        private Integer _timeLeft;
+
+        LoggedData (String message, Integer timeSlice, Integer timeLeft, String from) {
+            _message = message;
+            _timeSlice = timeSlice;
+            _timeLeft = timeLeft;
+            _from = from;
+        }
+
+        public String getLog() { return _message; }
+        public Integer getTimeSlice () { return _timeSlice; }
+        public Integer getTimeLeft() { return _timeLeft; }
+        public String getFrom() { return  _from; }
     }
 }
