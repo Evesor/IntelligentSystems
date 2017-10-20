@@ -76,7 +76,9 @@ public class HomeAgent extends BaseAgent
 		applianceName = (java.util.List<String>) map.get(APPLIANCE_LIST_MAP_KEY);
 
 		//watt = new int[n];
-		on = new HashMap<String, Boolean>();
+		on = new HashMap<String,Boolean>();
+		watt = new HashMap<String,Integer>();
+		electricityForecast = new HashMap<String,Integer>();
 		applianceName.forEach((appliance) -> {
 			on.put(appliance, false);
 			watt.put(appliance,10);
