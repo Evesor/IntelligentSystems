@@ -1,27 +1,12 @@
 // Websocket Server
 var ws = new WebSocket("ws://localhost:4567/ws");
 
-ws.onopen = function(data)
-{
-	alert("Connected...");
-};
-
 ws.onmessage = function(data) 
 { 
 	try {
 		var jsonData = JSON.parse(data.data);
-		//console.log(jsonData);
 		drawMessages(jsonData);
-		//drawStats(jsonData);
-		//console.log(update);
-		//update(jsonData);
 	} catch (err) {}
-};
-
-ws.onclose = function()
-{ 
-	// Websocket is closed.
-	alert("Connection is closed..."); 
 };
 
 //Draw the logging messages to the screen 

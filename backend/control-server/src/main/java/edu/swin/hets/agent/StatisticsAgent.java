@@ -62,7 +62,7 @@ public class StatisticsAgent extends BaseAgent {
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             if (agreement != null) {
                 ArrayList<PowerSaleAgreement> currentList = _agreements.get(_agreements.size() - 1);
-                if (! currentList.stream().anyMatch((agg) -> agg.equalValues(agreement))) {
+                if (!currentList.stream().anyMatch((agg) -> agg.equalValues(agreement))) {
                     // No matches, add the agreement.
                     currentList.add(agreement);
                 }
@@ -95,7 +95,8 @@ public class StatisticsAgent extends BaseAgent {
                     runningTotal += lambda.applyAsDouble(agg);
                     numberOfItems ++;
                 }
-                averageList.add(runningTotal / numberOfItems);
+                if (runningTotal == 0 || numberOfItems == 0) averageList.add(0.0);
+                else averageList.add(runningTotal / numberOfItems);
             }
             return averageList;
         }

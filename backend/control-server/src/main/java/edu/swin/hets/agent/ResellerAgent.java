@@ -3,7 +3,7 @@ package edu.swin.hets.agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
-import edu.swin.hets.helper.negotiator.*;
+import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
@@ -148,10 +148,10 @@ public class ResellerAgent extends BaseAgent {
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
         //TODO Remove later when home agent demand is coming though, for now just make random demand
-        _nextRequiredAmount = new Random().nextInt(300) + 100;
-        if (_nextRequiredAmount < _minPurchaseAmount) {
-            _nextRequiredAmount = _minPurchaseAmount;
-        }
+//        _nextRequiredAmount = new Random().nextInt(300) + 100;
+//        if (_nextRequiredAmount < _minPurchaseAmount) {
+//            _nextRequiredAmount = _minPurchaseAmount;
+//        }
     }
 
     // Time is expiring, make sure we have purchased enough electricity
@@ -227,6 +227,7 @@ public class ResellerAgent extends BaseAgent {
                     addPowerSaleAgreement(acceptMsg, agreement);
                     send(acceptMsg);
                     _currentBuyAgreements.add(agreement);
+                    saleMade(agreement);
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     updateContracts();
@@ -242,6 +243,8 @@ public class ResellerAgent extends BaseAgent {
             //TODO, check this is a valid proposal still.
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _currentSellAgreements.add(agreement);
+            saleMade(agreement);
+            LogDebug("Accepted a prop from: " + msg.getSender().getName());
         }
     }
 
@@ -289,7 +292,7 @@ public class ResellerAgent extends BaseAgent {
             addPowerSaleProposal(response, proposed);
             response.setSender(getAID());
             send(response);
-            LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
+            LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;
             try {
                 strategy = makeNegotiationStrategy(proposed, msg.getSender().getName());
@@ -302,8 +305,12 @@ public class ResellerAgent extends BaseAgent {
 
     private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String opponentName)
             throws ExecutionException{
+        if (_inputArgs.size() == 0) {
+            LogError("No valid inputs to make negotiation strategy, using default");
+            return new HoldForFirstOfferPrice(offer, opponentName, _current_globals.getTime());
+        }
         try {
-            return NegotiatorFactory.Factory.getNegotiationStratergy(_inputArgs, new BasicUtility(), getName(),
+            return NegotiatorFactory.Factory.getNegotiationStrategy(_inputArgs, new BasicUtility(), getName(),
                     opponentName, offer, _current_globals.getTime());
         } catch (ExecutionException e) {
             String error = "Negotiator factory failed to initialize with: " ;
@@ -314,6 +321,12 @@ public class ResellerAgent extends BaseAgent {
         }
     }
 
+    private void saleMade(PowerSaleAgreement agg) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        addPowerSaleAgreement(msg, agg);
+        msg.addReceiver(new AID("StatisticsAgent", AID.ISLOCALNAME));
+        send(msg);
+    }
      /******************************************************************************
      *  Use: Used by getJson to output data to server.
      *****************************************************************************/

@@ -6,7 +6,6 @@ import edu.swin.hets.helper.negotiator.LinearUtilityDecentNegotiator;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.List;
-
 /******************************************************************************
  *  Use: Create negotiations based on JSON arguments.
  *  PS: The code is bodgy as but Huan told me to do it so that's ok.
@@ -15,7 +14,7 @@ import java.util.List;
 public class NegotiatorFactory {
     public static NegotiatorFactory Factory = new NegotiatorFactory();
 
-    public INegotiationStrategy getNegotiationStratergy (
+    public INegotiationStrategy getNegotiationStrategy(
             List<String> input,
             IUtilityFunction utilityFun,
             String ourName,
