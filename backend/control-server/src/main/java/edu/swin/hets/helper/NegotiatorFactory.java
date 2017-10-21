@@ -37,6 +37,7 @@ public class NegotiatorFactory {
                                                                       PowerSaleProposal firstOffer,
                                                                       Integer timeSlice,
                                                                       List<String> params) throws ExecutionException {
+
         if (params.size() != 4) {
             throw new ExecutionException(new Throwable("Wrong number of inputs"));
         }
