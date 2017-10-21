@@ -9,15 +9,18 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 import java.util.List;
+import java.util.Vector;
 
 public class ApplianceAgent extends BaseAgent
 {
 	boolean on;
 	//TODO current array
 	//should be vector
+	//private Vector<Integer> current;
 	int[] current = new int[48];
 	//TODO forecast array
 	//should be vector, should store enumeration instead of int
+	//private Vector<Integer> forecast;
 	int[] forecast = new int[48];
 	int watt;
 
@@ -43,6 +46,8 @@ public class ApplianceAgent extends BaseAgent
 	private void init()
 	{
 		on = false;
+		//current = new Vector<Integer>();
+		//forecast = new Vector<Integer>();
 		int i;
 		for(i=0;i<24;i++)
 		{
