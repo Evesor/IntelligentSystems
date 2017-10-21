@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <link rel="icon" href="../favicon.ico"/>
+
+    <!-- Index stylesheet -->
+    <link rel="stylesheet" href="../CSS/index-style.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="../brower-components/font-awesome/css/font-awesome.min.css">
+    <!-- Bootstrap stylesheet -->
+    <link rel="stylesheet" href="../brower-components/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../brower-components/bootstrap/css/bootstrap-3_3_7.min.css">
+
+    <!-- Javascript Functions -->
+    <script src="../JS/logging.js"></script>
+
+    <title>Intelligent Systems Project 3</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+      <a class="navbar-brand" href="index.html">Navbar</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation-bar" aria-controls="navigation-bar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navigation-bar">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="agents.html">Agents</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link disabled" href="#">Reference</a>
+          </li>
+          <li class="nav-item active">
+            <a class="nav-link" href="logging.html">Logs  <span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="stats.html">Stats</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <style type="text/css">
+        th, td {
+          padding: 10px;
+        }
+        table tr:nth-child(even) {
+         background-color: #eee;
+        }
+        table tr:nth-child(odd) {
+          background-color: #fff;
+        }
+        table th {
+          color: black;
+          background-color: white;
+        }
+    </style>
+
+    <ul class="list-group">
+      <li class="list-group-item">
+          <span class="badge" id="number-verbose-messages">0</span>
+          <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#verbose-message-table">Verbose</button>
+          <table id="verbose-message-table" class="collapse">
+          <tr>
+            <th>Logged By</th>
+            <th>Logged At Time</th>
+            <th>Time Left</th>
+            <th>Message</th>
+          </tr>
+          </table>
+      </li>
+      <li class="list-group-item">
+        <span class="badge" id="number-error-messages">0</span>
+        <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#error-message-table">Error</button>
+        <table id="error-message-table" class="collapse">
+          <tr>
+            <th>Logged By</th>
+            <th>Logged At Time</th>
+            <th>Time Left</th>
+            <th>Message</th>
+          </tr>
+          </table>
+      </li> 
+      <li class="list-group-item">
+        <span class="badge" id="number-debug-messages">0</span>
+        <button type="button" class="btn btn-warning" data-toggle="collapse" data-target="#debug-message-table">Debug</button>
+        <table id="debug-message-table" class="collapse">
+          <tr>
+            <th>Logged By</th>
+            <th>Logged At Time</th>
+            <th>Time Left</th>
+            <th>Message</th>
+          </tr>
+          </table>
+      </li> 
+    </ul>
+
+    <!-- Jquery javascript AJAX -->
+    <script src="../brower-components/jquery/jquery-3.2.1.min.js"></script>
+    <!-- Bootstrap javascript at the end so page loads faster -->
+    <script src="../brower-components/bootstrap/js/popper.min.js"></script>
+    <script src="../brower-components/bootstrap/js/bootstrap.min.js"></script>
+
+  </body>
+</html>

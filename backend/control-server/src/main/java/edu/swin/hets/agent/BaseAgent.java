@@ -35,9 +35,9 @@ import java.util.*;
  *          - content : "no handlers found"
  *****************************************************************************/
 public abstract class BaseAgent extends Agent{
-    protected GlobalValues _current_globals;
+    GlobalValues _current_globals;
     private HashMap<MessageTemplate, IMessageHandler> _msg_handlers;
-    private Vector<ACLMessage> _messages_this_timeslice;
+    private ArrayList<ACLMessage> _messages_this_timeslice;
 
     private MessageTemplate globalValuesChangedTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
@@ -50,7 +50,7 @@ public abstract class BaseAgent extends Agent{
         _msg_handlers = new HashMap<MessageTemplate, IMessageHandler>();
         addMessageHandler(globalValuesChangedTemplate, new GlobalsChangedHandler());
         addMessageHandler(messageNotUndersoodTemplate, new MessageNotUnderstoodHandler());
-        _messages_this_timeslice = new Vector<ACLMessage>();
+        _messages_this_timeslice = new ArrayList<ACLMessage>();
         this.addMessageHandlingBehavior();
         _current_globals = getCurrentGlobalValuesBlocking();
     }
@@ -62,12 +62,12 @@ public abstract class BaseAgent extends Agent{
     // Called to get the internal data of this agent to push to the web server
     abstract protected String getJSON ();
 
-    protected void addMessageHandler(MessageTemplate template, IMessageHandler handler) {
+    void addMessageHandler(MessageTemplate template, IMessageHandler handler) {
         _msg_handlers.put(template, handler);
     }
 
     // Used to tell someone that you don't understand there message.
-    protected void sendNotUndersood(ACLMessage originalMsg, String content) {
+    void sendNotUndersood(ACLMessage originalMsg, String content) {
         ACLMessage response = originalMsg.createReply();
         response.setPerformative(ACLMessage.NOT_UNDERSTOOD);
         response.setContent(content);
@@ -75,7 +75,7 @@ public abstract class BaseAgent extends Agent{
         send(response);
     }
 
-    protected void sendRejectProposalMessage(ACLMessage origionalMsg) {
+    void sendRejectProposalMessage(ACLMessage origionalMsg) {
         ACLMessage response = origionalMsg.createReply();
         response.setPerformative(ACLMessage.REJECT_PROPOSAL);
         response.setSender(getAID());
@@ -126,16 +126,16 @@ public abstract class BaseAgent extends Agent{
                 GlobalValues newGlobals = (GlobalValues) msg.getContentObject();
                 if (_current_globals != null) {
                     if (newGlobals.getTime() != _current_globals.getTime()) {
-                        TimeExpired();
+                        _current_globals = newGlobals;
                         String deets = getJSON();
                         String msgs = new MessageHistory(_messages_this_timeslice, getName()).getMessages();
-                        SendAgentDetailsToServer(deets.substring(0, deets.length() - 1) + ',' +
-                                msgs.substring(1, msgs.length()));
+                        String toSend = deets.substring(0, deets.length() - 1) + ',' + msgs.substring(1, msgs.length());
+                        SendAgentDetailsToServer(toSend);
+                        TimeExpired();
                     } else {
-                        //System.out.println("________________________________________" + getLocalName() + " " + _current_globals.getTimeLeft());
+                        _current_globals = newGlobals;
                         TimePush(_current_globals.getTimeLeft() * 1000);
                     }
-                    _current_globals = newGlobals;
                 }
             } catch (UnreadableException e) {
                 sendNotUndersood(msg, "invalid globals attached");
@@ -159,7 +159,7 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    protected void RegisterAMSService (String serviceName,String serviceType) {
+    void RegisterAMSService (String serviceName,String serviceType) {
         LogVerbose("registering a " + serviceType + " service from " + serviceName);
         ServiceDescription sd = new ServiceDescription();
         sd.setName(serviceName);
@@ -182,7 +182,7 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    protected DFAgentDescription[] getService(String serviceType) {
+    DFAgentDescription[] getService(String serviceType) {
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
         sd.setType(serviceType);
@@ -214,7 +214,7 @@ public abstract class BaseAgent extends Agent{
         return agents;
     }
 
-    protected void addPowerSaleAgreement(ACLMessage msg, PowerSaleAgreement ag) {
+    void addPowerSaleAgreement(ACLMessage msg, PowerSaleAgreement ag) {
         try {
             msg.setContentObject(ag);
         }catch (IOException e) {
@@ -222,7 +222,7 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    protected void addPowerSaleProposal(ACLMessage msg, PowerSaleProposal prop) {
+    void addPowerSaleProposal(ACLMessage msg, PowerSaleProposal prop) {
         try {
             msg.setContentObject(prop);
         }catch (IOException e) {
@@ -230,7 +230,7 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    protected PowerSaleProposal getPowerSalePorposal(ACLMessage msg) {
+    PowerSaleProposal getPowerSalePorposal(ACLMessage msg) {
         try {
             return (PowerSaleProposal)msg.getContentObject();
         }catch (UnreadableException e) {
@@ -239,7 +239,7 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    protected PowerSaleAgreement getPowerSaleAgrement (ACLMessage msg) {
+    PowerSaleAgreement getPowerSaleAgrement (ACLMessage msg) {
         try {
             return (PowerSaleAgreement) msg.getContentObject();
         }catch (UnreadableException e) {
@@ -248,7 +248,7 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    protected void LogError (String toLog) {
+    void LogError (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("error: ".concat(toLog));
         msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
@@ -256,7 +256,7 @@ public abstract class BaseAgent extends Agent{
         send(msg);
     }
 
-    protected void LogDebug (String toLog) {
+    void LogDebug (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("debug: ".concat(toLog));
         msg.addReceiver( new AID("LoggingAgent", AID.ISLOCALNAME));
@@ -264,7 +264,7 @@ public abstract class BaseAgent extends Agent{
         send(msg);
     }
 
-    protected void LogVerbose (String toLog) {
+    void LogVerbose (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("verbose: ".concat(toLog));
         msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));

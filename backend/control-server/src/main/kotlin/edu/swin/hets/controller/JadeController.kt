@@ -2,6 +2,7 @@ package edu.swin.hets.controller
 
 import edu.swin.hets.agent.GlobalValuesAgent
 import edu.swin.hets.agent.LoggingAgent
+import edu.swin.hets.agent.StatisticsAgent
 import edu.swin.hets.agent.WebAgent
 import edu.swin.hets.controller.distributor.ContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
@@ -61,6 +62,7 @@ class JadeController(private val runtime: Runtime,
 
         Thread.sleep(1000)
         mainContainer?.createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf())?.start()
+       // mainContainer?.createNewAgent("StatisticsAgent", StatisticsAgent::class.java.name, arrayOf())?.start()
     }
 
     fun stop() {

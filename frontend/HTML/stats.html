@@ -9,25 +9,20 @@
     <link rel="stylesheet" href="../CSS/index-style.css">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="../brower-components/font-awesome/css/font-awesome.min.css">
+    <!-- Material Design Bootstrap -->
+    <link href="../brower-components/MDB/css/mdb.min.css" rel="stylesheet">
     <!-- Bootstrap stylesheet -->
     <link rel="stylesheet" href="../brower-components/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../brower-components/bootstrap/css/bootstrap-3_3_7.min.css">
-
-    <!-- d3 Graphs for siq interactive agent data -->
-    <script src="https://d3js.org/d3.v4.min.js"></script>
-
-    <!-- Jquery javascript AJAX -->
-    <script src="../brower-components/jquery/jquery-3.2.1.min.js"></script>
-
-    <!-- Javascript Functions -->
-    <script src="../JS/functions.js"></script>
-    <script src="../JS/agents.js"></script>
+    <!-- google charts -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
     <title>Intelligent Systems Project 3</title>
+
   </head>
   <body>
     <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-      <a class="navbar-brand" href="index.html">Navbar</a>
+      <a class="navbar-brand" href="" ="index.html">Navbar</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation-bar" aria-controls="navigation-bar" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -35,10 +30,10 @@
       <div class="collapse navbar-collapse" id="navigation-bar">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
-            <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
+            <a class="nav-link" href="index.html">Home</a>
           </li>
-          <li class="nav-item active">
-            <a class="nav-link" href="#">Agents</a>
+          <li class="nav-item">
+            <a class="nav-link" href="agents.html">Agents</a>
           </li>
           <li class="nav-item">
             <a class="nav-link disabled" href="#">Reference</a>
@@ -46,34 +41,27 @@
           <li class="nav-item">
             <a class="nav-link" href="logging.html">Logs</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="stats.html">Stats</a>
+          <li class="nav-item active">
+            <a class="nav-link" href="stats.html">Stats  <span class="sr-only">(current)</span></a>
           </li>
         </ul>
       </div>
-      <button id="ref" type="button" class="btn btn-danger" onClick="window.location.reload()"><i class="fa fa-refresh" aria-hidden="true"></i> Refresh</button>
     </nav>
+    <div>
+       <div id="average-price-chart" style="width: 900px; height: 500px"></div>
+       <div id="average-volume-chart" style="width: 900px; height: 500px"></div>
+       <div id="average-time-chart" style="width: 900px; height: 500px"></div>
+    </div>
 
-    <div class="container">
-      <div class="row">
-        <div class="col">
-          <svg width="960" height="600"></svg>
-          <script>drawAgents();</script>
-        </div><!-- /.col -->
-
-        <div class="col">
-          <div class="box">
-            <div id="agent-data"></div>
-          </div>
-        </div><!-- /.col -->
-      </div><!-- /.row -->
-    </div><!-- /.container -->
-
+  
+    <!-- Jquery javascript AJAX -->
+    <script src="../brower-components/jquery/jquery-3.2.1.min.js"></script>
     <!-- Bootstrap javascript at the end so page loads faster -->
     <script src="../brower-components/bootstrap/js/popper.min.js"></script>
     <script src="../brower-components/bootstrap/js/bootstrap.min.js"></script>
 
-    <!-- d3 Graphs for siq interactive agent data -->
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="../JS/stats.js"></script>
+
+
   </body>
 </html>

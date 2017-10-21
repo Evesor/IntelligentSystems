@@ -70,13 +70,13 @@ public class GlobalValuesAgent extends Agent {
 
     // Call 5 times before we change the time.
     private void UpdateGlobalValues() {
-        _time_left--;
+        _time_left -= 1000;
         if (_time_left <= 0) {
             _current_time++;
             _current_weather = _predictions.elementAt(0);
             _predictions.removeElementAt(0);
             _predictions.add(Weather.getRandom());
-            _time_left = 5;
+            _time_left = 5000;
         }
         _current_global_value = new GlobalValues(_current_time, _current_weather, _time_left);
     }
