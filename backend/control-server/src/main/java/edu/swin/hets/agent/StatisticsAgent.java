@@ -76,13 +76,18 @@ public class StatisticsAgent extends NegotiatingAgent {
         public List<Double> getAveragePrice () {
             return average((agg) -> agg.getCost());
         }
-
         public List<Double> getAverageVolume () {
             return average((agg) -> agg.getAmount());
         }
-
         public List<Double> getAverageTime () {
             return average((agg) -> agg.getEndTime() - agg.getStartTime());
+        }
+        public List<Integer> getNumberOfSalesMade() {
+            List<Integer> numberOfSales = new ArrayList<>();
+            for (List<PowerSaleAgreement> agg : _agreements) {
+                numberOfSales.add(agg.size());
+            }
+            return numberOfSales;
         }
 
         // Function used to make average of values based on lambda of what value we want.

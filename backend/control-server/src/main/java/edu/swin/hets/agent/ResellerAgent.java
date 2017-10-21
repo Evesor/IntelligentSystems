@@ -41,7 +41,7 @@ import java.util.concurrent.ExecutionException;
  *             content Object: A PowerSaleProposal object
  *****************************************************************************/
 public class ResellerAgent extends NegotiatingAgent {
-    private static final double FINE_FOR_FAILURE = 2;
+    private static final double FINE_FOR_FAILURE_TO_FULFILL_CONTRACT = 2;
     private static final int GROUP_ID = 2;
     private static final String TYPE = "Reseller Agent";
     private double _money;
@@ -49,13 +49,12 @@ public class ResellerAgent extends NegotiatingAgent {
     private double _currentByPrice;
     private double _nextPurchasedAmount;
     private double _nextRequiredAmount;
-    private ArrayList<Double> _future_needs;
     private ArrayList<PowerSaleAgreement> _currentBuyAgreements;
     private ArrayList<PowerSaleAgreement> _currentSellAgreements;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _customerDB;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _sellerDB;
     private ArrayList<INegotiationStrategy> _currentNegotiations;
-    private List<String> _inputArgs;
+    private List<String> _strategyParams;
 
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
@@ -87,9 +86,9 @@ public class ResellerAgent extends NegotiatingAgent {
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropMessageTemplate, new ProposalHandler());
         RegisterAMSService(getAID().getName(), "reseller");
-        _inputArgs = (List<String>) getArguments()[0];
-        if (_inputArgs.size() > 0) {
-            _inputArgs.forEach((a) -> LogDebug(" was passed: " + a));
+        _strategyParams = (List<String>) getArguments()[0];
+        if (_strategyParams.size() > 0) {
+            _strategyParams.forEach((a) -> LogDebug(" was passed: " + a));
         }
     }
 
@@ -109,7 +108,7 @@ public class ResellerAgent extends NegotiatingAgent {
     // We are in a new time-slice, update bookkeeping.
     protected void TimeExpired() {
         if (_nextRequiredAmount > _nextPurchasedAmount) {
-            double fine = FINE_FOR_FAILURE * (_nextRequiredAmount - _nextPurchasedAmount);
+            double fine = FINE_FOR_FAILURE_TO_FULFILL_CONTRACT * (_nextRequiredAmount - _nextPurchasedAmount);
             LogError(getName() + " failed to fulfill all its contracts and was fined: " + fine);
             _money -= fine;
         }
@@ -145,11 +144,6 @@ public class ResellerAgent extends NegotiatingAgent {
         // Re calculate usage for this time slice
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
-        //TODO Remove later when home agent demand is coming though, for now just make random demand
-//        _nextRequiredAmount = new Random().nextInt(300) + 100;
-//        if (_nextRequiredAmount < _minPurchaseAmount) {
-//            _nextRequiredAmount = _minPurchaseAmount;
-//        }
     }
 
     // Time is expiring, make sure we have purchased enough electricity
@@ -287,16 +281,16 @@ public class ResellerAgent extends NegotiatingAgent {
 
     private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String opponentName)
             throws ExecutionException{
-        if (_inputArgs.size() == 0) {
+        if (_strategyParams.size() == 0) {
             LogError("No valid inputs to make negotiation strategy, using default");
             return new HoldForFirstOfferPrice(offer, opponentName, _current_globals.getTime());
         }
         try {
-            return NegotiatorFactory.Factory.getNegotiationStrategy(_inputArgs, new BasicUtility(), getName(),
+            return NegotiatorFactory.Factory.getNegotiationStrategy(_strategyParams, new BasicUtility(), getName(),
                     opponentName, offer, _current_globals.getTime());
         } catch (ExecutionException e) {
             String error = "Negotiator factory failed to initialize with: " ;
-            for (String a : _inputArgs) { error += ("  " + a); }
+            for (String a : _strategyParams) { error += ("  " + a); }
             error += (" due to: " + e.getMessage());
             LogError(error);
             throw new ExecutionException(new Throwable("Not good baby"));
@@ -328,7 +322,8 @@ public class ResellerAgent extends NegotiatingAgent {
                 private double current_buy_price;
                 private double current_sales_volume;
                 private double current_purchase_volume;
-                AgentData (double buy_price, double sell_price, double current_sales, double current_purchases, String name){
+                AgentData (double buy_price, double sell_price, double current_sales, double current_purchases,
+                           String name){
                     current_sell_price = sell_price;
                     current_buy_price = buy_price;
                     current_sales_volume = current_sales;
@@ -361,13 +356,12 @@ public class ResellerAgent extends NegotiatingAgent {
         @Override
         public double evaluate(PowerSaleProposal proposal) {
             double required = _nextRequiredAmount - _nextPurchasedAmount;
-            double requiredUtil = (_supplyImperative / (Math.abs(required) < 0.1 ? 0.1 : required)); //TODO, bad hack, fix
-            //System.out.println(getName() + " required is: " + required + " contributing: " + requiredUtil + " to utility");
-            double costDiffrence = (_idealPrice - proposal.getCost());
-            double costDiffrenceUtil = costDiffrence * _costImperative;
-            //System.out.println("Cost diff is: " + costDiffrence +  " Cost utility is " + costDiffrenceUtil);
-            double timeImperative =  Math.abs((GlobalValues.lengthOfTimeSlice() - _current_globals.getTimeLeft()) * _timeImperative);
-            return (requiredUtil + costDiffrenceUtil + timeImperative);
+            double requiredUtil = (_supplyImperative / (Math.abs(required) < 0.1 ? 0.1 : required));
+            double costDifference = (_idealPrice - proposal.getCost());
+            double costDifferenceUtil = costDifference * _costImperative;
+            double timeImperative =  Math.abs((GlobalValues.lengthOfTimeSlice() -
+                    _current_globals.getTimeLeft()) * _timeImperative);
+            return (requiredUtil + costDifferenceUtil + timeImperative);
         }
 
 

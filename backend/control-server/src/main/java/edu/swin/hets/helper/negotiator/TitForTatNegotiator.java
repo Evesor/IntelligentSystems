@@ -23,4 +23,5 @@ public class TitForTatNegotiator implements INegotiationStrategy {
     public String getOpponentName() {
         return null;
     }
+
 }

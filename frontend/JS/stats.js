@@ -14,13 +14,15 @@ ws.onmessage = function(data)
 };
 
 function two1dto2d(a, name) {
+	var final_index = a.length; // Limit to 50
+	var start_index = a.length > 50 ? a.length - 50: 0;
 	var list = [];
 	var c = [];
-	c.push(['time' , name]);
+	c.push(['time', name]);
 	for (var i = 0; i < a.length; i++) {
     	list.push(i.toString());
 	}
-  	for (var i = 0; i < a.length; i++) {
+  	for (var i = start_index; i < final_index; i++) {
     	c.push([list[i], a[i]]);
   	}
   	return c
@@ -30,25 +32,29 @@ function drawStats(data) {
 	drawChart(two1dto2d(data.averagePrice, 'Price'), "Average price", "average-price-chart");
 	drawChart(two1dto2d(data.averageVolume, 'Sales'), "Average volume of sales", "average-volume-chart");
 	drawChart(two1dto2d(data.averageTime, 'Length'), "Average time of contracts", "average-time-chart");
+	drawChart(two1dto2d(data.numberOfSalesMade, 'Sales'), "Number of sales made", "sales-made-chart");
 }
 
 
-function drawChart(chart_data, chart_name, chart_backend_name) {	
+function drawChart(chart_data, chart_name, chart_backend_name) {
 	try {
 		var data = google.visualization.arrayToDataTable(chart_data);
 	} catch (error) {
 		console.log(error);
 	}
-	var line_color = '#C70039';
+	var line_color = '#AD85BA';
 	switch (chart_backend_name) {
 		case "average-price-chart":
-			line_color = '#1E8449';
+			line_color = '#95A1C3';
 			break;
 		case "average-volume-chart":
-			line_color = '#F5B041';
+			line_color = '#74A18E';
 			break;
 		case "average-time-chart":
-			line_color = '#AF7AC5';
+			line_color = '#818FB5';
+			break;
+		case "sales-made-chart":
+			line_color = "#E49969";
 			break;
 	}
     var options = {

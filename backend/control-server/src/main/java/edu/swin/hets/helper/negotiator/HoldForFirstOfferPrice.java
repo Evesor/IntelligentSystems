@@ -41,4 +41,5 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     public String getOpponentName() {
         return _opponentsName;
     }
+
 }
