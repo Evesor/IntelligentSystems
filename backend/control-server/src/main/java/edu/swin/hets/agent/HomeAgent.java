@@ -1,15 +1,14 @@
 package edu.swin.hets.agent;
 
-import edu.swin.hets.helper.GoodMessageTemplates;
-import edu.swin.hets.helper.IMessageHandler;
-import edu.swin.hets.helper.PowerSaleAgreement;
-import edu.swin.hets.helper.PowerSaleProposal;
+import edu.swin.hets.helper.*;
+import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import sun.rmi.runtime.Log;
 
 import java.io.IOException;
 import java.lang.*;
@@ -40,6 +39,8 @@ public class HomeAgent extends BaseAgent
 	private double _next_required_amount;
 	//maximum acceptable buy price
 	private double _current_by_price;
+	private ArrayList<INegotiationStrategy> _currentNegotiations;
+	private Vector<PowerSaleAgreement> _current_sell_agreements;
 
 	private MessageTemplate electricityForecastMT = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.INFORM),
@@ -71,9 +72,11 @@ public class HomeAgent extends BaseAgent
 		maxWatt = 10000;
 		energySaverWatt = 10;//TODO calculate energySaverWatt
 		_current_buy_agreements = new Vector<PowerSaleAgreement>();
+		_current_sell_agreements = new Vector<PowerSaleAgreement>();
 		_next_purchased_amount = 0;
 		_current_by_price = 10;
 		LogDebug(getLocalName() + " init is complete!");
+		_currentNegotiations = new ArrayList<>();
 	}
 	
 	@Override
@@ -206,8 +209,27 @@ public class HomeAgent extends BaseAgent
 			// We have purchased this electricty.
 			_next_purchased_amount += agreement.getAmount();
 		}
-		if (_next_required_amount > _next_purchased_amount) {
+
+		for (PowerSaleAgreement agreement : _current_sell_agreements) {
+			if (agreement.getEndTime() < _current_globals.getTime()) {
+				// No longer valid
+				toRemove.add(agreement);
+			}
+		}
+		for (PowerSaleAgreement rem: toRemove) {
+			LogDebug("Removing a contract");
+			_current_sell_agreements.removeElement(rem);
+		}
+		for (PowerSaleAgreement agreement : _current_sell_agreements) {
+			// We have purchased this electricty.
+			_next_purchased_amount -= agreement.getAmount();
+		}
+
+		if(_next_required_amount > _next_purchased_amount) {
 			sendBuyCFP();
+		}
+		if(_next_required_amount < _next_purchased_amount) {
+			sendSellCFP();
 		}
 	}
 
@@ -239,7 +261,10 @@ public class HomeAgent extends BaseAgent
 			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
 			sendBuyCFP(); // We need to buy more electricity
 		}
-		// We have enough electricity do nothing.
+
+		if(_next_required_amount < _next_purchased_amount) {
+			sendSellCFP();
+		}
 	}
 
 	//TODO Override getJSON
@@ -249,87 +274,100 @@ public class HomeAgent extends BaseAgent
 	//send buy CFP
 	private void sendBuyCFP()
 	{
-		ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-		DFAgentDescription[] resellers = getService("reseller");
-		for (DFAgentDescription reseller : resellers) {
-			cfp.addReceiver(reseller.getName()); //CFP to each reseller
-		}
-		//TODO make more complicated logic.
-		/*_next_required_amount - _next_purchased_amount*/
-		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,
-				1, getAID(), false);
+//		ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+//		DFAgentDescription[] resellers = getService("reseller");
+//		for (DFAgentDescription reseller : resellers) {
+//			cfp.addReceiver(reseller.getName()); //CFP to each reseller
+//		}
+//		//TODO make more complicated logic.
+//		/*_next_required_amount - _next_purchased_amount*/
+//		PowerSaleProposal prop = new PowerSaleProposal(_next_required_amount - _next_purchased_amount,
+//				1, getAID(), false);
+//		prop.setBuyerAID(getAID());
+//		LogVerbose("Sending a CFP to reseller for: " + prop.getAmount());
+//		try {
+//			cfp.setContentObject(prop);
+//		} catch (IOException e) {
+//			LogError("Could not attach a proposal to a message, exception thrown");
+//		}
+//		send(cfp);
+//		LogDebug("SEND CFP DONE");
+
+		double toBuy = _next_required_amount - _next_purchased_amount;
+		PowerSaleProposal prop = new PowerSaleProposal(toBuy,1,getAID(),false);
 		prop.setBuyerAID(getAID());
-		LogVerbose("Sending a CFP to reseller for: " + prop.getAmount());
-		try {
-			cfp.setContentObject(prop);
-		} catch (IOException e) {
-			LogError("Could not attach a proposal to a message, exception thrown");
+		DFAgentDescription[] resellers = getService("reseller");
+		for(DFAgentDescription reseller : resellers)
+		{
+			ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+			cfp.addReceiver(reseller.getName());
+			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,reseller.getName().getName(),_current_globals.getTime());
+			_currentNegotiations.add(strategy);
+			addPowerSaleProposal(cfp,prop);
+			cfp.setConversationId(UUID.randomUUID().toString());
+			send(cfp);
+			LogDebug("sending buy CFP");
 		}
-		send(cfp);
-		LogDebug("SEND CFP DONE");
 	}
 
 	// Someone is offering to sell us electricity
 	private class ProposalHandler implements IMessageHandler {
 		public void Handler(ACLMessage msg) {
-			PowerSaleProposal proposed;
-			try {
-				proposed = (PowerSaleProposal) msg.getContentObject();
-			} catch (UnreadableException e) {
-				sendNotUndersood(msg, "no proposal found");
-				return;
+			//_currentNegotiations.forEach((neg) -> LogDebug("Negotiating with: " + neg.getOpponentName()));
+			Optional<INegotiationStrategy> opt = _currentNegotiations.stream().filter(
+				(agg) -> agg.getOpponentName().equals(msg.getSender().getName())).findAny();
+			if (opt.isPresent()) {
+				LogError("opt PRESENT" + msg.getSender());
+				INegotiationStrategy negotiation = opt.get();
+				PowerSaleProposal prop = getPowerSalePorposal(msg);
+				negotiation.addNewProposal(prop, false);
+				IPowerSaleContract response = negotiation.getResponse();
+				if(response instanceof PowerSaleProposal) {
+					// We should send back a counter proposal.
+					PowerSaleProposal counterProposal = (PowerSaleProposal) response;
+					negotiation.addNewProposal(counterProposal, true);
+					_currentNegotiations.add(negotiation);
+					ACLMessage replyMsg = msg.createReply();
+					replyMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+					addPowerSaleProposal(replyMsg, counterProposal);
+					send(replyMsg);
+				}
+				else {
+					// We should accept the contract.
+					_currentNegotiations.clear();
+					PowerSaleAgreement contract = new PowerSaleAgreement(prop, _current_globals.getTime());
+					LogVerbose(" has accepted a contract from " + msg.getSender().getName() +
+							" for " + contract.getCost());
+					_current_sell_agreements.add(contract);
+					_next_purchased_amount -= contract.getAmount();
+					ACLMessage acceptMsg = msg.createReply();
+					acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+					addPowerSaleAgreement(acceptMsg, contract);
+					send(acceptMsg);
+				}
 			}
-			if (proposed.getCost() <= _current_by_price) {
-				LogVerbose(getName() + " agreed to buy " + proposed.getAmount() + " electricity for " +
-						proposed.getDuration() + " time slots");
-				PowerSaleAgreement contract = new PowerSaleAgreement(proposed, _current_globals.getTime());
-				_current_buy_agreements.add(contract);
-				_next_purchased_amount += contract.getAmount();
-				ACLMessage acceptMsg = msg.createReply();
-				acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-				addPowerSaleAgreement(acceptMsg, contract);
-				send(acceptMsg);
-			}
+			else{LogError("opt is not present : " + msg.getSender().getLocalName());}
 		}
 	}
 
-	private int sentCounter;
-	private Vector<PowerSaleProposal> receivedBuyProposal;
 	private void sendSellCFP()
 	{
-		sentCounter = 0;
-		receivedBuyProposal = null;
-		ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+		double toSell = _next_purchased_amount - _next_required_amount;
+		PowerSaleProposal prop = new PowerSaleProposal(toSell,1,getAID(),true);
+		prop.setSellerAID(getAID());
 		DFAgentDescription[] resellers = getService("reseller");
 		for(DFAgentDescription reseller : resellers)
-			{cfp.addReceiver(reseller.getName());
-			sentCounter++;}
-		PowerSaleProposal prop = new PowerSaleProposal(1,1,getAID(),true);
-		//prop.setSellerAID(getAID());
-		addPowerSaleProposal(cfp,prop);
-		send(cfp);
+		{
+			ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+			cfp.addReceiver(reseller.getName());
+			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop, reseller.getName().getName(),
+				 _current_globals.getTime());
+			_currentNegotiations.add(strategy);
+			addPowerSaleProposal(cfp, prop);
+			cfp.setConversationId(UUID.randomUUID().toString());
+			send(cfp);
+		}
 	}
-
-	// Someone is offering to sell us electricity
-//	private class buyProposalHandler implements IMessageHandler {
-//		public void Handler(ACLMessage msg) {
-//			if(receivedBuyProposal.length < sentCounter){receivedBuyProposal.add( += msg;}
-//			if(sentCounter==receivedBuyProposal.length)
-//			{
-//				//pick cheapest deal
-//				double min = receivedBuyProposal[0].getCost();
-//				int indexMin = 0;
-//				int i;
-//				for(i=1;i<=receivedBuyProposal.length-1;i++)
-//					{if(receivedBuyProposal[i].getCost() < min)
-//						{min = receivedBuyProposal[i].getCost();
-//						indexMin = i;}}
-//
-//				//TODO send accept
-//				//TODO send reject
-//			}
-//		}
-//	}
 }
 
 //TODO behaviour to negotiate price for buy & sell

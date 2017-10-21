@@ -30,8 +30,17 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     @Override
     public IPowerSaleContract getResponse() {
         if (_thereMostRecentOffer != null) {
-            if (_thereMostRecentOffer.getCost() >= _firstOffer.getCost()) {
-                return new PowerSaleAgreement(_thereMostRecentOffer, _currentTime);
+            //I am the seller
+            if(_firstOffer.getBuyerAID().getName().equals(_opponentsName)) {
+                if (_thereMostRecentOffer.getCost() >= _firstOffer.getCost()) {
+                    return new PowerSaleAgreement(_thereMostRecentOffer, _currentTime);
+                }
+            }
+            //I am the buyer
+            else if(_firstOffer.getSellerAID().getName().equals(_opponentsName)) {
+                if (_thereMostRecentOffer.getCost() <= _firstOffer.getCost()) {
+                    return new PowerSaleAgreement(_thereMostRecentOffer, _currentTime);
+                }
             }
         }
         return _firstOffer;

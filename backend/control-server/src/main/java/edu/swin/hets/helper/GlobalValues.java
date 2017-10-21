@@ -22,4 +22,5 @@ public class GlobalValues implements Serializable{
     }
     public int getTimeLeft () { return _time_left; }
     public static int lengthOfTimeSlice () { return 5000;}
+    public static int pushTimeLength () { return 1000; }
 }
