@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>IS7 HETS</title>
 </head>
+
 <body>
     <div id="chatControls">
         <input id="message" placeholder="Type your message">
@@ -11,56 +13,478 @@
     </div>
 
     <div id="chat"></div>
-    <script src="https://fastcdn.org/D3.js/3.5.6/d3.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
     <script>
-        //Establish the WebSocket connection and set up event handlers
-        var webSocket = new WebSocket("ws://localhost:4567/ws");
 
-        webSocket.onmessage = function (msg) {
-            console.log(JSON.parse(msg.data));
-            updateChat(msg);
+        Array.prototype.flatMap = function (lambda) {
+            return Array.prototype.concat.apply([], this.map(lambda));
         };
 
-        webSocket.onclose = function () {
-            alert("WebSocket connection closed")
+        Array.prototype.unique = function () {
+            return [...new Set(this)];
         };
 
-        //Send message if "Send" is clicked
-        id("send").addEventListener("click", function () {
-            sendMessage(id("message").value);
-        });
+        /** Diffs two arrays, finding out which elements are new in the second array */
+        Array.prototype.removed = function (newArray) {
+            return this.filter((firstElement) => {
+                return !newArray.some(secondElement => {
+                    return firstElement === secondElement;
+                });
+            });
+        };
 
-        //Send message if enter is pressed in the input field
-        id("message").addEventListener("keypress", function (e) {
-            if (e.keyCode === 13) {
-                sendMessage(e.target.value);
+        /** Diffs two arrays, finding out which elements have been removed in the second array */
+        Array.prototype.added = function (newArray) {
+            return newArray.filter((firstElement) => {
+                return !this.some((secondElement) => {
+                    return firstElement === secondElement;
+                });
+            });
+        };
+
+        // (() => {
+        //     let nestedArray = [1,2,[3,[4,5],6],7];
+        //     let flattenedArray = [1,2,3,[4,5],6,7];
+        //     console.log("flatMap test");
+        //     console.log("test data: ");
+        //     console.log(nestedArray);
+        //     console.log("actual: ");
+        //     console.log(nestedArray.flatMap(x => {return x}));
+        //     console.log("expected: ");
+        //     console.log(flattenedArray);
+
+
+
+        //     let array1 = [1,2,3,4,5,6,7];
+        //     let array2 = [2,4,5,8,9,10];
+
+        //     let array1Added = array1.added(array2);
+        //     let array1Removed = array1.removed(array2);
+
+        //     console.log("added test")
+        //     console.log("actual: " + array1Added.toString()); 
+        //     console.log("expected: " + "8,9,10");
+
+        //     console.log("removed test")
+        //     console.log("actual: " + array1Removed.toString()); 
+        //     console.log("expected: " + "1,3,6,7");
+        // })();
+
+        // let myGraph = () => {
+        //     // Add and remove elements on the graph object
+
+        //     this.addNode = function (id) {
+        //         nodes.push({ "id": id });
+        //         update();
+        //     };
+
+        //     this.diffNodes = function (newNodes) {
+        //         return newNodes.diff(nodes)
+        //     }
+
+        //     this.removeNode = function (id) {
+        //         var i = 0;
+        //         var n = findNode(id);
+        //         while (i < links.length) {
+        //             if ((links[i]['source'] == n) || (links[i]['target'] == n)) {
+        //                 links.splice(i, 1);
+        //             }
+        //             else i++;
+        //         }
+        //         nodes.splice(findNodeIndex(id), 1);
+        //         update();
+        //     };
+
+        //     this.removeLink = function (source, target) {
+        //         for (var i = 0; i < links.length; i++) {
+        //             if (links[i].source.id == source && links[i].target.id == target) {
+        //                 links.splice(i, 1);
+        //                 break;
+        //             }
+        //         }
+        //         update();
+        //     };
+
+        //     this.removeallLinks = function () {
+        //         links.splice(0, links.length);
+        //         update();
+        //     };
+
+        //     this.removeAllNodes = function () {
+        //         nodes.splice(0, links.length);
+        //         update();
+        //     };
+
+        //     this.addLink = function (source, target, value) {
+        //         links.push({ "source": findNode(source), "target": findNode(target), "value": value });
+        //         update();
+        //     };
+
+        //     var findNode = function (id) {
+        //         for (var i in nodes) {
+        //             if (nodes[i]["id"] === id) return nodes[i];
+        //         }
+        //         ;
+        //     };
+
+        //     var findNodeIndex = function (id) {
+        //         for (var i = 0; i < nodes.length; i++) {
+        //             if (nodes[i].id == id) {
+        //                 return i;
+        //             }
+        //         }
+        //         ;
+        //     };
+
+        //     // set up the D3 visualisation in the specified element
+        //     var w = 960,
+        //         h = 450;
+
+        //     var color = d3.scale.category10();
+
+        //     var vis = d3.select("body")
+        //         .append("svg:svg")
+        //         .attr("width", w)
+        //         .attr("height", h)
+        //         .attr("id", "svg")
+        //         .attr("pointer-events", "all")
+        //         .attr("viewBox", "0 0 " + w + " " + h)
+        //         .attr("perserveAspectRatio", "xMinYMid")
+        //         .append('svg:g');
+
+        //     var force = d3.layout.force();
+
+        //     var nodes = force.nodes(),
+        //         links = force.links();
+
+        //     var update = function () {
+        //         var link = vis.selectAll("line")
+        //             .data(links, function (d) {
+        //                 return d.source.id + "-" + d.target.id;
+        //             });
+
+        //         link.enter().append("line")
+        //             .attr("id", function (d) {
+        //                 return d.source.id + "-" + d.target.id;
+        //             })
+        //             .attr("stroke-width", function (d) {
+        //                 return d.value / 10;
+        //             })
+        //             .attr("class", "link");
+        //         link.append("title")
+        //             .text(function (d) {
+        //                 return d.value;
+        //             });
+        //         link.exit().remove();
+
+        //         var node = vis.selectAll("g.node")
+        //             .data(nodes, function (d) {
+        //                 return d.id;
+        //             });
+
+        //         var nodeEnter = node.enter().append("g")
+        //             .attr("class", "node")
+        //             .call(force.drag);
+
+        //         nodeEnter.append("svg:circle")
+        //             .attr("r", 12)
+        //             .attr("id", function (d) {
+        //                 return "Node;" + d.id;
+        //             })
+        //             .attr("class", "nodeStrokeClass")
+        //             .attr("fill", function (d) { return color(d.id); });
+
+        //         nodeEnter.append("svg:text")
+        //             .attr("class", "textClass")
+        //             .attr("x", 14)
+        //             .attr("y", ".31em")
+        //             .text(function (d) {
+        //                 return d.id;
+        //             });
+
+        //         node.exit().remove();
+
+        //         force.on("tick", function () {
+
+        //             node.attr("transform", function (d) {
+        //                 return "translate(" + d.x + "," + d.y + ")";
+        //             });
+
+        //             link.attr("x1", function (d) {
+        //                 return d.source.x;
+        //             })
+        //                 .attr("y1", function (d) {
+        //                     return d.source.y;
+        //                 })
+        //                 .attr("x2", function (d) {
+        //                     return d.target.x;
+        //                 })
+        //                 .attr("y2", function (d) {
+        //                     return d.target.y;
+        //                 });
+        //         });
+
+        //         // Restart the force layout.
+        //         force
+        //             .gravity(.01)
+        //             .charge(-80000)
+        //             .friction(0)
+        //             .linkDistance(function (d) { return d.value * 10 })
+        //             .size([w, h])
+        //             .start();
+        //     };
+
+        //     // Make it all go
+        //     update();
+        // }
+
+        (() => {
+
+            let graph;
+            let d3Data = (() => {
+                let nodes = [];
+                let links = [];
+
+                this.mergeNodes = (newNodes) => {
+                    console.log(newNodes);
+                    nodes.push(newNodes);
+                }
+
+                this.mergeLinks = (newLinks) => {
+                    console.log(newLinks);
+                    links.push(newLinks)
+                }
+
+                this.getNodes = () => {
+                    return nodes;
+                }
+
+                this.getLinks = () => {
+                    return links;
+                }
+
+                this.fuckingDeleteThis = () => {
+                    nodes = [];
+                    links = [];
+                }
+
+                return this;
+            })();
+
+            //<NodeName, Information Associated>
+            let d3DataInformation = (() => {
+                this.agentMap = {};
+
+                this.updateAgents = (newAgents) => {
+                    // newAgents is an array of agents
+                    newAgents.forEach((element) => {
+                        if (!(element.name in agentMap)) {
+                            agentMap[element.name] = element.data;
+                        } else {
+                            // Sort out and insert data here lole
+                            agentMap[element.name] = element.data;
+                        }
+                    });
+                }
+
+                return this;
+            })();
+            let updateNodes = (d3Data, d3DataInformation, newData) => {
             }
-        });
 
-        //Send a message if it's not empty, then clear the input field
-        function sendMessage(message) {
-            if (message !== "") {
-                webSocket.send(message);
-                id("message").value = "";
+
+            // Establish the WebSocket connection and set up event handlers
+            // let webSocket = new WebSocket("ws://localhost:4567/ws");
+            let webSocket = {};
+
+            webSocket.onmessage = function (msg) {
+                console.log(JSON.parse(msg.data));
+                //updateChat(msg);
+            };
+
+            webSocket.onclose = function () {
+                console.log("Websocket Closed.");
+                updateChat("Websocket Closed");
+            };
+
+            //Send message if "Send" is clicked
+            id("send").addEventListener("click", function () {
+                sendMessage(id("message").value);
+            });
+
+            //Send message if enter is pressed in the input field
+            id("message").addEventListener("keypress", function (e) {
+                if (e.keyCode === 13) {
+                    sendMessage(e.target.value);
+                }
+            });
+
+            //Send a message if it's not empty, then clear the input field
+            function sendMessage(message) {
+                if (message !== "") {
+                    // webSocket.send(message);
+                    id("message").value = "";
+                }
             }
-        }
 
-        //Update the chat-panel
-        function updateChat(msg) {
-            insert("chat", msg.data);
-            insert("chat", "\n");
-            console.log(msg);
-        }
+            //Update the chat-panel
+            function updateChat(msg) {
+                insert("chat", msg);
+                insert("chat", "\n");
+                console.log(msg);
+            }
 
-        //Helper function for inserting HTML as the first child of an element
-        function insert(targetId, message) {
-            id(targetId).insertAdjacentHTML("afterbegin", message);
-        }
+            //Helper function for inserting HTML as the first child of an element
+            function insert(targetId, message) {
+                id(targetId).insertAdjacentHTML("afterbegin", message);
+            }
 
-        //Helper function for selecting element by id
-        function id(id) {
-            return document.getElementById(id);
-        }
+            //Helper function for selecting element by id
+            function id(id) {
+                return document.getElementById(id);
+            }
+
+            let testJSON = {
+                "nodes": [
+                    {
+                        "id": "Reseller2@10.1.21.39:1099\/JADE",
+                        "group": 2,
+                        "agent": {
+                            "name": "Reseller2",
+                            "type": "Reseller Agent",
+                            "current_Buy_Price": 1,
+                            "current_Sales_Volume": 238,
+                            "current_Purchase_Volume": 357,
+                            "current_Sell_Price": 1
+                        },
+                        "links": [
+                            {
+                                "source": "PowerPlant1@10.1.21.39:1099\/JADE",
+                                "target": "Reseller2@10.1.21.39:1099\/JADE",
+                                "value": 4
+                            },
+                            {
+                                "source": "PowerPlant2@10.1.21.39:1099\/JADE",
+                                "target": "Reseller2@10.1.21.39:1099\/JADE",
+                                "value": 4
+                            },
+                            {
+                                "source": "Home2@10.1.21.39:1099\/JADE",
+                                "target": "Reseller2@10.1.21.39:1099\/JADE",
+                                "value": 2
+                            },
+                            {
+                                "source": "Home1@10.1.21.39:1099\/JADE",
+                                "target": "Reseller2@10.1.21.39:1099\/JADE",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "id": "PowerPlant2@10.1.21.39:1099\/JADE",
+                        "group": 1,
+                        "agent": {
+                            "name": "PowerPlant2",
+                            "current_Sell_Price": 1.8,
+                            "current_Production": 0
+                        },
+                        "links": [
+                            {
+                                "source": "Reseller1@10.1.21.39:1099\/JADE",
+                                "target": "PowerPlant2@10.1.21.39:1099\/JADE",
+                                "value": 2
+                            },
+                            {
+                                "source": "Reseller2@10.1.21.39:1099\/JADE",
+                                "target": "PowerPlant2@10.1.21.39:1099\/JADE",
+                                "value": 8
+                            }
+                        ]
+                    },
+                    {
+                        "id": "PowerPlant1@10.1.21.39:1099\/JADE",
+                        "group": 1,
+                        "agent": {
+                            "name": "PowerPlant1",
+                            "current_Sell_Price": 1.8,
+                            "current_Production": 0
+                        },
+                        "links": [
+                            {
+                                "source": "Reseller1@10.1.21.39:1099\/JADE",
+                                "target": "PowerPlant1@10.1.21.39:1099\/JADE",
+                                "value": 1
+                            },
+                            {
+                                "source": "Reseller2@10.1.21.39:1099\/JADE",
+                                "target": "PowerPlant1@10.1.21.39:1099\/JADE",
+                                "value": 7
+                            }
+                        ]
+                    },
+                    {
+                        "id": "Reseller1@10.1.21.39:1099\/JADE",
+                        "group": 2,
+                        "agent": {
+                            "name": "Reseller1",
+                            "type": "Reseller Agent",
+                            "current_Buy_Price": 1,
+                            "current_Sales_Volume": 120,
+                            "current_Purchase_Volume": 240,
+                            "current_Sell_Price": 1
+                        },
+                        "links": [
+                            {
+                                "source": "PowerPlant1@10.1.21.39:1099\/JADE",
+                                "target": "Reseller1@10.1.21.39:1099\/JADE",
+                                "value": 1
+                            },
+                            {
+                                "source": "PowerPlant2@10.1.21.39:1099\/JADE",
+                                "target": "Reseller1@10.1.21.39:1099\/JADE",
+                                "value": 1
+                            },
+                            {
+                                "source": "Home2@10.1.21.39:1099\/JADE",
+                                "target": "Reseller1@10.1.21.39:1099\/JADE",
+                                "value": 2
+                            },
+                            {
+                                "source": "Home1@10.1.21.39:1099\/JADE",
+                                "target": "Reseller1@10.1.21.39:1099\/JADE",
+                                "value": 2
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            let testHarness = (() => {
+                // console.log(d3Data);
+                // (d3Data.mergeLinks("MERGING LINKS"));
+                // (d3Data.mergeNodes("MERGING NODES"));
+                // console.log(d3Data.getNodes());
+                // console.log(d3Data.getLinks());
+                let links = testJSON.nodes.flatMap((x) => {
+                    return x.links;
+                });
+                let agents = testJSON.nodes.map((x) => {
+                    return x.agent;
+                });
+                let ids = testJSON.nodes.map(x => {
+                    return x.id;
+                });
+                let idAgentMap = {};
+
+                testJSON.nodes.forEach((x) => {
+                    idAgentMap[x.id] = x.agent;
+                });
+
+                console.log(idAgentMap);
+            })();
+
+        })();
     </script>
 </body>
+
 </html>
