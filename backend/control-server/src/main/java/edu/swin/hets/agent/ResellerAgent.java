@@ -40,14 +40,13 @@ import java.util.concurrent.ExecutionException;
  *       - PROPOSAL : Used to send a proposal back to a home user.
  *             content Object: A PowerSaleProposal object
  *****************************************************************************/
-public class ResellerAgent extends BaseAgent {
+public class ResellerAgent extends NegotiatingAgent {
     private static final double FINE_FOR_FAILURE = 2;
     private static final int GROUP_ID = 2;
     private static final String TYPE = "Reseller Agent";
     private double _money;
     private double _currentSellPrice;
     private double _currentByPrice;
-    private double _minPurchaseAmount;
     private double _nextPurchasedAmount;
     private double _nextRequiredAmount;
     private ArrayList<Double> _future_needs;
@@ -76,7 +75,6 @@ public class ResellerAgent extends BaseAgent {
         super.setup();
         _currentByPrice = 1;
         _currentSellPrice = 1.0;
-        _minPurchaseAmount = 100;
         _nextRequiredAmount = 0;
         _money = 500;
         _currentBuyAgreements = new ArrayList<>();
@@ -167,14 +165,12 @@ public class ResellerAgent extends BaseAgent {
     // We want to to buy electricity
     private void sendBuyCFP() {
         DFAgentDescription[] powerPlants = getService("powerplant");
-        IUtilityFunction currentUtil = new BasicUtility();
         _currentNegotiations.clear(); // We have just received a push or new timeSlice, clear list.
         //TODO make more complicated logic for initial offer.
         PowerSaleProposal prop = new PowerSaleProposal(
                 _nextRequiredAmount - _nextPurchasedAmount,1, getAID(), false);
         for (DFAgentDescription powerPlant : powerPlants) {
             // Make new negotiation for each powerPlant
-            //TODO, don't use magic numbers, grab them from input or use defaults.
             INegotiationStrategy strategy;
             try {
                 strategy = makeNegotiationStrategy(prop, powerPlant.getName().getName());
@@ -182,13 +178,8 @@ public class ResellerAgent extends BaseAgent {
                 return;
             }
             _currentNegotiations.add(strategy);
-            ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-            cfp.setConversationId(UUID.randomUUID().toString());
-            cfp.addReceiver(powerPlant.getName()); //CFP to each power plant
             prop.setBuyerAID(getAID());
-            addPowerSaleProposal(cfp, prop);
-            cfp.setSender(getAID());
-            send(cfp);
+            sendCFP(prop, powerPlant.getName());
         }
         LogDebug(getName() + " is sending cfp for: " + (_nextRequiredAmount - _nextPurchasedAmount) );
     }
@@ -212,20 +203,14 @@ public class ResellerAgent extends BaseAgent {
                     // Make counter offer
                     PowerSaleProposal counterProposal = (PowerSaleProposal) offer;
                     strategy.addNewProposal(counterProposal, true);
-                    ACLMessage counterMsg = msg.createReply();
-                    counterMsg.setPerformative(ACLMessage.PROPOSE);
-                    addPowerSaleProposal(counterMsg, counterProposal);
+                    sendCounterOffer(msg, counterProposal);
                     LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
                             " for electricity negotiating with " + msg.getSender().getName());
-                    send(counterMsg);
                 }
                 else {
                     // Accept the contract
                     PowerSaleAgreement agreement = (PowerSaleAgreement) offer;
-                    ACLMessage acceptMsg = msg.createReply();
-                    acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                    addPowerSaleAgreement(acceptMsg, agreement);
-                    send(acceptMsg);
+                    sendAcceptProposal(msg, agreement);
                     _currentBuyAgreements.add(agreement);
                     saleMade(agreement);
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
@@ -244,7 +229,8 @@ public class ResellerAgent extends BaseAgent {
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _currentSellAgreements.add(agreement);
             saleMade(agreement);
-            LogDebug("Accepted a prop from: " + msg.getSender().getName());
+            LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
+                " @ " + agreement.getCost());
         }
     }
 
@@ -287,11 +273,7 @@ public class ResellerAgent extends BaseAgent {
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
             proposed.setSellerAID(getAID());
-            ACLMessage response = msg.createReply();
-            response.setPerformative(ACLMessage.PROPOSE);
-            addPowerSaleProposal(response, proposed);
-            response.setSender(getAID());
-            send(response);
+            sendProposal(msg, proposed);
             LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;
             try {

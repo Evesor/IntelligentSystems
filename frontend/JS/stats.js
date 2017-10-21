@@ -3,7 +3,6 @@ var ws = new WebSocket("ws://localhost:4567/ws");
 
 google.charts.load('current', {'packages':['corechart']});
 
-
 ws.onmessage = function(data) 
 { 
 	try {

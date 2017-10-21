@@ -28,7 +28,7 @@ import java.util.Optional;
  *       - PROPOSE : Used to send out a proposal to someone
  *              content Object : A power sale proposal obj
  *****************************************************************************/
-public class PowerPlantAgent extends BaseAgent {
+public class PowerPlantAgent extends NegotiatingAgent {
     private static final int GROUP_ID = 1;
     private static String TYPE = "Power Plant";
     private double _money;
@@ -126,11 +126,7 @@ public class PowerPlantAgent extends BaseAgent {
                     proposed, msg.getSender().getName(), _current_globals.getTime());
             _currentNegotiations.add(strategy);
             proposed.setSellerAID(getAID());
-            ACLMessage response = msg.createReply();
-            response.setPerformative(ACLMessage.PROPOSE);
-            addPowerSaleProposal(response, proposed);
-            response.setSender(getAID());
-            send(response);
+            sendProposal(msg, proposed);
             LogVerbose(getName() + " sending a proposal for " +  proposed.getAmount() + " @ " +
                     proposed.getCost() + " to: "  + msg.getSender().getName());
         }
@@ -160,7 +156,7 @@ public class PowerPlantAgent extends BaseAgent {
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             if (agreement.getAmount() > (_maxProduction - _currentProduction)) {
                 // Cant sell that much electricity, send back error message.
-                quoteNoLongerValid(msg);
+                sendRejectProposalMessage(msg);
                 return;
             }
             _currentContracts.add(agreement);
@@ -182,24 +178,20 @@ public class PowerPlantAgent extends BaseAgent {
             IPowerSaleContract response = strategy.getResponse();
             if (response instanceof PowerSaleProposal) {
                 // Make counter offer
-                ACLMessage counterMessage = msg.createReply();
-                counterMessage.setPerformative(ACLMessage.PROPOSE);
+                PowerSaleProposal counter = (PowerSaleProposal) response;
+                sendCounterOffer(msg, counter);
+                strategy.addNewProposal(counter, true);
+                LogDebug(getName() + " offered to pay " + counter.getCost()  +
+                        " for electricity negotiating with " + msg.getSender().getName());
             }
             else { // Accept
                 PowerSaleAgreement agreement = (PowerSaleAgreement) response;
-                ACLMessage acceptMessage = msg.createReply();
-                acceptMessage.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                addPowerSaleAgreement(acceptMessage, agreement);
-                send(acceptMessage);
+                sendAcceptProposal(msg, agreement);
                 _currentContracts.add(agreement);
                 updateContracts();
                 LogVerbose(getName() + " has just agreed to sell " + agreement.getAmount() + " from " + agreement);
             }
         }
-    }
-
-    private void quoteNoLongerValid(ACLMessage msg) {
-        sendRejectProposalMessage(msg);
     }
     /******************************************************************************
      *  Use: Used by JSON serializing library to make JSON objects.

@@ -19,7 +19,7 @@ import java.util.function.ToDoubleFunction;
  *       - INFORM : Used to tell the stats agent about a new agreement.
  *             content: "An PowerSaleAgreement object."
  *****************************************************************************/
-public class StatisticsAgent extends BaseAgent {
+public class StatisticsAgent extends NegotiatingAgent {
     private ArrayList<ArrayList<PowerSaleAgreement>> _agreements;
 
     private MessageTemplate _saleInformMessageTemplate = MessageTemplate.and(

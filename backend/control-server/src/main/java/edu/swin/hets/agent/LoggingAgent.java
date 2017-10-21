@@ -2,17 +2,13 @@ package edu.swin.hets.agent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.swin.hets.agent.BaseAgent;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import sun.rmi.runtime.Log;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 /******************************************************************************
  *  Use: An agent for dealing with development messages.
  *  Name: Always only have one of these on the main container, have it name set

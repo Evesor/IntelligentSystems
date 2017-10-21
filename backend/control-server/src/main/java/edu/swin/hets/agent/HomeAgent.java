@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.lang.*;
 import java.util.*;
 
-public class HomeAgent extends BaseAgent
+public class HomeAgent extends NegotiatingAgent
 {
 	public static String APPLIANCE_LIST_MAP_KEY = "HOME_AGENT_APPLIANCE_LIST";
 	//number of appliances
@@ -215,7 +215,7 @@ public class HomeAgent extends BaseAgent
 	@Override
 	protected void TimePush(int ms_left)
 	{
-		LogDebug("Time Left : " + _current_globals.getTimeLeft());
+		//LogDebug("Time Left : " + _current_globals.getTimeLeft());
 		_next_purchased_amount -= sumWatt();
 		if(sumWatt() > _next_purchased_amount)
 		{

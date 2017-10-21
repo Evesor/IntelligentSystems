@@ -75,13 +75,69 @@ public abstract class BaseAgent extends Agent{
         send(response);
     }
 
-    void sendRejectProposalMessage(ACLMessage origionalMsg) {
-        ACLMessage response = origionalMsg.createReply();
-        response.setPerformative(ACLMessage.REJECT_PROPOSAL);
-        response.setSender(getAID());
-        send(response);
+    void RegisterAMSService (String serviceName,String serviceType) {
+        LogVerbose("registering a " + serviceType + " service from " + serviceName);
+        ServiceDescription sd = new ServiceDescription();
+        sd.setName(serviceName);
+        sd.setType(serviceType);
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        dfd.addServices(sd);
+        try {
+            DFService.register(this, dfd);
+        } catch (FIPAException e) {
+            LogError("Could not add a " + serviceType + " service, exception thrown: " + e.getMessage());
+        }
     }
 
+    void DeRegisterService () {
+        try  {
+            DFService.deregister(this);
+        } catch (Exception e) {
+            LogError("Could not de register a service, exception thrown");
+        }
+    }
+
+    DFAgentDescription[] getService(String serviceType) {
+        DFAgentDescription dfd = new DFAgentDescription();
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType(serviceType);
+        dfd.addServices(sd);
+        try {
+            DFAgentDescription[] result = DFService.search(this, dfd);
+            if (result.length == 0) {
+                LogDebug("No " + serviceType + " services found");
+            }
+            return result;
+        } catch (Exception e) {
+            LogError("Could not contact the DF, error thrown");
+        }
+        return null;
+    }
+
+    void LogError (String toLog) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.setContent("error: ".concat(toLog));
+        msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.setSender(getAID());
+        send(msg);
+    }
+
+    void LogDebug (String toLog) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.setContent("debug: ".concat(toLog));
+        msg.addReceiver( new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.setSender(getAID());
+        send(msg);
+    }
+
+    void LogVerbose (String toLog) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.setContent("verbose: ".concat(toLog));
+        msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.setSender(getAID());
+        send(msg);
+    }
     // Used by the agent at construction to make sure that it get a time at initialization.
     private GlobalValues getCurrentGlobalValuesBlocking() {
         ACLMessage msg = blockingReceive(globalValuesChangedTemplate);
@@ -130,7 +186,7 @@ public abstract class BaseAgent extends Agent{
                         String deets = getJSON();
                         String msgs = new MessageHistory(_messages_this_timeslice, getName()).getMessages();
                         String toSend = deets.substring(0, deets.length() - 1) + ',' + msgs.substring(1, msgs.length());
-                        SendAgentDetailsToServer(toSend);
+                        sendAgentDetailsToServer(toSend);
                         TimeExpired();
                     } else {
                         _current_globals = newGlobals;
@@ -143,15 +199,6 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    // Used to send the server the object details as a JSON string
-    private void SendAgentDetailsToServer (String detailsAsJSON) {
-        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.addReceiver(new AID("WebServer", AID.ISLOCALNAME));
-        msg.setContent(detailsAsJSON);
-        msg.setSender(getAID());
-        send(msg);
-    }
-
     private class MessageNotUnderstoodHandler implements IMessageHandler{
         public void Handler(ACLMessage msg) {
             LogDebug("message not undersood by: " + getName() +
@@ -159,115 +206,11 @@ public abstract class BaseAgent extends Agent{
         }
     }
 
-    void RegisterAMSService (String serviceName,String serviceType) {
-        LogVerbose("registering a " + serviceType + " service from " + serviceName);
-        ServiceDescription sd = new ServiceDescription();
-        sd.setName(serviceName);
-        sd.setType(serviceType);
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        dfd.addServices(sd);
-        try {
-            DFService.register(this, dfd);
-        } catch (FIPAException e) {
-            LogError("Could not add a " + serviceType + " service, exception thrown: " + e.getMessage());
-        }
-    }
-
-    protected void DeRegisterService () {
-        try  {
-            DFService.deregister(this);
-        } catch (Exception e) {
-            LogError("Could not de register a service, exception thrown");
-        }
-    }
-
-    DFAgentDescription[] getService(String serviceType) {
-        DFAgentDescription dfd = new DFAgentDescription();
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType(serviceType);
-        dfd.addServices(sd);
-        try {
-            DFAgentDescription[] result = DFService.search(this, dfd);
-            if (result.length == 0) {
-                LogDebug("No " + serviceType + " services found");
-            }
-            return result;
-        } catch (Exception e) {
-            LogError("Could not contact the DF, error thrown");
-        }
-        return null;
-    }
-
-    // Method to return list of agents in the platform (taken from AMSDumpAgent from Week3)
-    protected AMSAgentDescription[] getAgentList() {
-        AMSAgentDescription [] agents = null;
-        try {
-            SearchConstraints c = new SearchConstraints();
-            c.setMaxResults (new Long(-1));
-            agents = AMSService.search( this, new AMSAgentDescription (), c );
-        }
-        catch (Exception e) {
-            LogError("Problem searching AMS");
-            e.printStackTrace();
-        }
-        return agents;
-    }
-
-    void addPowerSaleAgreement(ACLMessage msg, PowerSaleAgreement ag) {
-        try {
-            msg.setContentObject(ag);
-        }catch (IOException e) {
-            LogError("Tried to attach a power sale agreement to message, error thrown");
-        }
-    }
-
-    void addPowerSaleProposal(ACLMessage msg, PowerSaleProposal prop) {
-        try {
-            msg.setContentObject(prop);
-        }catch (IOException e) {
-            LogError("Tried to attach a power sale agreement to message, error thrown");
-        }
-    }
-
-    PowerSaleProposal getPowerSalePorposal(ACLMessage msg) {
-        try {
-            return (PowerSaleProposal)msg.getContentObject();
-        }catch (UnreadableException e) {
-            LogError("Tried to read a power sale agreement from message, error thrown");
-            return null;
-        }
-    }
-
-    PowerSaleAgreement getPowerSaleAgrement (ACLMessage msg) {
-        try {
-            return (PowerSaleAgreement) msg.getContentObject();
-        }catch (UnreadableException e) {
-            LogError("Tried to read a power sale agreement from message, error thrown");
-            return null;
-        }
-    }
-
-    void LogError (String toLog) {
+    // Used to send the server the object details as a JSON string
+    private void sendAgentDetailsToServer(String detailsAsJSON) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.setContent("error: ".concat(toLog));
-        msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
-        msg.setSender(getAID());
-        send(msg);
-    }
-
-    void LogDebug (String toLog) {
-        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.setContent("debug: ".concat(toLog));
-        msg.addReceiver( new AID("LoggingAgent", AID.ISLOCALNAME));
-        msg.setSender(getAID());
-        send(msg);
-    }
-
-    void LogVerbose (String toLog) {
-        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.setContent("verbose: ".concat(toLog));
-        msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.addReceiver(new AID("WebServer", AID.ISLOCALNAME));
+        msg.setContent(detailsAsJSON);
         msg.setSender(getAID());
         send(msg);
     }
