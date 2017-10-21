@@ -86,7 +86,7 @@ public abstract class BaseAgent extends Agent{
         try {
             DFService.register(this, dfd);
         } catch (FIPAException e) {
-            LogError("Could not add a " + serviceType + " service, exception thrown: " + e.getMessage());
+            LogDebug("Could not add a " + serviceType + " service, exception thrown: " + e.getMessage());
         }
     }
 
@@ -94,7 +94,7 @@ public abstract class BaseAgent extends Agent{
         try  {
             DFService.deregister(this);
         } catch (Exception e) {
-            LogError("Could not de register a service, exception thrown");
+            LogDebug("Could not de register a service, exception thrown");
         }
     }
 

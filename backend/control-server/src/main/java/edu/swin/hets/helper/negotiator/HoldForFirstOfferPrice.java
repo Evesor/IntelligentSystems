@@ -30,19 +30,30 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     @Override
     public IPowerSaleContract getResponse() {
         if (_thereMostRecentOffer != null) {
-            //I am the seller
-            if (_firstOffer.getBuyerAID().getName().equals(_opponentsName)) {
-                if (_thereMostRecentOffer.getCost() >= _firstOffer.getCost()) {
-                    return new PowerSaleAgreement(_thereMostRecentOffer, _currentTime);
-                }
+            // Messy because seller and buyer may not both be initialized.
+            if (_firstOffer.getSellerAID() != null && _firstOffer.getBuyerAID() != null) {
+                // Both filled out, switch on type
+                if (_firstOffer.getSellerAID().getName().equals(_opponentsName)) return weAreBuyer();
+                else if (_firstOffer.getBuyerAID().getName().equals(_opponentsName)) return weAreSeller();
             }
-            //I am the buyer
-            else if (_firstOffer.getSellerAID().getName().equals(_opponentsName)) {
-                if (_thereMostRecentOffer.getCost() <= _firstOffer.getCost()) {
-                    return new PowerSaleAgreement(_thereMostRecentOffer, _currentTime);
-                }
+            else {
+                if (_firstOffer.getBuyerAID() == null) return weAreSeller();
+                else if (_firstOffer.getSellerAID() == null) return weAreBuyer();
             }
+            //TODO, add a throw or something, if we get here that is bad.
         }
+        return _firstOffer;
+    }
+
+    private IPowerSaleContract weAreBuyer() {
+        if (_thereMostRecentOffer.getCost() <= _firstOffer.getCost())
+            return new PowerSaleAgreement(_thereMostRecentOffer, _currentTime);
+        return _firstOffer;
+    }
+
+    private IPowerSaleContract weAreSeller() {
+        if (_thereMostRecentOffer.getCost() >= _firstOffer.getCost())
+            return new PowerSaleAgreement(_thereMostRecentOffer, _currentTime);
         return _firstOffer;
     }
 
