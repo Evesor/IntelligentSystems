@@ -26,7 +26,8 @@ public class StatisticsAgent extends BaseAgent {
             GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()),
             MessageTemplate.MatchPerformative(ACLMessage.INFORM));
 
-    public StatisticsAgent () {
+    @Override
+    protected void setup () {
         super.setup();
         _agreements = new ArrayList<>();
         _agreements.add(new ArrayList<>()); // Add list for first time-slice.

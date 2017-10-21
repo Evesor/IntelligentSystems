@@ -10,7 +10,7 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
 import java.util.*;
-
+import java.util.concurrent.ExecutionException;
 /******************************************************************************
  *  Use: A simple example of a reseller agent class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -56,6 +56,7 @@ public class ResellerAgent extends BaseAgent {
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _customerDB;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _sellerDB;
     private ArrayList<INegotiationStrategy> _currentNegotiations;
+    private List<String> _inputArgs;
 
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
@@ -88,7 +89,10 @@ public class ResellerAgent extends BaseAgent {
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropMessageTemplate, new ProposalHandler());
         RegisterAMSService(getAID().getName(), "reseller");
-        List<String> args = (List<String>) getArguments()[0];
+        _inputArgs = (List<String>) getArguments()[0];
+        if (_inputArgs.size() > 0) {
+            _inputArgs.forEach((a) -> LogDebug(" was passed: " + a));
+        }
     }
 
     protected String getJSON() {
@@ -104,7 +108,7 @@ public class ResellerAgent extends BaseAgent {
         return json;
     }
 
-    // We are in a new time-slice, update bookeeping.
+    // We are in a new time-slice, update bookkeeping.
     protected void TimeExpired() {
         if (_nextRequiredAmount > _nextPurchasedAmount) {
             double fine = FINE_FOR_FAILURE * (_nextRequiredAmount - _nextPurchasedAmount);
@@ -171,9 +175,12 @@ public class ResellerAgent extends BaseAgent {
         for (DFAgentDescription powerPlant : powerPlants) {
             // Make new negotiation for each powerPlant
             //TODO, don't use magic numbers, grab them from input or use defaults.
-            INegotiationStrategy strategy = new LinearUtilityDecentNegotiator(
-                    currentUtil, getName(), powerPlant.getName().getName()
-                    ,prop ,_current_globals.getTime(), 0.1, 0.5, 1);
+            INegotiationStrategy strategy;
+            try {
+                strategy = makeNegotiationStrategy(prop, powerPlant.getName().getName());
+            } catch (ExecutionException e) {
+                return;
+            }
             _currentNegotiations.add(strategy);
             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
             cfp.setConversationId(UUID.randomUUID().toString());
@@ -283,13 +290,31 @@ public class ResellerAgent extends BaseAgent {
             response.setSender(getAID());
             send(response);
             LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
-            // TODO, Change params to read form input, not use magic numbers
-            INegotiationStrategy strategy = new LinearUtilityDecentNegotiator(new BasicUtility(), getName(),
-                    msg.getSender().getName(), proposed, _current_globals.getTime(), 0.1, 0.5, 1);
+            INegotiationStrategy strategy;
+            try {
+                strategy = makeNegotiationStrategy(proposed, msg.getSender().getName());
+            } catch (ExecutionException e) {
+                return;
+            }
             _currentNegotiations.add(strategy);
         }
     }
-    /******************************************************************************
+
+    private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String opponentName)
+            throws ExecutionException{
+        try {
+            return NegotiatorFactory.Factory.getNegotiationStratergy(_inputArgs, new BasicUtility(), getName(),
+                    opponentName, offer, _current_globals.getTime());
+        } catch (ExecutionException e) {
+            String error = "Negotiator factory failed to initialize with: " ;
+            for (String a : _inputArgs) { error += ("  " + a); }
+            error += (" due to: " + e.getMessage());
+            LogError(error);
+            throw new ExecutionException(new Throwable("Not good baby"));
+        }
+    }
+
+     /******************************************************************************
      *  Use: Used by getJson to output data to server.
      *****************************************************************************/
     private class ResellerAgentData implements Serializable {
