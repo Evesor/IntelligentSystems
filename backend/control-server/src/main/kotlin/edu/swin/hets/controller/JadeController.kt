@@ -2,6 +2,7 @@ package edu.swin.hets.controller
 
 import edu.swin.hets.agent.GlobalValuesAgent
 import edu.swin.hets.agent.LoggingAgent
+import edu.swin.hets.agent.StatisticsAgent
 import edu.swin.hets.agent.WebAgent
 import edu.swin.hets.controller.distributor.ContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
@@ -41,6 +42,7 @@ class JadeController(private val runtime: Runtime,
         mainContainer = runtime.createMainContainer(profile).apply {
             createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
             createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
+            createNewAgent("StatisticsAgent", StatisticsAgent::class.java.name, arrayOf())?.start()
         }
 
         JadeGateway.init(null,

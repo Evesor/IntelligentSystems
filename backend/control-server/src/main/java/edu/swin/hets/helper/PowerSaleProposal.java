@@ -8,7 +8,7 @@ import java.io.Serializable;
  *  NOTES: The cost of the contract is set to a negative number on
  *         initialization.
  *****************************************************************************/
-public class PowerSaleProposal implements Serializable {
+public class PowerSaleProposal implements Serializable, IPowerSaleContract{
     private double _power_amount;
     private int _duration;
     private double _cost;

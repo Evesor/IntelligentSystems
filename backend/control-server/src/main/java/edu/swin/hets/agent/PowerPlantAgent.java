@@ -2,14 +2,14 @@ package edu.swin.hets.agent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.swin.hets.helper.GoodMessageTemplates;
-import edu.swin.hets.helper.IMessageHandler;
-import edu.swin.hets.helper.PowerSaleAgreement;
-import edu.swin.hets.helper.PowerSaleProposal;;
+import edu.swin.hets.helper.*;
+import edu.swin.hets.helper.negotiator.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Optional;
+
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -28,19 +28,25 @@ import java.util.ArrayList;
  *       - PROPOSE : Used to send out a proposal to someone
  *              content Object : A power sale proposal obj
  *****************************************************************************/
-public class PowerPlantAgent extends BaseAgent {
+public class PowerPlantAgent extends NegotiatingAgent {
     private static final int GROUP_ID = 1;
     private static String TYPE = "Power Plant";
     private double _money;
     private double _costOfProduction;
-    private double _current_sell_price;
-    private double _max_production;
-    private double _current_production;
-    private ArrayList<PowerSaleAgreement> _current_contracts;
+    private double _currentIdealSellPrice;
+    private double _maxProduction;
+    private double _currentProduction;
+    private ArrayList<PowerSaleAgreement> _currentContracts;
+    private ArrayList<INegotiationStrategy> _currentNegotiations;
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
             GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
+    private MessageTemplate ProposeTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
+            MessageTemplate.or(
+                    GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()),
+                    GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName())));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
             GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
@@ -52,29 +58,32 @@ public class PowerPlantAgent extends BaseAgent {
     protected void setup() {
         super.setup();
         _money = 500;
-        _current_production = 10;
-        _max_production = 1000;
+        _currentProduction = 10;
+        _maxProduction = 1000;
         _costOfProduction = 0.5;
-        _current_sell_price = 0.8;
-        _current_contracts = new ArrayList<>();
+        _currentIdealSellPrice = 1.8;
+        _currentContracts = new ArrayList<>();
+        _currentNegotiations = new ArrayList<>();
         RegisterAMSService(getAID().getName(),"powerplant");
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
         addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
+        addMessageHandler(ProposeTemplate, new ProposeHandler());
     }
 
     // Update bookkeeping.
     protected void TimeExpired (){
         updateContracts();
         balanceBooks();
-        LogVerbose(getName() + " is producing: " + _current_production);
+        _currentNegotiations.clear();
+        LogVerbose(getName() + " is producing: " + _currentProduction);
     }
 
     protected String getJSON() {
         String json = "";
         try {
             json = new ObjectMapper().writeValueAsString(
-                    new PowerPlantData(_current_sell_price, _current_production, getName()));
+                    new PowerPlantData(_currentIdealSellPrice, _currentProduction, getName()));
         }
         catch (JsonProcessingException e) {
             LogError("Error parsing data to json in " + getName() + " exeption thrown");
@@ -87,48 +96,39 @@ public class PowerPlantAgent extends BaseAgent {
     }
 
     private void balanceBooks () {
-        _current_contracts.forEach((agg) -> _money += agg.getCost() * agg.getAmount());
-        _current_contracts.forEach((agg) -> _money -= agg.getAmount() * _costOfProduction);
+        _currentContracts.forEach((agg) -> _money += agg.getCost() * agg.getAmount());
+        _currentContracts.forEach((agg) -> _money -= agg.getAmount() * _costOfProduction);
     }
 
     private void updateContracts() {
-        _current_production = 0;
+        _currentProduction = 0;
         ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
         // Filter out old contracts
-        _current_contracts.stream().filter(
+        _currentContracts.stream().filter(
                 (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
-        _current_contracts.removeAll(toRemove);
+        _currentContracts.removeAll(toRemove);
         // Update how much we now need to produce.
-        _current_contracts.forEach((agg) -> _current_production += agg.getAmount());
+        _currentContracts.forEach((agg) -> _currentProduction += agg.getAmount());
     }
 
     // Someone buying from us.
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
+            IUtilityFunction util = new BasicUtility();
             // A request for a price on electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
-            if (proposed.getAmount() > (_max_production - _current_production)) {
-                // Cant sell that much electricity, don't bother putting a bit in.
+            if (proposed.getAmount() > (_maxProduction - _currentProduction)) {
                 LogVerbose(getName() + " was asked to sell electricity than it can make.");
                 return;
             }
-            if (proposed.getCost() < 0) {
-                // No amount set, set how much we will sell that quantity for.
-                proposed.setCost(_current_sell_price);
-            }
-            else if (proposed.getCost() < _current_sell_price) {
-                // To low a price, don't bother agreeing.
-                //TODO Add negotiation here to try and make a more agreeable price.
-                sendRejectProposalMessage(msg);
-                return;
-            }
+            if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
+            INegotiationStrategy strategy = new HoldForFirstOfferPrice(
+                    proposed, msg.getSender().getName(), _current_globals.getTime());
+            _currentNegotiations.add(strategy);
             proposed.setSellerAID(getAID());
-            ACLMessage response = msg.createReply();
-            response.setPerformative(ACLMessage.PROPOSE);
-            addPowerSaleProposal(response, proposed);
-            response.setSender(getAID());
-            send(response);
-            LogVerbose(getName() + " sending a proposal to " + msg.getSender().getName());
+            sendProposal(msg, proposed);
+            LogVerbose(getName() + " sending a proposal for " +  proposed.getAmount() + " @ " +
+                    proposed.getCost() + " to: "  + msg.getSender().getName());
         }
     }
 
@@ -139,11 +139,12 @@ public class PowerPlantAgent extends BaseAgent {
                 // Someone is rejecting a contract, remove it.
                 PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
                 ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
-                _current_contracts.stream().filter((agg) -> agg.equalValues(agreement)).forEach(toRemove::add);
-                _current_contracts.removeAll(toRemove);
+                _currentContracts.stream().filter((agg) -> agg.equalValues(agreement)).forEach(toRemove::add);
+                _currentContracts.removeAll(toRemove);
             }
             if (GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()).match(msg)) {
-                // TODO, send back a better quote maybe?
+                //TODO, remove it form negotiation chain
+                // TODO, if not a send back a better quote maybe?
             }
         }
     }
@@ -153,18 +154,45 @@ public class PowerPlantAgent extends BaseAgent {
         public void Handler(ACLMessage msg) {
             // A quote we have previously made has been accepted.
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
-            if (agreement.getAmount() > (_max_production - _current_production)) {
+            if (agreement.getAmount() > (_maxProduction - _currentProduction)) {
                 // Cant sell that much electricity, send back error message.
-                quoteNoLongerValid(msg);
+                sendRejectProposalMessage(msg);
                 return;
             }
-            LogDebug(getName() + " has made a deal");
-            _current_contracts.add(agreement);
+            _currentContracts.add(agreement);
         }
     }
 
-    private void quoteNoLongerValid(ACLMessage msg) {
-        sendRejectProposalMessage(msg);
+    // Someone is being difficult and haggling.... Sigh
+    private class ProposeHandler implements IMessageHandler {
+        public void Handler(ACLMessage msg) {
+            Optional<INegotiationStrategy> opt = _currentNegotiations.stream().filter(
+                    (neg) -> neg.getOpponentName().equals(msg.getSender().getName())).findAny();
+            if (!opt.isPresent()) {
+                LogError(getName() + " got a proposal from someone it was not negotiating with.");
+                return;
+            }
+            INegotiationStrategy strategy = opt.get();
+            PowerSaleProposal prop = getPowerSalePorposal(msg);
+            strategy.addNewProposal(prop, false);
+            IPowerSaleContract response = strategy.getResponse();
+            if (response instanceof PowerSaleProposal) {
+                //TODO, fix negotiation strategy before turning back on.
+                // Make counter offer
+//                PowerSaleProposal counter = (PowerSaleProposal) response;
+//                sendCounterOffer(msg, counter);
+//                strategy.addNewProposal(counter, true);
+//                LogDebug(getName() + " offered to pay " + counter.getCost()  +
+//                        " for electricity negotiating with " + msg.getSender().getName());
+            }
+            else { // Accept
+                PowerSaleAgreement agreement = (PowerSaleAgreement) response;
+                sendAcceptProposal(msg, agreement);
+                _currentContracts.add(agreement);
+                updateContracts();
+                LogVerbose(getName() + " has just agreed to sell " + agreement.getAmount() + " from " + agreement);
+            }
+        }
     }
     /******************************************************************************
      *  Use: Used by JSON serializing library to make JSON objects.
@@ -175,7 +203,6 @@ public class PowerPlantAgent extends BaseAgent {
         PowerPlantData(double sell_price, double production, String name) {
             dat = new AgentData(sell_price, production, name);
             Name = name;
-
         }
         public String getid() { return Name; }
         public int getgroup() { return GROUP_ID; }
@@ -192,6 +219,21 @@ public class PowerPlantAgent extends BaseAgent {
             public double getCurrent_Production() { return current_production; }
             public double getCurrent_Sell_Price() { return current_sell_price; }
             public String getName () { return Name.split("@")[0];}
+        }
+    }
+    /******************************************************************************
+     *  Use: Used to define how useful a deal is to us.
+     *****************************************************************************/
+    private class BasicUtility implements IUtilityFunction{
+
+        @Override
+        public double evaluate(PowerSaleProposal proposal) {
+            return 0;
+        }
+
+        @Override
+        public boolean equals(IUtilityFunction utility) {
+            return false;
         }
     }
 }
