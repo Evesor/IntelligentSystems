@@ -3,6 +3,10 @@
     let webSocket = new WebSocket("ws://localhost:4567/ws");
     var graph = agentGraph("#svgdiv");
 
+    graph.addNode("Home1@192.168.0.13:1099/JADE");
+    graph.addNode("Home2@192.168.0.13:1099/JADE");
+    graph.addLink(graph.createLink("Home1@192.168.0.13:1099/JADE", "Home2@192.168.0.13:1099/JADE", 5))
+
     webSocket.onmessage = function (msg) {
         let jsonData = JSON.parse(msg.data);
         if ('nodes' in jsonData){
@@ -22,6 +26,7 @@
         ids.forEach(id => graph.addNode(id));
         links
             .filter(link => graph.validateLink(link))
+            .map(link => graph.createLink(link.source, link.target, link.value))
             .forEach(link => graph.addLink(link));
     }
 
