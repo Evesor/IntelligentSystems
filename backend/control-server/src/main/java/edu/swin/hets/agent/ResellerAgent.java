@@ -90,6 +90,8 @@ public class ResellerAgent extends NegotiatingAgent {
         if (_strategyParams.size() > 0) {
             _strategyParams.forEach((a) -> LogDebug(" was passed: " + a));
         }
+        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        System.out.println(PowerSaleAgreement.class.getName());
     }
 
     protected String getJSON() {
@@ -144,6 +146,8 @@ public class ResellerAgent extends NegotiatingAgent {
         // Re calculate usage for this time slice
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
+        //TODO, Remove once home is sorted again
+        _nextRequiredAmount = 300;
     }
 
     // Time is expiring, make sure we have purchased enough electricity
@@ -197,7 +201,7 @@ public class ResellerAgent extends NegotiatingAgent {
                     // Make counter offer
                     PowerSaleProposal counterProposal = (PowerSaleProposal) offer;
                     strategy.addNewProposal(counterProposal, true);
-                    sendCounterOffer(msg, counterProposal);
+                    sendProposal(msg, counterProposal);
                     LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
                             " for electricity negotiating with " + msg.getSender().getName());
                 }
@@ -206,7 +210,7 @@ public class ResellerAgent extends NegotiatingAgent {
                     PowerSaleAgreement agreement = (PowerSaleAgreement) offer;
                     sendAcceptProposal(msg, agreement);
                     _currentBuyAgreements.add(agreement);
-                    saleMade(agreement);
+                    sendSaleMade(agreement);
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     updateContracts();
@@ -222,7 +226,7 @@ public class ResellerAgent extends NegotiatingAgent {
             //TODO, check this is a valid proposal still.
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _currentSellAgreements.add(agreement);
-            saleMade(agreement);
+            sendSaleMade(agreement);
             LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
                 " @ " + agreement.getCost());
         }
@@ -295,13 +299,6 @@ public class ResellerAgent extends NegotiatingAgent {
             LogError(error);
             throw new ExecutionException(new Throwable("Not good baby"));
         }
-    }
-
-    private void saleMade(PowerSaleAgreement agg) {
-        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        addPowerSaleAgreement(msg, agg);
-        msg.addReceiver(new AID("StatisticsAgent", AID.ISLOCALNAME));
-        send(msg);
     }
      /******************************************************************************
      *  Use: Used by getJson to output data to server.

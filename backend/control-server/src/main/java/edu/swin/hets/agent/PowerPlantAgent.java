@@ -44,9 +44,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
     private MessageTemplate ProposeTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
-            MessageTemplate.or(
-                    GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()),
-                    GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName())));
+            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
     private MessageTemplate PropAcceptedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
             GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
