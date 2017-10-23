@@ -75,12 +75,11 @@ var AgentGraph = () => {
 
         // set up the D3 visualisation in the specified element
     var w = 960,
-        h = 450;
+        h = 600;
 
     var color = d3.scale.category10();
 
-    var vis = d3.select("body")
-        .append("svg:svg")
+    var vis = d3.select("svg")
         .attr("width", w)
         .attr("height", h)
         .attr("id", "svg")
