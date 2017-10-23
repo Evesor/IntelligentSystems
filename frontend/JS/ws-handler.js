@@ -1,11 +1,7 @@
 (() => {
 // Establish the WebSocket connection and set up event handlers
     let webSocket = new WebSocket("ws://localhost:4567/ws");
-    var graph = AgentGraph("#svgdiv");
-
-    graph.addNode("Home1@192.168.0.13:1099/JADE");
-    graph.addNode("Home2@192.168.0.13:1099/JADE");
-    graph.addLink(graph.createLink("Home1@192.168.0.13:1099/JADE", "Home2@192.168.0.13:1099/JADE", 5));
+    var graph = AgentGraph();
 
     webSocket.onmessage = function (msg) {
         let jsonData = JSON.parse(msg.data);
@@ -23,8 +19,6 @@
             return x.links;
         });
 
-        // console.log(jsonData);
-        // console.log(links);
         ids.forEach(id => graph.addNode(id));
         links
             .filter(link => graph.validateLink(link))

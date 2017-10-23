@@ -1,7 +1,0 @@
-{
-  "applianceAgent": {
-    "currentPowerUsage" : 14,
-    "predictedPowerUsage" : [2, 4, 10, 6],
-    "switch" : ["on", "off"]
-  }
-}

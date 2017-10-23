@@ -1,5 +1,5 @@
 // Websocket Server
-var ws = new WebSocket("ws://localhost:4567/ws");
+//var ws = new WebSocket("ws://localhost:4567/ws");
 
 google.charts.load('current', {'packages':['corechart']});
 
@@ -13,19 +13,19 @@ ws.onmessage = function(data)
 	} catch (err) {}
 };
 
-function two1dto2d(a, name) {
-	var final_index = a.length; // Limit to 50
-	var start_index = a.length > 50 ? a.length - 50: 0;
+function two1dto2d(aList, name) {
+	var final_index = aList.length; // Limit to 50
+	var start_index = aList.length > 50 ? aList.length - 50: 0;
 	var list = [];
-	var c = [];
-	c.push(['time', name]);
-	for (var i = 0; i < a.length; i++) {
+	var completeOutput = [];
+	completeOutput.push(['time', name]);
+	for (var i = 0; i < aList.length; i++) {
     	list.push(i.toString());
 	}
   	for (var i = start_index; i < final_index; i++) {
-    	c.push([list[i], a[i]]);
+    	completeOutput.push([list[i], aList[i]]);
   	}
-  	return c
+  	return completeOutput
 }
 
 

@@ -3,7 +3,7 @@ var ws = new WebSocket("ws://localhost:4567/ws");
 
 ws.onopen = function(data)
 {
-	alert("Connected...");
+	console.log("Connected to websocket...");
 };
 
 ws.onmessage = function(data) 
@@ -62,5 +62,3 @@ function getAgentsFromNodes(a) {
 		link.replaceChild(node, link.childNodes[0]);
 	}
 }
-
-

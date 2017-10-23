@@ -1,5 +1,5 @@
 // Websocket Server
-var ws = new WebSocket("ws://localhost:4567/ws");
+//var ws = new WebSocket("ws://localhost:4567/ws");
 
 ws.onmessage = function(data) 
 { 
