@@ -4,6 +4,7 @@ import edu.swin.hets.helper.INegotiationStrategy;
 import edu.swin.hets.helper.IPowerSaleContract;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.PowerSaleProposal;
+import jade.lang.acl.ACLMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,12 +21,16 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     private List<PowerSaleProposal> _thereOffers;
     private String _opponentsName;
     private Integer _currentTime;
+    private String _conversationID;
 
-    public HoldForFirstOfferPrice(PowerSaleProposal firstOffer, String opponentsName, Integer currentTime) {
+    public HoldForFirstOfferPrice(PowerSaleProposal firstOffer, String conversationID,  String opponentsName,
+                                  Integer currentTime) {
+
         _firstOffer = firstOffer;
         _opponentsName = opponentsName;
         _currentTime = currentTime;
         _thereOffers = new ArrayList<>();
+        _conversationID = conversationID;
     }
 
     @Override
@@ -35,7 +40,7 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
 
     @Override
     public Optional<IPowerSaleContract> getResponse() {
-        if (sameAsLastNOffers(mostRecentOffer(), 5)) return null;
+        if (sameAsLastNOffers(mostRecentOffer(), 5)) return Optional.empty();
         if (_thereOffers.size() > 1) {
             // Messy because seller and buyer may not both be initialized.
             if (_firstOffer.getSellerAID() != null && _firstOffer.getBuyerAID() != null) {
@@ -67,13 +72,12 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     }
 
     private boolean sameAsLastNOffers (PowerSaleProposal prop, int n) {
-        if (_thereOffers.size() <= n) return false; // We haven't got n offers yet, keep waiting.
-        //TODO, dodjy fix
+        if (_thereOffers.size() < n + 1) return false; // We haven't got n offers yet, keep waiting.
+        boolean oneDifferent = false;
         int lastIndex = _thereOffers.size() - 1;
         int firstIndex = _thereOffers.size() - n;
-        if (firstIndex == 0) firstIndex = 1; //TODO, fix
-        for (int i = firstIndex; i < lastIndex; i++) if (prop.equalValues(_thereOffers.get(i))) return false;
-        return true;
+        for (int i = firstIndex; i < lastIndex; i++) if (!prop.equalValues(_thereOffers.get(i))) oneDifferent = true;
+        return !oneDifferent;
     }
 
     private PowerSaleProposal mostRecentOffer() {
@@ -84,4 +88,7 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     public String getOpponentName() {
         return _opponentsName;
     }
+
+    @Override
+    public String getConversationID() { return _conversationID; }
 }

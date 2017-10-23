@@ -5,6 +5,8 @@ import edu.swin.hets.helper.PowerSaleProposal;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.IPowerSaleContract;
 import edu.swin.hets.helper.IUtilityFunction;
+import jade.core.AID;
+
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -26,6 +28,7 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
     private double _priceJump;
     private double _volumeJump;
     private Integer _timeJump;
+    private String _conversationID;
 
     public LinearUtilityDecentNegotiator(IUtilityFunction utilityFun,
                                          String ourName,
@@ -34,7 +37,8 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
                                          Integer timeSlice,
                                          double priceJump,
                                          double volumeJump,
-                                         Integer timeJump) {
+                                         Integer timeJump,
+                                         String conversationID) {
         _utilityFun = utilityFun;
         _proposalHistory = new ArrayList<>();
         _proposalHistory.add(new PowerSaleProposal[2]);
@@ -45,9 +49,13 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
         _priceJump = priceJump;
         _volumeJump = volumeJump;
         _timeJump = timeJump;
+        _conversationID = conversationID;
     }
 
     public String getOpponentName() { return _opponentName; }
+
+    @Override
+    public String getConversationID() { return _conversationID; }
 
     @Override
     public void addNewProposal(PowerSaleProposal proposal, boolean fromUs) {
@@ -82,14 +90,21 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
         // Move linearly towards there offer, provided it is within %90 of our best offer.
         return linearMove(ourOffer, thereOffer, 0.9);
     }
+
+    private boolean areWeSeller() {
+        if(_proposalHistory.get(0)[0].getSellerAID() != null) {
+            if (_proposalHistory.get(0)[0].getSellerAID().getName().equals(_ourName)) return true;
+        }
+        return false;
+    }
     // Recursive function that looks for an offer that is closer to the one offered that is still acceptable.
     // Note : Step size and tolerance are percentages, DO NOT EXCEEDED 0<->1
     private Optional<IPowerSaleContract> linearMove(PowerSaleProposal p1, PowerSaleProposal p2, double tolerance) {
         PowerSaleProposal counter = new PowerSaleProposal(
                 (p1.getAmount() - p2.getAmount()) * _volumeJump,
                 (int) Math.round((p1.getDuration() - p2.getDuration()) * _timeJump),
-                p2.getSellerAID(),
-                (p2.getSellerAID().getName().equals(_ourName)));
+                new AID(_ourName, AID.ISLOCALNAME),
+                areWeSeller());
         counter.setCost((p1.getCost() - p2.getCost()) * _priceJump);
         if (_utilityFun.evaluate(p1) * tolerance < _utilityFun.evaluate(counter)) {
             // This counter is pretty good, return it.

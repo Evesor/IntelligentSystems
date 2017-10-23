@@ -9,4 +9,5 @@ public interface INegotiationStrategy {
     void addNewProposal(PowerSaleProposal proposal, boolean fromUs);
     Optional<IPowerSaleContract> getResponse();
     String getOpponentName();
+    String getConversationID();
 }

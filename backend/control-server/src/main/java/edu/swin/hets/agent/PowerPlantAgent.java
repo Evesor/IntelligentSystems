@@ -120,11 +120,11 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 return;
             }
             if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
+            ACLMessage sent = sendProposal(msg, proposed);
             INegotiationStrategy strategy = new HoldForFirstOfferPrice(
-                    proposed, msg.getSender().getName(), _current_globals.getTime());
+                    proposed, sent.getConversationId() , msg.getSender().getName(), _current_globals.getTime());
             _currentNegotiations.add(strategy);
             proposed.setSellerAID(getAID());
-            sendProposal(msg, proposed);
             LogVerbose(getName() + " sending a proposal for " +  proposed.getAmount() + " @ " +
                     proposed.getCost() + " to: "  + msg.getSender().getName());
         }
@@ -141,6 +141,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 _currentContracts.removeAll(toRemove);
             }
             if (GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()).match(msg)) {
+                // _currentNegotiations.stream().filter((prop))
                 //TODO, remove it form negotiation chain
                 // TODO, if not a send back a better quote maybe?
             }

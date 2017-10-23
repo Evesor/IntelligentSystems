@@ -20,12 +20,14 @@ public class NegotiatorFactory {
             String ourName,
             String opponentName,
             PowerSaleProposal firstOffer,
-            Integer timeSlice)
+            Integer timeSlice,
+            String conversationID)
             throws ExecutionException{
         switch (input.get(0)) {
-            case ("HoldForFirstOfferPrice"): return new HoldForFirstOfferPrice(firstOffer, opponentName, timeSlice);
+            case ("HoldForFirstOfferPrice"): return new HoldForFirstOfferPrice(firstOffer, conversationID,
+                    opponentName, timeSlice);
             case ("LinearUtilityDecentNegotiator"): return createLinearUtilityDecentNegotiator(utilityFun,
-                    ourName, opponentName, firstOffer, timeSlice, input);
+                    ourName, opponentName, firstOffer, timeSlice,conversationID, input);
         }
         throw new ExecutionException(new Throwable("Did not find the Negotiation function."));
     }
@@ -35,6 +37,7 @@ public class NegotiatorFactory {
                                                                       String opponentName,
                                                                       PowerSaleProposal firstOffer,
                                                                       Integer timeSlice,
+                                                                      String conversationID,
                                                                       List<String> params) throws ExecutionException {
         if (params.size() != 4) {
             throw new ExecutionException(new Throwable("Wrong number of inputs"));
@@ -42,7 +45,7 @@ public class NegotiatorFactory {
         return new LinearUtilityDecentNegotiator(utilityFun, ourName,
                 opponentName, firstOffer , timeSlice, Double.parseDouble(params.get(1)),
                 Double.parseDouble(params.get(2)),
-                Integer.parseInt(params.get(3)));
+                Integer.parseInt(params.get(3)), conversationID);
 
     }
 }

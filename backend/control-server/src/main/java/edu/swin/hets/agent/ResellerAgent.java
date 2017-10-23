@@ -8,8 +8,6 @@ import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-
-import javax.swing.text.html.Option;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -168,15 +166,15 @@ public class ResellerAgent extends NegotiatingAgent {
                 _nextRequiredAmount - _nextPurchasedAmount,1, getAID(), false);
         for (DFAgentDescription powerPlant : powerPlants) {
             // Make new negotiation for each powerPlant
+            prop.setBuyerAID(getAID());
+            ACLMessage sent = sendCFP(prop, powerPlant.getName());
             INegotiationStrategy strategy;
             try {
-                strategy = makeNegotiationStrategy(prop, powerPlant.getName().getName());
+                strategy = makeNegotiationStrategy(prop, sent.getConversationId(), powerPlant.getName().getName());
             } catch (ExecutionException e) {
                 return;
             }
             _currentNegotiations.add(strategy);
-            prop.setBuyerAID(getAID());
-            sendCFP(prop, powerPlant.getName());
         }
         LogDebug(getName() + " is sending cfp for: " + (_nextRequiredAmount - _nextPurchasedAmount) );
     }
@@ -277,11 +275,11 @@ public class ResellerAgent extends NegotiatingAgent {
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
             proposed.setSellerAID(getAID());
-            sendProposal(msg, proposed);
+            ACLMessage sent = sendProposal(msg, proposed);
             LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;
             try {
-                strategy = makeNegotiationStrategy(proposed, msg.getSender().getName());
+                strategy = makeNegotiationStrategy(proposed, sent.getConversationId() ,msg.getSender().getName());
             } catch (ExecutionException e) {
                 return;
             }
@@ -289,15 +287,16 @@ public class ResellerAgent extends NegotiatingAgent {
         }
     }
 
-    private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String opponentName)
+    private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String conversationID ,
+                                                         String opponentName)
             throws ExecutionException{
         if (_inputArgs.size() == 0) {
             LogError("No valid inputs to make negotiation strategy, using default");
-            return new HoldForFirstOfferPrice(offer, opponentName, _current_globals.getTime());
+            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, _current_globals.getTime());
         }
         try {
             return NegotiatorFactory.Factory.getNegotiationStrategy(_inputArgs, new BasicUtility(), getName(),
-                    opponentName, offer, _current_globals.getTime());
+                    opponentName, offer, _current_globals.getTime(), conversationID);
         } catch (ExecutionException e) {
             String error = "Negotiator factory failed to initialize with: " ;
             for (String a : _inputArgs) { error += ("  " + a); }

@@ -304,13 +304,10 @@ public class HomeAgent extends NegotiatingAgent
 		DFAgentDescription[] resellers = getService("reseller");
 		for(DFAgentDescription reseller : resellers)
 		{
-			ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-			cfp.addReceiver(reseller.getName());
-			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,reseller.getName().getName(),_current_globals.getTime());
+			ACLMessage sent = sendCFP(prop, reseller.getName());
+			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
+					,reseller.getName().getName(),_current_globals.getTime());
 			_currentNegotiations.add(strategy);
-			addPowerSaleProposal(cfp,prop);
-			cfp.setConversationId(UUID.randomUUID().toString());
-			send(cfp);
 			LogDebug("sending buy CFP");
 		}
 	}
@@ -382,14 +379,11 @@ public class HomeAgent extends NegotiatingAgent
 		DFAgentDescription[] resellers = getService("reseller");
 		for(DFAgentDescription reseller : resellers)
 		{
-			ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-			cfp.addReceiver(reseller.getName());
-			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop, reseller.getName().getName(),
+			ACLMessage sent = sendCFP(prop, reseller.getName());
+			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
+					, reseller.getName().getName(),
 				 _current_globals.getTime());
 			_currentNegotiations.add(strategy);
-			addPowerSaleProposal(cfp, prop);
-			cfp.setConversationId(UUID.randomUUID().toString());
-			send(cfp);
 		}
 	}
 }

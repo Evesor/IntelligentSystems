@@ -27,4 +27,9 @@ public class TitForTatNegotiator implements INegotiationStrategy {
         return null;
     }
 
+    @Override
+    public String getConversationID() {
+        return null;
+    }
+
 }

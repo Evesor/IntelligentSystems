@@ -34,8 +34,12 @@ public class PowerSaleProposal implements Serializable, IPowerSaleContract{
     }
     //Used to check if two contracts are equal.
     public boolean equalValues(PowerSaleProposal prop) {
-        if (!prop._buyer_AID.getName().equals(_buyer_AID.getName())) return false;
-        if (!prop._seller_AID.getName().equals(_seller_AID.getName())) return false;
+        if (prop._buyer_AID != null && _buyer_AID != null) {
+            if (!prop._buyer_AID.getName().equals(_buyer_AID.getName())) return false;
+        }
+        if (prop._seller_AID != null && _seller_AID != null) {
+            if (!prop._seller_AID.getName().equals(_seller_AID.getName())) return false;
+        }
         if (prop._cost != _cost) return false;
         if (prop._duration != _duration) return false;
         if (prop._power_amount != _power_amount) return false;
