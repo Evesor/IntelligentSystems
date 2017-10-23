@@ -52,7 +52,11 @@ public class HomeAgent extends NegotiatingAgent
 
 	private MessageTemplate PropMessageTemplate = MessageTemplate.and(
 			MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
-			GoodMessageTemplates.ContatinsString("edu.swin.hets.helper.PowerSaleProposal"));
+			GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
+
+	private MessageTemplate QuoteAcceptedTemplate = MessageTemplate.and(
+		MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL),
+		GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
 	
 	//initialize all variable value
 	private void init()
@@ -88,6 +92,7 @@ public class HomeAgent extends NegotiatingAgent
 		addMessageHandler(electricityForecastMT, new HomeAgent.ForecastHandler());
 		addMessageHandler(electricityRequestMT, new HomeAgent.electricityRequestHandler());
 		addMessageHandler(PropMessageTemplate, new ProposalHandler());
+		addMessageHandler(QuoteAcceptedTemplate, new ProposalAcceptedHandler());
 		LogDebug(getLocalName() + " setup is complete!");
 		turn("lamp1",true);
 	}
@@ -310,6 +315,19 @@ public class HomeAgent extends NegotiatingAgent
 		}
 	}
 
+	// Someone is buying electricity off us
+	private class ProposalAcceptedHandler implements IMessageHandler {
+		public void Handler(ACLMessage msg) {
+			//TODO, check this is a valid proposal still.
+			PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
+			if (agreement.getSellerAID().getName().equals(getName())) _current_sell_agreements.add(agreement);
+			else _current_buy_agreements.add(agreement);
+			sendSaleMade(agreement);
+			LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
+					" @ " + agreement.getCost());
+		}
+	}
+
 	// Someone is offering to sell us electricity
 	private class ProposalHandler implements IMessageHandler {
 		public void Handler(ACLMessage msg) {
@@ -317,7 +335,7 @@ public class HomeAgent extends NegotiatingAgent
 			Optional<INegotiationStrategy> opt = _currentNegotiations.stream().filter(
 				(agg) -> agg.getOpponentName().equals(msg.getSender().getName())).findAny();
 			if (opt.isPresent()) {
-				LogError("opt PRESENT" + msg.getSender());
+				//LogError("opt PRESENT" + msg.getSender());
 				INegotiationStrategy negotiation = opt.get();
 				PowerSaleProposal prop = getPowerSalePorposal(msg);
 				negotiation.addNewProposal(prop, false);
@@ -328,7 +346,7 @@ public class HomeAgent extends NegotiatingAgent
 					negotiation.addNewProposal(counterProposal, true);
 					_currentNegotiations.add(negotiation);
 					ACLMessage replyMsg = msg.createReply();
-					replyMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+					replyMsg.setPerformative(ACLMessage.PROPOSE);
 					addPowerSaleProposal(replyMsg, counterProposal);
 					send(replyMsg);
 				}

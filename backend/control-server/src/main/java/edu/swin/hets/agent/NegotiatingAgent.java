@@ -20,6 +20,14 @@ public abstract class NegotiatingAgent extends BaseAgent{
         super.setup();
     }
 
+
+    void sendSaleMade(PowerSaleAgreement agg) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        addPowerSaleAgreement(msg, agg);
+        msg.addReceiver(new AID("StatisticsAgent", AID.ISLOCALNAME));
+        send(msg);
+    }
+
     void sendProposal(ACLMessage origionalMSG, PowerSaleProposal prop) {
         ACLMessage response = origionalMSG.createReply();
         response.setPerformative(ACLMessage.PROPOSE);
