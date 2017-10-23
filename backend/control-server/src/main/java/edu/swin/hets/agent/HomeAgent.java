@@ -342,13 +342,13 @@ public class HomeAgent extends NegotiatingAgent
 				IPowerSaleContract response = negotiation.getResponse();
 				if(response instanceof PowerSaleProposal) {
 					// We should send back a counter proposal.
-					PowerSaleProposal counterProposal = (PowerSaleProposal) response;
-					negotiation.addNewProposal(counterProposal, true);
-					_currentNegotiations.add(negotiation);
-					ACLMessage replyMsg = msg.createReply();
-					replyMsg.setPerformative(ACLMessage.PROPOSE);
-					addPowerSaleProposal(replyMsg, counterProposal);
-					send(replyMsg);
+//					PowerSaleProposal counterProposal = (PowerSaleProposal) response;
+//					negotiation.addNewProposal(counterProposal, true);
+//					_currentNegotiations.add(negotiation);
+//					ACLMessage replyMsg = msg.createReply();
+//					replyMsg.setPerformative(ACLMessage.PROPOSE);
+//					addPowerSaleProposal(replyMsg, counterProposal);
+//					send(replyMsg);
 				}
 				else {
 					// We should accept the contract.
