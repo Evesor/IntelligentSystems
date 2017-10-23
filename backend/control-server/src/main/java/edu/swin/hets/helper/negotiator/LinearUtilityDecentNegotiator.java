@@ -29,6 +29,7 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
     private double _volumeJump;
     private Integer _timeJump;
     private String _conversationID;
+    //TODO, put hard limit on negotiation lengths.
 
     public LinearUtilityDecentNegotiator(IUtilityFunction utilityFun,
                                          String ourName,

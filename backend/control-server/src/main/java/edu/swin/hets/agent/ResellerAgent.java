@@ -185,10 +185,9 @@ public class ResellerAgent extends NegotiatingAgent {
         public void Handler(ACLMessage msg) {
             if (_nextRequiredAmount > _nextPurchasedAmount){
                 Optional<INegotiationStrategy> optional = _currentNegotiations.stream().filter(
-                        (x) -> x.getOpponentName().equals(msg.getSender().getName())).findAny();
-                //TODO, make sure we are getting the right negotiation chain for this message ID
+                        (neg) -> neg.getConversationID().equals(msg.getConversationId())).findAny();
                 if (! optional.isPresent()) {
-                    LogError("We got a message from someone we were not negotiating with");
+                    LogError("We got a message with a conversation id not registered from " + msg.getSender());
                     return;
                 }
                 INegotiationStrategy strategy = optional.get();
@@ -293,7 +292,7 @@ public class ResellerAgent extends NegotiatingAgent {
             throws ExecutionException{
         if (_inputArgs.size() == 0) {
             LogError("No valid inputs to make negotiation strategy, using default");
-            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, _current_globals.getTime());
+            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, _current_globals.getTime(), 15);
         }
         try {
             return NegotiatorFactory.Factory.getNegotiationStrategy(_inputArgs, new BasicUtility(), getName(),

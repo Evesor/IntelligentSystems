@@ -9,10 +9,6 @@ import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
-import sun.rmi.runtime.Log;
-
-import java.io.IOException;
 import java.lang.*;
 import java.util.*;
 /******************************************************************************
@@ -339,7 +335,7 @@ public class HomeAgent extends NegotiatingAgent
 		{
 			ACLMessage sent = sendCFP(prop, reseller.getName());
 			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
-					,reseller.getName().getName(),_current_globals.getTime());
+					,reseller.getName().getName(),_current_globals.getTime(), 20);
 			_currentNegotiations.add(strategy);
 			LogDebug("sending buy CFP");
 		}
@@ -415,7 +411,7 @@ public class HomeAgent extends NegotiatingAgent
 			ACLMessage sent = sendCFP(prop, reseller.getName());
 			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
 					, reseller.getName().getName(),
-				 _current_globals.getTime());
+				 _current_globals.getTime(), 20);
 			_currentNegotiations.add(strategy);
 		}
 	}

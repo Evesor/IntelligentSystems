@@ -4,8 +4,6 @@ import edu.swin.hets.helper.INegotiationStrategy;
 import edu.swin.hets.helper.IPowerSaleContract;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.PowerSaleProposal;
-import jade.lang.acl.ACLMessage;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,15 +20,17 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     private String _opponentsName;
     private Integer _currentTime;
     private String _conversationID;
+    private Integer _maxNegotiationTime;
 
     public HoldForFirstOfferPrice(PowerSaleProposal firstOffer, String conversationID,  String opponentsName,
-                                  Integer currentTime) {
+                                  Integer currentTime, Integer maxNegotiationTime) {
 
         _firstOffer = firstOffer;
         _opponentsName = opponentsName;
         _currentTime = currentTime;
         _thereOffers = new ArrayList<>();
         _conversationID = conversationID;
+        _maxNegotiationTime = maxNegotiationTime;
     }
 
     @Override
@@ -41,6 +41,7 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     @Override
     public Optional<IPowerSaleContract> getResponse() {
         if (sameAsLastNOffers(mostRecentOffer(), 5)) return Optional.empty();
+        if (_thereOffers.size() > _maxNegotiationTime) return Optional.empty();
         if (_thereOffers.size() > 1) {
             // Messy because seller and buyer may not both be initialized.
             if (_firstOffer.getSellerAID() != null && _firstOffer.getBuyerAID() != null) {

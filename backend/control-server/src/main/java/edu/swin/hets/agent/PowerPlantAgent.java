@@ -9,7 +9,6 @@ import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Optional;
-
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -113,7 +112,6 @@ public class PowerPlantAgent extends NegotiatingAgent {
     // Someone buying from us.
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            IUtilityFunction util = new BasicUtility();
             // A request for a price on electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (proposed.getAmount() > (_maxProduction - _currentProduction)) {
@@ -123,7 +121,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
             ACLMessage sent = sendProposal(msg, proposed);
             INegotiationStrategy strategy = new HoldForFirstOfferPrice(
-                    proposed, sent.getConversationId() , msg.getSender().getName(), _current_globals.getTime());
+                    proposed, sent.getConversationId() , msg.getSender().getName(), _current_globals.getTime(), 15);
             _currentNegotiations.add(strategy);
             proposed.setSellerAID(getAID());
             LogVerbose(getName() + " sending a proposal for " +  proposed.getAmount() + " @ " +
@@ -141,10 +139,12 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 _currentContracts.stream().filter((agg) -> agg.equalValues(agreement)).forEach(toRemove::add);
                 _currentContracts.removeAll(toRemove);
             }
-            if (GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()).match(msg)) {
-                // _currentNegotiations.stream().filter((prop))
-                //TODO, remove it form negotiation chain
-                // TODO, if not a send back a better quote maybe?
+            if (GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()).match(msg)) {
+                ArrayList<INegotiationStrategy> toRemove = new ArrayList<>();
+                 _currentNegotiations.stream().filter(
+                         (prop) -> prop.getConversationID().equals(msg.getConversationId())).
+                         forEach((prop) -> toRemove.add(prop));
+                 _currentNegotiations.removeAll(toRemove);
             }
         }
     }
@@ -183,7 +183,6 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 return;
             }
             if (response.get() instanceof PowerSaleProposal) {
-                //TODO, fix negotiation strategy before turning back on.
                 // Make counter offer
                 PowerSaleProposal counter = (PowerSaleProposal) response.get();
                 sendProposal(msg, counter);
