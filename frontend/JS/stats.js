@@ -28,12 +28,18 @@ function two1dto2d(a, name) {
   	return c
 }
 
+<<<<<<< Updated upstream
 function drawStats(data) {
 	drawChart(two1dto2d(data.averagePrice, 'Price'), "Average price", "average-price-chart");
 	drawChart(two1dto2d(data.averageVolume, 'Sales'), "Average volume of sales", "average-volume-chart");
 	drawChart(two1dto2d(data.averageTime, 'Length'), "Average time of contracts", "average-time-chart");
 	drawChart(two1dto2d(data.numberOfSalesMade, 'Sales'), "Number of sales made", "sales-made-chart");
 }
+=======
+
+
+function drawChart() {
+>>>>>>> Stashed changes
 
 
 function drawChart(chart_data, chart_name, chart_backend_name) {

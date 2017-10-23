@@ -174,6 +174,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             PowerSaleProposal prop = getPowerSalePorposal(msg);
             strategy.addNewProposal(prop, false);
             IPowerSaleContract response = strategy.getResponse();
+
             if (response instanceof PowerSaleProposal) {
                 //TODO, fix negotiation strategy before turning back on.
                 // Make counter offer

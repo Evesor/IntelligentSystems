@@ -54,8 +54,7 @@ public class ResellerAgent extends NegotiatingAgent {
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _customerDB;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _sellerDB;
     private ArrayList<INegotiationStrategy> _currentNegotiations;
-    private List<String> _strategyParams;
-
+    private List<String> _inputArgs;
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
@@ -86,12 +85,10 @@ public class ResellerAgent extends NegotiatingAgent {
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropMessageTemplate, new ProposalHandler());
         RegisterAMSService(getAID().getName(), "reseller");
-        _strategyParams = (List<String>) getArguments()[0];
-        if (_strategyParams.size() > 0) {
-            _strategyParams.forEach((a) -> LogDebug(" was passed: " + a));
+        _inputArgs = (List<String>) getArguments()[0];
+        if (_inputArgs.size() > 0) {
+            _inputArgs.forEach((a) -> LogDebug(" was passed: " + a));
         }
-        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        System.out.println(PowerSaleAgreement.class.getName());
     }
 
     protected String getJSON() {
@@ -285,16 +282,16 @@ public class ResellerAgent extends NegotiatingAgent {
 
     private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String opponentName)
             throws ExecutionException{
-        if (_strategyParams.size() == 0) {
+        if (_inputArgs.size() == 0) {
             LogError("No valid inputs to make negotiation strategy, using default");
             return new HoldForFirstOfferPrice(offer, opponentName, _current_globals.getTime());
         }
         try {
-            return NegotiatorFactory.Factory.getNegotiationStrategy(_strategyParams, new BasicUtility(), getName(),
+            return NegotiatorFactory.Factory.getNegotiationStrategy(_inputArgs, new BasicUtility(), getName(),
                     opponentName, offer, _current_globals.getTime());
         } catch (ExecutionException e) {
             String error = "Negotiator factory failed to initialize with: " ;
-            for (String a : _strategyParams) { error += ("  " + a); }
+            for (String a : _inputArgs) { error += ("  " + a); }
             error += (" due to: " + e.getMessage());
             LogError(error);
             throw new ExecutionException(new Throwable("Not good baby"));
