@@ -2,6 +2,7 @@ package edu.swin.hets.controller
 
 import edu.swin.hets.agent.GlobalValuesAgent
 import edu.swin.hets.agent.LoggingAgent
+import edu.swin.hets.agent.StatisticsAgent
 import edu.swin.hets.agent.WebAgent
 import edu.swin.hets.controller.distributor.ContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
@@ -41,7 +42,9 @@ class JadeController(private val runtime: Runtime,
         mainContainer = runtime.createMainContainer(profile).apply {
             createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
             createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
+            createNewAgent("StatisticsAgent", StatisticsAgent::class.java.name, arrayOf())?.start()
         }
+
         JadeGateway.init(null,
                 Properties().apply {
                     setProperty(Profile.CONTAINER_NAME, "Gateway")
@@ -49,7 +52,15 @@ class JadeController(private val runtime: Runtime,
                     setProperty(Profile.MAIN_PORT, "1099")
                 })
 
-        containerDistributor.start()
+        try {
+            containerDistributor.start()
+        } catch (e: IllegalStateException) {
+            e.printStackTrace()
+            logger.error("Stopping JADE service and server...")
+            stop()
+            System.exit(1)
+        }
+
         Thread.sleep(1000)
         mainContainer?.createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf())?.start()
     }

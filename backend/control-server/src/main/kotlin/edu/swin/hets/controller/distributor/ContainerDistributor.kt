@@ -19,7 +19,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.Serializable
 
-data class AgentDefinition(val name: String, val className: String, val arguments: String = "") : Serializable
+data class AgentDefinition(val name: String, val className: String, val arguments: String = "", val owner: String = "") : Serializable
 data class ContainerDefinition(val name: String, val agents: List<AgentDefinition>) : Serializable
 data class SystemDefinition(val containers: List<ContainerDefinition>) : Serializable
 
@@ -36,16 +36,16 @@ abstract class ContainerDistributor(val runtime: Runtime, val systemDefinition: 
                                 AgentDefinition("PowerPlant2", PowerPlantAgent::class.java.name)
                         )),
                         ContainerDefinition("Appliance Container", listOf(
-                                AgentDefinition("Appliance1", ApplianceAgent::class.java.name),
-                                AgentDefinition("Appliance2", ApplianceAgent::class.java.name)
+                                AgentDefinition(name = "Appliance1", className = ApplianceAgent::class.java.name, owner = "Home1"),
+                                AgentDefinition(name = "Appliance2", className = ApplianceAgent::class.java.name, owner = "Home2")
                         )),
                         ContainerDefinition("Home Container", listOf(
                                 AgentDefinition("Home1", HomeAgent::class.java.name),
                                 AgentDefinition("Home2", HomeAgent::class.java.name)
                         )),
                         ContainerDefinition("Reseller Container", listOf(
-                                AgentDefinition("Reseller1", ResellerAgent::class.java.name),
-                                AgentDefinition("Reseller2", ResellerAgent::class.java.name)
+                                AgentDefinition(name = "Reseller1", className = ResellerAgent::class.java.name, arguments = "HoldForFirstOfferPrice"),
+                                AgentDefinition(name ="Reseller2", className =  ResellerAgent::class.java.name, arguments = "LinearUtilityDecentNegotiator,0.1,0.5,1")
                         ))
                 ))
     }

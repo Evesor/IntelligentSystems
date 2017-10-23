@@ -1,5 +1,6 @@
 package edu.swin.hets.agent;
 
+import edu.swin.hets.helper.GlobalValues;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import jade.core.AID;
@@ -8,14 +9,21 @@ import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+
 public class ApplianceAgent extends BaseAgent
 {
 	boolean on;
 	//TODO current array
 	//should be vector
+	//private ArrayList<Integer[]> current;
 	int[] current = new int[48];
 	//TODO forecast array
 	//should be vector, should store enumeration instead of int
+	//private ArrayList<Integer[]> forecast;
 	int[] forecast = new int[48];
 	int watt;
 
@@ -41,14 +49,22 @@ public class ApplianceAgent extends BaseAgent
 	private void init()
 	{
 		on = false;
+		//current = new ArrayList<>();
+		//current.add(new Integer[4]);
+		//forecast = new ArrayList<>();
+		//forecast.add(new Integer[4]);
+
 		int i;
-		for(i=0;i<24;i++)
+		for(i=0;i<48;i++)
 		{
 			current[i] = 0;
 			forecast[i] = 0;
 		}
 		Object[] args = getArguments();
-		watt = Integer.parseInt(args[0].toString());
+		//watt = Integer.parseInt(args[0].toString());
+		List<String> argument = (List<String>) args[0];
+		watt = Integer.parseInt(argument.get(0));
+
 		updateForecastUsage();
 	}
 
@@ -92,6 +108,7 @@ public class ApplianceAgent extends BaseAgent
 	{
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		msg.setContent("electricity current," + current[_current_globals.getTime()]);
+		//msg.setContent("electricity current," + current.get(_current_globals.getTime()));
 		msg.addReceiver(new AID("home1", AID.ISLOCALNAME));
 		send(msg);
 	}
@@ -101,6 +118,7 @@ public class ApplianceAgent extends BaseAgent
 		updateForecastUsage();
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		msg.setContent("electricity forecast," + forecast[_current_globals.getTime()]);
+		//msg.setContent("electricity forecast," + forecast.get(_current_globals.getTime()));
 		msg.addReceiver(new AID("home1", AID.ISLOCALNAME));
 		send(msg);
 	}
@@ -145,6 +163,8 @@ public class ApplianceAgent extends BaseAgent
 		//count electricity usage
 		if(on == true)
 		{
+			//current.add(new Integer[4]);
+			//current.set(_current_globals.getTime(),current.get(_current_globals.getTime())+watt);
 			current[_current_globals.getTime()] += watt;
 			LogDebug("current : " + current[_current_globals.getTime()]);
 			sendForecastUsage();
@@ -158,6 +178,8 @@ public class ApplianceAgent extends BaseAgent
 		if(on == true)
 		{
 			current[_current_globals.getTime()] += watt;
+			//current.get(_current_globals.getTime())[5 - (ms_left/ GlobalValues.pushTimeLength())] =
+			//current.set(_current_globals.getTime(),current.get(_current_globals.getTime())+watt);
 			LogDebug("current : " + current[_current_globals.getTime()]);
 		}
 	}

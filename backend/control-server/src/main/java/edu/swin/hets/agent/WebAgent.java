@@ -68,12 +68,17 @@ public class WebAgent extends BaseAgent {
     private class InformMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
             //LogVerbose("Web agent just got: " + msg.getContent());
-            if (msg.getSender().getName().contains("Reseller1@10.1.21.39:1099/JADE")
-                    || msg.getSender().getName().contains("Reseller2@10.1.21.39:1099/JADE")
+            if (msg.getSender().getName().contains("Reseller")
                     || msg.getSender().getName().contains("PowerPlant")) {
                 messages.add(msg.getContent());
             }
-            //clientWebSocketHandler.broadcast(msg.getContent());
+            if (msg.getSender().getName().contains("LoggingAgent")) {
+                clientWebSocketHandler.broadcast(msg.getContent());
+            }
+
+            if (msg.getSender().getName().contains("StatisticsAgent")) {
+                clientWebSocketHandler.broadcast(msg.getContent());
+            }
         }
     }
 }
