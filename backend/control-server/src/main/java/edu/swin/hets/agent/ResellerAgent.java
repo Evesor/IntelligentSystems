@@ -90,8 +90,6 @@ public class ResellerAgent extends NegotiatingAgent {
         if (_strategyParams.size() > 0) {
             _strategyParams.forEach((a) -> LogDebug(" was passed: " + a));
         }
-        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        System.out.println(PowerSaleAgreement.class.getName());
     }
 
     protected String getJSON() {
