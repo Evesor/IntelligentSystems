@@ -44,8 +44,8 @@ abstract class ContainerDistributor(val runtime: Runtime, val systemDefinition: 
                                 AgentDefinition("Home2", HomeAgent::class.java.name)
                         )),
                         ContainerDefinition("Reseller Container", listOf(
-                                AgentDefinition("Reseller1", ResellerAgent::class.java.name),
-                                AgentDefinition("Reseller2", ResellerAgent::class.java.name)
+                                AgentDefinition(name = "Reseller1", className = ResellerAgent::class.java.name, arguments = "HoldForFirstOfferPrice"),
+                                AgentDefinition(name ="Reseller2", className =  ResellerAgent::class.java.name, arguments = "LinearUtilityDecentNegotiator,0.1,0.5,1")
                         ))
                 ))
     }
