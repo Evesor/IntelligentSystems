@@ -201,7 +201,7 @@ public class ResellerAgent extends NegotiatingAgent {
                     // Make counter offer
                     PowerSaleProposal counterProposal = (PowerSaleProposal) offer;
                     strategy.addNewProposal(counterProposal, true);
-                    sendCounterOffer(msg, counterProposal);
+                    sendProposal(msg, counterProposal);
                     LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
                             " for electricity negotiating with " + msg.getSender().getName());
                 }
