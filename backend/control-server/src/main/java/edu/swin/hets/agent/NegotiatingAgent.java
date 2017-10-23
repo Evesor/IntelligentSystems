@@ -42,13 +42,6 @@ public abstract class NegotiatingAgent extends BaseAgent{
         send(acceptMsg);
     }
 
-//    void sendCounterOffer (ACLMessage origionalMSG, PowerSaleProposal counter) {
-//        ACLMessage counterMsg = origionalMSG.createReply();
-//        counterMsg.setPerformative(ACLMessage.PROPOSE);
-//        addPowerSaleProposal(counterMsg, counter);
-//        send(counterMsg);
-//    }
-
     void sendCFP (PowerSaleProposal prop, AID reciver) {
         ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
         addPowerSaleProposal(cfp, prop);

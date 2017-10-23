@@ -8,6 +8,8 @@ import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+
+import javax.swing.text.html.Option;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -193,10 +195,16 @@ public class ResellerAgent extends NegotiatingAgent {
                 INegotiationStrategy strategy = optional.get();
                 PowerSaleProposal proposed = getPowerSalePorposal(msg);
                 strategy.addNewProposal(proposed, false);
-                IPowerSaleContract offer = strategy.getResponse();
-                if (offer instanceof PowerSaleProposal) {
+                Optional <IPowerSaleContract> offer = strategy.getResponse();
+                if (!offer.isPresent()) { // We should end negotiation
+                    LogDebug("Has stopped negotiating with : " + msg.getSender().getName());
+                    sendRejectProposalMessage(msg);
+                    _currentNegotiations.remove(strategy);
+                    return;
+                }
+                if (offer.get() instanceof PowerSaleProposal) {
                     // Make counter offer
-                    PowerSaleProposal counterProposal = (PowerSaleProposal) offer;
+                    PowerSaleProposal counterProposal = (PowerSaleProposal) offer.get();
                     strategy.addNewProposal(counterProposal, true);
                     sendProposal(msg, counterProposal);
                     LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
@@ -204,14 +212,15 @@ public class ResellerAgent extends NegotiatingAgent {
                 }
                 else {
                     // Accept the contract
-                    PowerSaleAgreement agreement = (PowerSaleAgreement) offer;
+                    PowerSaleAgreement agreement = (PowerSaleAgreement) offer.get();
                     sendAcceptProposal(msg, agreement);
                     _currentBuyAgreements.add(agreement);
                     sendSaleMade(agreement);
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     updateContracts();
-                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " + _nextRequiredAmount);
+                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
+                            _nextRequiredAmount);
                 }
             }
         }
@@ -303,7 +312,8 @@ public class ResellerAgent extends NegotiatingAgent {
     private class ResellerAgentData implements Serializable {
             private AgentData data;
             private String Name;
-            ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases, String name) {
+            ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases,
+                              String name) {
                 Name = name;
                 data = new AgentData(buy_price, sell_price,current_sales, current_purchases, name);
             }

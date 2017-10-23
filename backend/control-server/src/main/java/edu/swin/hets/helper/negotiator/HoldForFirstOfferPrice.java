@@ -7,6 +7,8 @@ import edu.swin.hets.helper.PowerSaleProposal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 /******************************************************************************
  *  Use: A very basic strategy where we don't care about how the contract gets
  *       changed so long as the price remains the same as our first offer.
@@ -32,7 +34,7 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
     }
 
     @Override
-    public IPowerSaleContract getResponse() {
+    public Optional<IPowerSaleContract> getResponse() {
         if (sameAsLastNOffers(mostRecentOffer(), 5)) return null;
         if (_thereOffers.size() > 1) {
             // Messy because seller and buyer may not both be initialized.
@@ -47,24 +49,29 @@ public class HoldForFirstOfferPrice implements INegotiationStrategy {
             }
             //TODO, add a throw or something, if we get here that is bad.
         }
-        return _firstOffer;
+        return Optional.of(_firstOffer);
     }
 
-    private IPowerSaleContract weAreBuyer() {
-        if (mostRecentOffer().getCost() <= _firstOffer.getCost())
-            return new PowerSaleAgreement(mostRecentOffer(), _currentTime);
-        return _firstOffer;
+    private Optional<IPowerSaleContract> weAreBuyer() {
+        if (mostRecentOffer().getCost() <= _firstOffer.getCost() &&
+                _firstOffer.withinTolorance(mostRecentOffer(), 0.5, 0.5, 1))
+            return Optional.of(new PowerSaleAgreement(mostRecentOffer(), _currentTime));
+        return Optional.of(_firstOffer);
     }
 
-    private IPowerSaleContract weAreSeller() {
-        if (mostRecentOffer().getCost() >= _firstOffer.getCost())
-            return new PowerSaleAgreement(mostRecentOffer(), _currentTime);
-        return _firstOffer;
+    private Optional<IPowerSaleContract> weAreSeller() {
+        if (mostRecentOffer().getCost() >= _firstOffer.getCost() &&
+                _firstOffer.withinTolorance(mostRecentOffer(), 0.5, 0.5, 1))
+            return Optional.of(new PowerSaleAgreement(mostRecentOffer(), _currentTime));
+        return Optional.of(_firstOffer);
     }
 
     private boolean sameAsLastNOffers (PowerSaleProposal prop, int n) {
-        int firstIndex = _thereOffers.size() - 1;
-        int lastIndex = firstIndex - n;
+        if (_thereOffers.size() <= n) return false; // We haven't got n offers yet, keep waiting.
+        //TODO, dodjy fix
+        int lastIndex = _thereOffers.size() - 1;
+        int firstIndex = _thereOffers.size() - n;
+        if (firstIndex == 0) firstIndex = 1; //TODO, fix
         for (int i = firstIndex; i < lastIndex; i++) if (prop.equalValues(_thereOffers.get(i))) return false;
         return true;
     }

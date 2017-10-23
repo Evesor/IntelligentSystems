@@ -339,8 +339,14 @@ public class HomeAgent extends NegotiatingAgent
 				INegotiationStrategy negotiation = opt.get();
 				PowerSaleProposal prop = getPowerSalePorposal(msg);
 				negotiation.addNewProposal(prop, false);
-				IPowerSaleContract response = negotiation.getResponse();
-				if(response instanceof PowerSaleProposal) {
+				Optional<IPowerSaleContract> response = negotiation.getResponse();
+				if (! response.isPresent()) { //End negotiation
+					sendRejectProposalMessage(msg);
+					_currentNegotiations.remove(negotiation);
+					LogDebug("has stopped negotiating with " + msg.getSender());
+					return;
+				}
+				if(response.get() instanceof PowerSaleProposal) {
 					// We should send back a counter proposal.
 //					PowerSaleProposal counterProposal = (PowerSaleProposal) response;
 //					negotiation.addNewProposal(counterProposal, true);

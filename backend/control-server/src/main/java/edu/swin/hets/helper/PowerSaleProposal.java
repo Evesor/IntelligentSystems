@@ -23,6 +23,16 @@ public class PowerSaleProposal implements Serializable, IPowerSaleContract{
         _cost = -1;
     }
 
+    public boolean withinTolorance (PowerSaleProposal p2, double powerTol,double durationTol, double costTol) {
+        if (Math.abs(_power_amount - _power_amount * powerTol) > p2.getAmount() ||
+                Math.abs(_power_amount + _power_amount * powerTol) < p2.getAmount()) return false;
+        if (Math.abs(_duration - _duration * durationTol) > p2.getDuration() ||
+                Math.abs(_duration + _duration * durationTol) < p2.getDuration()) return false;
+        if (Math.abs(_cost - _cost * costTol) > p2.getCost() ||
+                Math.abs(_cost + _cost * costTol) < p2.getCost()) return false;
+        return true;
+    }
+    //Used to check if two contracts are equal.
     public boolean equalValues(PowerSaleProposal prop) {
         if (!prop._buyer_AID.getName().equals(_buyer_AID.getName())) return false;
         if (!prop._seller_AID.getName().equals(_seller_AID.getName())) return false;

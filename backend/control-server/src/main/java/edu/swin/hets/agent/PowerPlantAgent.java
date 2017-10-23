@@ -173,19 +173,24 @@ public class PowerPlantAgent extends NegotiatingAgent {
             INegotiationStrategy strategy = opt.get();
             PowerSaleProposal prop = getPowerSalePorposal(msg);
             strategy.addNewProposal(prop, false);
-            IPowerSaleContract response = strategy.getResponse();
-
-            if (response instanceof PowerSaleProposal) {
+            Optional<IPowerSaleContract> response = strategy.getResponse();
+            if (!response.isPresent()) { // We should end negotiations.
+                LogDebug("has stopped negotiating with: " + msg.getSender());
+                _currentNegotiations.remove(strategy);
+                sendRejectProposalMessage(msg);
+                return;
+            }
+            if (response.get() instanceof PowerSaleProposal) {
                 //TODO, fix negotiation strategy before turning back on.
                 // Make counter offer
-//                PowerSaleProposal counter = (PowerSaleProposal) response;
-//                sendCounterOffer(msg, counter);
-//                strategy.addNewProposal(counter, true);
-//                LogDebug(getName() + " offered to pay " + counter.getCost()  +
-//                        " for electricity negotiating with " + msg.getSender().getName());
+                PowerSaleProposal counter = (PowerSaleProposal) response.get();
+                sendProposal(msg, counter);
+                strategy.addNewProposal(counter, true);
+                LogDebug(getName() + " offered to pay " + counter.getCost()  +
+                        " for electricity negotiating with " + msg.getSender().getName());
             }
             else { // Accept
-                PowerSaleAgreement agreement = (PowerSaleAgreement) response;
+                PowerSaleAgreement agreement = (PowerSaleAgreement) response.get();
                 sendAcceptProposal(msg, agreement);
                 _currentContracts.add(agreement);
                 updateContracts();
