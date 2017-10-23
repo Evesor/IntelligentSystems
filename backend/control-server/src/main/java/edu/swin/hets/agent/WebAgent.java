@@ -45,6 +45,7 @@ public class WebAgent extends BaseAgent {
 
     protected void TimeExpired() {
         //clientWebSocketHandler.broadcast("wow");
+        if (messages.size() == 0) return;
         String output = "{\"nodes\":[";
         for (String message : messages) {
             output = output.concat(message + ",");

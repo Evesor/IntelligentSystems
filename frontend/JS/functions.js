@@ -10,7 +10,7 @@ ws.onmessage = function(data)
 { 
 	try {
 		var jsonData = JSON.parse(data.data);
-		//console.log(jsonData);
+		console.log(jsonData);
 		drawMessages(jsonData);
 		drawStats(jsonData);
 		console.log(update);

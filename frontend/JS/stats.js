@@ -3,15 +3,13 @@
 
 google.charts.load('current', {'packages':['corechart']});
 
-ws.onmessage = function(data) 
-{ 
-	try {
-		var jsonData = JSON.parse(data.data);
-		if (jsonData.hasOwnProperty('averagePrice')) {
-			drawStats(jsonData);
-		}
-	} catch (err) {}
-};
+// ws.onmessage = function(data) 
+// { 
+// 	try {
+// 		var jsonData = JSON.parse(data.data);
+// 		drawMessages(jsonData);
+// 	} catch (err) {}
+// };
 
 function two1dto2d(aList, name) {
 	var final_index = aList.length; // Limit to 50
@@ -29,11 +27,16 @@ function two1dto2d(aList, name) {
 }
 
 
-function drawStats(data) {
-	drawChart(two1dto2d(data.averagePrice, 'Price'), "Average price", "average-price-chart");
-	drawChart(two1dto2d(data.averageVolume, 'Sales'), "Average volume of sales", "average-volume-chart");
-	drawChart(two1dto2d(data.averageTime, 'Length'), "Average time of contracts", "average-time-chart");
-	drawChart(two1dto2d(data.numberOfSalesMade, 'Sales'), "Number of sales made", "sales-made-chart");
+function drawStats(jsonData) {
+	try {
+		if (jsonData.hasOwnProperty('averagePrice')) {
+			drawChart(two1dto2d(jsonData.averagePrice, 'Price'), "Average price", "average-price-chart");
+			drawChart(two1dto2d(jsonData.averageVolume, 'Sales'), "Average volume of sales", "average-volume-chart");
+			drawChart(two1dto2d(jsonData.averageTime, 'Length'), "Average time of contracts", "average-time-chart");
+			drawChart(two1dto2d(jsonData.numberOfSalesMade, 'Sales'), "Number of sales made", "sales-made-chart");
+		}
+	} catch (err) {}
+
 }
 
 
