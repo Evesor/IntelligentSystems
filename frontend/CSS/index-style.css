@@ -16,6 +16,12 @@
   margin-top: 0px;
 }
 
+/* This is to load each page
+***************************************/
+#agents, #logs, #stats {
+  display: none;
+}
+
 /* This for agents.html
 ***************************************/
 .links line {
