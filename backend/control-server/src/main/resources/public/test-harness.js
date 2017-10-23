@@ -123,7 +123,7 @@ this.validateLink = function (link, nodes) {
         .shift();
 
     return !!result; 
-}
+};
 
 let testHarness = (() => {
     let links = testJSON.nodes.flatMap((x) => {
@@ -160,7 +160,7 @@ let arrayTestHarness = (() => {
     console.log("Expected: ");
     console.log(flattenedArray);
     console.log("Actual: ");
-    console.log(nestedArray.flatMap(x => { return x }));
+    console.log(nestedArray.flatMap(x => { return x; }));
     console.log("");
 
 
@@ -168,11 +168,11 @@ let arrayTestHarness = (() => {
     let array2 = [2, 4, 5, 8, 9, 10];
     let array1Added = array1.added(array2);
     let array1Removed = array1.removed(array2);
-    console.log("added test")
+    console.log("added test");
     console.log("Expected: " + "8,9,10");
     console.log("Actual: " + array1Added.toString());
     console.log("");
-    console.log("removed test")
+    console.log("removed test");
     console.log("Expected: " + "1,3,6,7");
     console.log("Actual: " + array1Removed.toString());
 

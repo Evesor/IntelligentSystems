@@ -5,7 +5,7 @@ Array.prototype.flatMap = function (lambda) {
 /** Returns true if the new element was not found in the array */
 Array.prototype.none = function (newElement) {
     return !this.some(element => element === newElement);
-}
+};
 
 Array.prototype.unique = function () {
     return [...new Set(this)];
