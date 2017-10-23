@@ -1,5 +1,7 @@
 package edu.swin.hets.agent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
@@ -296,7 +298,16 @@ public class HomeAgent extends NegotiatingAgent
 
 	//TODO Override getJSON
 	@Override
-	protected String getJSON(){return "Not implemented";}
+	protected String getJSON(){
+		String json = "";
+		try {
+			json = new ObjectMapper().writeValueAsString(
+					new HomeAgentData());
+		}
+		catch (JsonProcessingException e) {
+			LogError("Error parsing data to json in " + getName() + " exeption thrown");
+		}
+		return json;}
 
 	//send buy CFP
 	private void sendBuyCFP()
@@ -407,6 +418,13 @@ public class HomeAgent extends NegotiatingAgent
 				 _current_globals.getTime());
 			_currentNegotiations.add(strategy);
 		}
+	}
+	/******************************************************************************
+	 *  Use: Used by JSON serializing library to make JSON objects.
+	 *****************************************************************************/
+	private class HomeAgentData {
+		public Double getNextRequiredAmount () { return  _next_required_amount; }
+		public Double getNextPurchasedAmoutnt () { return _next_purchased_amount; }
 	}
 }
 
