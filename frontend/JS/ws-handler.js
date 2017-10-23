@@ -23,6 +23,8 @@
             return x.links;
         });
 
+        // console.log(jsonData);
+        // console.log(links);
         ids.forEach(id => graph.addNode(id));
         links
             .filter(link => graph.validateLink(link))
