@@ -1,14 +1,17 @@
 package edu.swin.hets.agent;
 
 import com.hierynomus.msdtyp.ACL;
-import edu.swin.hets.helper.PowerSaleAgreement;
-import edu.swin.hets.helper.PowerSaleProposal;
+import edu.swin.hets.helper.*;
+import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
+import sun.rmi.runtime.Log;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 /******************************************************************************
  *  Use: An abstract base agent class used to deal with some routine things
@@ -106,6 +109,31 @@ public abstract class NegotiatingAgent extends BaseAgent{
         }catch (UnreadableException e) {
             LogError("Tried to read a power sale agreement from message, error thrown");
             return null;
+        }
+    }
+    /*
+    *       Wrapper around the factory to make things easier.
+     */
+    INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer,
+                                                         String conversationID ,
+                                                         IUtilityFunction utilityFunction,
+                                                         String opponentName,
+                                                         int currentTime,
+                                                         List<String> negotiationArgs) throws ExecutionException {
+        if(negotiationArgs.size() < NegotiatorFactory.MIN_NUMBER_OF_ARGS ) {
+            LogError("Does not have any details to make negotiators with, using a default");
+            negotiationArgs.forEach((arg) -> LogError("was passed: " + arg));
+            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, currentTime, 8);
+        }
+        try {
+            return NegotiatorFactory.Factory.getNegotiationStrategy(negotiationArgs, utilityFunction, getName(),
+                    opponentName, offer, _current_globals.getTime(), conversationID);
+        } catch (ExecutionException e) {
+            String error = "Negotiator factory failed to initialize with: " ;
+            for (String a : negotiationArgs) { error += ("  " + a); }
+            error += (" due to: " + e.getMessage());
+            LogError(error);
+            throw new ExecutionException(new Throwable("Not good baby"));
         }
     }
 

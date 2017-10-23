@@ -8,7 +8,10 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -37,6 +40,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
     private double _currentProduction;
     private ArrayList<PowerSaleAgreement> _currentContracts;
     private ArrayList<INegotiationStrategy> _currentNegotiations;
+    private List<String> _negotiationArgs;
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
@@ -67,6 +71,10 @@ public class PowerPlantAgent extends NegotiatingAgent {
         addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
         addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
         addMessageHandler(ProposeTemplate, new ProposeHandler());
+        _negotiationArgs = (List<String>) getArguments()[0];
+        if (_negotiationArgs.size() > 0) {
+            _negotiationArgs.forEach((arg) -> LogDebug("was passed: " + arg));
+        }
     }
 
     // Update bookkeeping.
@@ -120,8 +128,13 @@ public class PowerPlantAgent extends NegotiatingAgent {
             }
             if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
             ACLMessage sent = sendProposal(msg, proposed);
-            INegotiationStrategy strategy = new HoldForFirstOfferPrice(
-                    proposed, sent.getConversationId() , msg.getSender().getName(), _current_globals.getTime(), 15);
+            INegotiationStrategy strategy;
+            try {
+                strategy = makeNegotiationStrategy(proposed, sent.getConversationId(), new BasicUtility(),
+                        msg.getSender().getName(), _current_globals.getTime(), _negotiationArgs);
+            } catch (ExecutionException e) {
+                return;
+            }
             _currentNegotiations.add(strategy);
             proposed.setSellerAID(getAID());
             LogVerbose(getName() + " sending a proposal for " +  proposed.getAmount() + " @ " +

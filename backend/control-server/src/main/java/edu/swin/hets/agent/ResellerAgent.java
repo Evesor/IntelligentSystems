@@ -3,7 +3,6 @@ package edu.swin.hets.agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
-import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
@@ -54,7 +53,7 @@ public class ResellerAgent extends NegotiatingAgent {
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _customerDB;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _sellerDB;
     private ArrayList<INegotiationStrategy> _currentNegotiations;
-    private List<String> _inputArgs;
+    private List<String> _negotiationArgs;
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
@@ -86,9 +85,9 @@ public class ResellerAgent extends NegotiatingAgent {
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropMessageTemplate, new ProposalHandler());
         RegisterAMSService(getAID().getName(), "reseller");
-        _inputArgs = (List<String>) getArguments()[0];
-        if (_inputArgs.size() > 0) {
-            _inputArgs.forEach((a) -> LogDebug(" was passed: " + a));
+        _negotiationArgs = (List<String>) getArguments()[0];
+        if (_negotiationArgs.size() > 0) {
+            _negotiationArgs.forEach((a) -> LogDebug(" was passed: " + a));
         }
     }
 
@@ -171,7 +170,8 @@ public class ResellerAgent extends NegotiatingAgent {
             ACLMessage sent = sendCFP(prop, powerPlant.getName());
             INegotiationStrategy strategy;
             try {
-                strategy = makeNegotiationStrategy(prop, sent.getConversationId(), powerPlant.getName().getName());
+                strategy = makeNegotiationStrategy(prop, sent.getConversationId(), new BasicUtility(),
+                        powerPlant.getName().getName(), _current_globals.getTime(), _negotiationArgs);
             } catch (ExecutionException e) {
                 return;
             }
@@ -279,30 +279,12 @@ public class ResellerAgent extends NegotiatingAgent {
             LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;
             try {
-                strategy = makeNegotiationStrategy(proposed, sent.getConversationId() ,msg.getSender().getName());
+                strategy = makeNegotiationStrategy(proposed, sent.getConversationId(), new BasicUtility()
+                        ,msg.getSender().getName(), _current_globals.getTime(), _negotiationArgs);
             } catch (ExecutionException e) {
                 return;
             }
             _currentNegotiations.add(strategy);
-        }
-    }
-
-    private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String conversationID ,
-                                                         String opponentName)
-            throws ExecutionException{
-        if (_inputArgs.size() == 0) {
-            LogError("No valid inputs to make negotiation strategy, using default");
-            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, _current_globals.getTime(), 15);
-        }
-        try {
-            return NegotiatorFactory.Factory.getNegotiationStrategy(_inputArgs, new BasicUtility(), getName(),
-                    opponentName, offer, _current_globals.getTime(), conversationID);
-        } catch (ExecutionException e) {
-            String error = "Negotiator factory failed to initialize with: " ;
-            for (String a : _inputArgs) { error += ("  " + a); }
-            error += (" due to: " + e.getMessage());
-            LogError(error);
-            throw new ExecutionException(new Throwable("Not good baby"));
         }
     }
      /******************************************************************************

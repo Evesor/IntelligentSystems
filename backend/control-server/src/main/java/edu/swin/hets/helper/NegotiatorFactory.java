@@ -10,6 +10,7 @@ import java.util.List;
  *  Throws: Lots.
  *****************************************************************************/
 public class NegotiatorFactory {
+    public static Integer MIN_NUMBER_OF_ARGS = 2; //Is type + the minim number of args the simplest strat takes
     public static NegotiatorFactory Factory = new NegotiatorFactory();
 
     public INegotiationStrategy getNegotiationStrategy(
