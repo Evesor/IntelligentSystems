@@ -54,10 +54,23 @@ public abstract class NegotiatingAgent extends BaseAgent{
         return cfp;
     }
 
-    ACLMessage sendRejectProposalMessage(ACLMessage origionalMsg) {
+    ACLMessage sendRejectProposalMessage(ACLMessage origionalMsg, PowerSaleProposal prop) {
         ACLMessage response = origionalMsg.createReply();
         response.setPerformative(ACLMessage.REJECT_PROPOSAL);
         response.setSender(getAID());
+        addPowerSaleProposal(response, prop);
+        send(response);
+        return response;
+    }
+    /*
+    *  Note agents should not reject contracts negotiated in good faith, contracts
+    *  should only be invalidated by timing events causing them to no longer be valid.
+     */
+    ACLMessage sendRejectAgreementMessage(ACLMessage origionalMsg, PowerSaleAgreement agg) {
+        ACLMessage response = origionalMsg.createReply();
+        response.setPerformative(ACLMessage.REJECT_PROPOSAL);
+        response.setSender(getAID());
+        addPowerSaleAgreement(response, agg);
         send(response);
         return response;
     }

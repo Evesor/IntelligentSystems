@@ -12,8 +12,8 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 /******************************************************************************
- *  Use: A simple example of a reseller agent class that is not dependant
- *       on any events, should be extended later for more detailed classes.
+ *  Use: The primary reseller agent who's negotiation sstrategiescan be
+ *       adapted.
  *  Notes:
  *       To buy: this->CFP :: PROP->this :: this->ACC || this->REJ
  *       When selling: CFP->this :: this->PROP :: ACC->this || REJ->this
@@ -64,7 +64,8 @@ public class ResellerAgent extends NegotiatingAgent {
             GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
+            MessageTemplate.or(GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()),
+                    GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName())));
     private MessageTemplate PropMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
             GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
@@ -196,7 +197,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 Optional <IPowerSaleContract> offer = strategy.getResponse();
                 if (!offer.isPresent()) { // We should end negotiation
                     LogDebug("Has stopped negotiating with : " + msg.getSender().getName());
-                    sendRejectProposalMessage(msg);
+                    sendRejectProposalMessage(msg, proposed);
                     _currentNegotiations.remove(strategy);
                     return;
                 }
@@ -348,7 +349,7 @@ public class ResellerAgent extends NegotiatingAgent {
     private class BasicUtility implements IUtilityFunction {
         private double _costImperative = 5;
         private double _supplyImperative = 5;
-        private double _timeImperative = 0.05;
+        private double _timeImperative = 0.1;
         private double _idealPrice = 0.5;
         private GlobalValues _createdTime;
 

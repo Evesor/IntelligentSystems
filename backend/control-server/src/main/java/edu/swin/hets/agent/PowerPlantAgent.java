@@ -50,7 +50,8 @@ public class PowerPlantAgent extends NegotiatingAgent {
             GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
+            MessageTemplate.or(GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()),
+                    GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName())));
 
     @Override
     protected void setup() {
@@ -155,7 +156,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             if (agreement.getAmount() > (_maxProduction - _currentProduction)) {
                 // Cant sell that much electricity, send back error message.
-                sendRejectProposalMessage(msg);
+                sendRejectAgreementMessage(msg, agreement);
                 return;
             }
             _currentContracts.add(agreement);
@@ -178,7 +179,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             if (!response.isPresent()) { // We should end negotiations.
                 LogDebug("has stopped negotiating with: " + msg.getSender());
                 _currentNegotiations.remove(strategy);
-                sendRejectProposalMessage(msg);
+                sendRejectProposalMessage(msg, prop);
                 return;
             }
             if (response.get() instanceof PowerSaleProposal) {

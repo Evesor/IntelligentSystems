@@ -13,7 +13,29 @@ import sun.rmi.runtime.Log;
 import java.io.IOException;
 import java.lang.*;
 import java.util.*;
-
+/******************************************************************************
+ *  Use: The primary home agent.
+ *  Messages Understood:
+ *       - ACCEPT_PROPOSAL : Used to signify a proposal has been accepted by
+ *                           someone selling or buying from us.
+ *             content Object: A PowerSaleAgreement object
+ *       - REJECT_PROPOSAL : Used to signify failed proposal from someone we
+ *                           wanted to buy / sell to.
+ *             content Object: A PowerSaleProposal object
+ *       - PROPOSAL : Used when someone wants to negotiate selling or buying
+ *                    electricity from us.
+ *             content Object: A PowerSaleProposal object
+ *  Messages sent:
+ *       - CFP : Used to negotiate purchasing electricity from reseller agents
+ *             content Object: A PowerSaleProposal object
+ *       - ACCEPT_PROPOSAL : Used to signify a proposal has been accepted.
+ *             content Object: A PowerSaleAgreement object
+ *       - REJECT_PROPOSAL : Used to signify failed proposal and request to
+ *       					 cancel ongoing negotiations with that agent.
+ *             content Object: A PowerSaleProposal object
+ *       - PROPOSAL : Used to send a counter proposal back to a reseller.
+ *             content Object: A PowerSaleProposal object
+ *****************************************************************************/
 public class HomeAgent extends NegotiatingAgent
 {
 	public static String APPLIANCE_LIST_MAP_KEY = "HOME_AGENT_APPLIANCE_LIST";
@@ -338,7 +360,7 @@ public class HomeAgent extends NegotiatingAgent
 				negotiation.addNewProposal(prop, false);
 				Optional<IPowerSaleContract> response = negotiation.getResponse();
 				if (! response.isPresent()) { //End negotiation
-					sendRejectProposalMessage(msg);
+					sendRejectProposalMessage(msg, prop);
 					_currentNegotiations.remove(negotiation);
 					LogDebug("has stopped negotiating with " + msg.getSender());
 					return;

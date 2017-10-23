@@ -73,7 +73,8 @@ public abstract class BaseAgent extends Agent{
         response.setContent(content);
         response.setSender(getAID());
         send(response);
-        LogError(" did not understand " + originalMsg.getContent());
+        LogError(" did not understand " + originalMsg.getContent() + " sent with preformative " +
+                originalMsg.getPerformative()+ " from " + originalMsg.getSender());
     }
 
     void RegisterAMSService (String serviceName,String serviceType) {
