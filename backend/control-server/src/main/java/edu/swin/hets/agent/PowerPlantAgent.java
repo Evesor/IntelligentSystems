@@ -9,7 +9,6 @@ import jade.lang.acl.MessageTemplate;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Optional;
-
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.
@@ -50,7 +49,8 @@ public class PowerPlantAgent extends NegotiatingAgent {
             GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
+            MessageTemplate.or(GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()),
+                    GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName())));
 
     @Override
     protected void setup() {
@@ -112,7 +112,6 @@ public class PowerPlantAgent extends NegotiatingAgent {
     // Someone buying from us.
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            IUtilityFunction util = new BasicUtility();
             // A request for a price on electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (proposed.getAmount() > (_maxProduction - _currentProduction)) {
@@ -120,11 +119,11 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 return;
             }
             if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
+            ACLMessage sent = sendProposal(msg, proposed);
             INegotiationStrategy strategy = new HoldForFirstOfferPrice(
-                    proposed, msg.getSender().getName(), _current_globals.getTime());
+                    proposed, sent.getConversationId() , msg.getSender().getName(), _current_globals.getTime(), 15);
             _currentNegotiations.add(strategy);
             proposed.setSellerAID(getAID());
-            sendProposal(msg, proposed);
             LogVerbose(getName() + " sending a proposal for " +  proposed.getAmount() + " @ " +
                     proposed.getCost() + " to: "  + msg.getSender().getName());
         }
@@ -140,9 +139,12 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 _currentContracts.stream().filter((agg) -> agg.equalValues(agreement)).forEach(toRemove::add);
                 _currentContracts.removeAll(toRemove);
             }
-            if (GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()).match(msg)) {
-                //TODO, remove it form negotiation chain
-                // TODO, if not a send back a better quote maybe?
+            if (GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()).match(msg)) {
+                ArrayList<INegotiationStrategy> toRemove = new ArrayList<>();
+                 _currentNegotiations.stream().filter(
+                         (prop) -> prop.getConversationID().equals(msg.getConversationId())).
+                         forEach((prop) -> toRemove.add(prop));
+                 _currentNegotiations.removeAll(toRemove);
             }
         }
     }
@@ -154,7 +156,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             if (agreement.getAmount() > (_maxProduction - _currentProduction)) {
                 // Cant sell that much electricity, send back error message.
-                sendRejectProposalMessage(msg);
+                sendRejectAgreementMessage(msg, agreement);
                 return;
             }
             _currentContracts.add(agreement);
@@ -173,18 +175,23 @@ public class PowerPlantAgent extends NegotiatingAgent {
             INegotiationStrategy strategy = opt.get();
             PowerSaleProposal prop = getPowerSalePorposal(msg);
             strategy.addNewProposal(prop, false);
-            IPowerSaleContract response = strategy.getResponse();
-            if (response instanceof PowerSaleProposal) {
-                //TODO, fix negotiation strategy before turning back on.
+            Optional<IPowerSaleContract> response = strategy.getResponse();
+            if (!response.isPresent()) { // We should end negotiations.
+                LogDebug("has stopped negotiating with: " + msg.getSender());
+                _currentNegotiations.remove(strategy);
+                sendRejectProposalMessage(msg, prop);
+                return;
+            }
+            if (response.get() instanceof PowerSaleProposal) {
                 // Make counter offer
-//                PowerSaleProposal counter = (PowerSaleProposal) response;
-//                sendCounterOffer(msg, counter);
-//                strategy.addNewProposal(counter, true);
-//                LogDebug(getName() + " offered to pay " + counter.getCost()  +
-//                        " for electricity negotiating with " + msg.getSender().getName());
+                PowerSaleProposal counter = (PowerSaleProposal) response.get();
+                sendProposal(msg, counter);
+                strategy.addNewProposal(counter, true);
+                LogDebug(getName() + " offered to pay " + counter.getCost()  +
+                        " for electricity negotiating with " + msg.getSender().getName());
             }
             else { // Accept
-                PowerSaleAgreement agreement = (PowerSaleAgreement) response;
+                PowerSaleAgreement agreement = (PowerSaleAgreement) response.get();
                 sendAcceptProposal(msg, agreement);
                 _currentContracts.add(agreement);
                 updateContracts();

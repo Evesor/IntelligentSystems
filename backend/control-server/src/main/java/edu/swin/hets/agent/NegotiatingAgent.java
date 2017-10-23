@@ -21,47 +21,58 @@ public abstract class NegotiatingAgent extends BaseAgent{
     }
 
 
-    void sendSaleMade(PowerSaleAgreement agg) {
+    ACLMessage sendSaleMade(PowerSaleAgreement agg) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         addPowerSaleAgreement(msg, agg);
         msg.addReceiver(new AID("StatisticsAgent", AID.ISLOCALNAME));
         send(msg);
+        return msg;
     }
 
-    void sendProposal(ACLMessage origionalMSG, PowerSaleProposal prop) {
+    ACLMessage sendProposal(ACLMessage origionalMSG, PowerSaleProposal prop) {
         ACLMessage response = origionalMSG.createReply();
         response.setPerformative(ACLMessage.PROPOSE);
         addPowerSaleProposal(response, prop);
         send(response);
+        return response;
     }
 
-    void sendAcceptProposal (ACLMessage origionalMSG, PowerSaleAgreement agg) {
+    ACLMessage sendAcceptProposal (ACLMessage origionalMSG, PowerSaleAgreement agg) {
         ACLMessage acceptMsg = origionalMSG.createReply();
         acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
         addPowerSaleAgreement(acceptMsg, agg);
         send(acceptMsg);
+        return acceptMsg;
     }
 
-//    void sendCounterOffer (ACLMessage origionalMSG, PowerSaleProposal counter) {
-//        ACLMessage counterMsg = origionalMSG.createReply();
-//        counterMsg.setPerformative(ACLMessage.PROPOSE);
-//        addPowerSaleProposal(counterMsg, counter);
-//        send(counterMsg);
-//    }
-
-    void sendCFP (PowerSaleProposal prop, AID reciver) {
+    ACLMessage sendCFP (PowerSaleProposal prop, AID reciver) {
         ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
         addPowerSaleProposal(cfp, prop);
         cfp.setConversationId(UUID.randomUUID().toString());
         cfp.addReceiver(reciver);
         send(cfp);
+        return cfp;
     }
 
-    void sendRejectProposalMessage(ACLMessage origionalMsg) {
+    ACLMessage sendRejectProposalMessage(ACLMessage origionalMsg, PowerSaleProposal prop) {
         ACLMessage response = origionalMsg.createReply();
         response.setPerformative(ACLMessage.REJECT_PROPOSAL);
         response.setSender(getAID());
+        addPowerSaleProposal(response, prop);
         send(response);
+        return response;
+    }
+    /*
+    *  Note agents should not reject contracts negotiated in good faith, contracts
+    *  should only be invalidated by timing events causing them to no longer be valid.
+     */
+    ACLMessage sendRejectAgreementMessage(ACLMessage origionalMsg, PowerSaleAgreement agg) {
+        ACLMessage response = origionalMsg.createReply();
+        response.setPerformative(ACLMessage.REJECT_PROPOSAL);
+        response.setSender(getAID());
+        addPowerSaleAgreement(response, agg);
+        send(response);
+        return response;
     }
 
     void addPowerSaleAgreement(ACLMessage msg, PowerSaleAgreement ag) {

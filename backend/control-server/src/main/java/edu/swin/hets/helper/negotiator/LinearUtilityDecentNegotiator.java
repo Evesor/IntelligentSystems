@@ -1,14 +1,15 @@
 package edu.swin.hets.helper.negotiator;
 
-
-import org.jetbrains.annotations.Nullable;
 import edu.swin.hets.helper.INegotiationStrategy;
 import edu.swin.hets.helper.PowerSaleProposal;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.IPowerSaleContract;
 import edu.swin.hets.helper.IUtilityFunction;
+import jade.core.AID;
 
 import java.util.ArrayList;
+import java.util.Optional;
+
 /******************************************************************************
  *  Use: A basic implementation of negotiating to test interface.
  *  Notes:
@@ -27,6 +28,8 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
     private double _priceJump;
     private double _volumeJump;
     private Integer _timeJump;
+    private String _conversationID;
+    //TODO, put hard limit on negotiation lengths.
 
     public LinearUtilityDecentNegotiator(IUtilityFunction utilityFun,
                                          String ourName,
@@ -35,7 +38,8 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
                                          Integer timeSlice,
                                          double priceJump,
                                          double volumeJump,
-                                         Integer timeJump) {
+                                         Integer timeJump,
+                                         String conversationID) {
         _utilityFun = utilityFun;
         _proposalHistory = new ArrayList<>();
         _proposalHistory.add(new PowerSaleProposal[2]);
@@ -46,9 +50,13 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
         _priceJump = priceJump;
         _volumeJump = volumeJump;
         _timeJump = timeJump;
+        _conversationID = conversationID;
     }
 
     public String getOpponentName() { return _opponentName; }
+
+    @Override
+    public String getConversationID() { return _conversationID; }
 
     @Override
     public void addNewProposal(PowerSaleProposal proposal, boolean fromUs) {
@@ -62,45 +70,51 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
     }
 
     @Override
-    public IPowerSaleContract getResponse() {
+    public Optional<IPowerSaleContract> getResponse() {
         PowerSaleProposal ourOffer = _proposalHistory.get(_proposalHistory.size() - 1)[0];
         PowerSaleProposal thereOffer = _proposalHistory.get(_proposalHistory.size() - 1)[1];
         if (thereOffer == null && _proposalHistory.size() > 1) {
             // They have not made an offer for our last one, use previous.
             thereOffer = _proposalHistory.get(_proposalHistory.size() - 2)[1];
         }
-        if (thereOffer == null) return ourOffer;
+        if (thereOffer == null) return Optional.of(ourOffer);
         // They have made some kind of offer.
         double thereOfferUtil = _utilityFun.evaluate(thereOffer);
         double ourOfferUtil = _utilityFun.evaluate(ourOffer);
         //TODO, Remove
-        System.out.println(_ourName + " had initial offer of util: " + ourOfferUtil + " and was offered " + thereOfferUtil + " worth of utility");
+        System.out.println(_ourName + " had initial offer of util: " + ourOfferUtil +
+                " and was offered " + thereOfferUtil + " worth of utility");
         if (thereOfferUtil > ourOfferUtil * 0.9) {
             // We are within %90 utility of what we want. Accept the offer.
-            return new PowerSaleAgreement(thereOffer, _timeSlice);
+            return Optional.of(new PowerSaleAgreement(thereOffer, _timeSlice));
         }
         // Move linearly towards there offer, provided it is within %90 of our best offer.
-        return linearMove(ourOffer, thereOffer, 0.9, 1);
+        return linearMove(ourOffer, thereOffer, 0.9);
+    }
+
+    private boolean areWeSeller() {
+        if(_proposalHistory.get(0)[0].getSellerAID() != null) {
+            if (_proposalHistory.get(0)[0].getSellerAID().getName().equals(_ourName)) return true;
+        }
+        return false;
     }
     // Recursive function that looks for an offer that is closer to the one offered that is still acceptable.
     // Note : Step size and tolerance are percentages, DO NOT EXCEEDED 0<->1
-    @Nullable
-    private PowerSaleProposal linearMove(PowerSaleProposal p1, PowerSaleProposal p2,
-                                         double tolerance, double stepSize) {
+    private Optional<IPowerSaleContract> linearMove(PowerSaleProposal p1, PowerSaleProposal p2, double tolerance) {
         PowerSaleProposal counter = new PowerSaleProposal(
                 (p1.getAmount() - p2.getAmount()) * _volumeJump,
                 (int) Math.round((p1.getDuration() - p2.getDuration()) * _timeJump),
-                p2.getSellerAID(),
-                (p2.getSellerAID().getName().equals(_ourName)));
+                new AID(_ourName, AID.ISLOCALNAME),
+                areWeSeller());
         counter.setCost((p1.getCost() - p2.getCost()) * _priceJump);
         if (_utilityFun.evaluate(p1) * tolerance < _utilityFun.evaluate(counter)) {
             // This counter is pretty good, return it.
-            return counter;
+            return Optional.of(counter);
         }
         // We have just evaluated the quality of a deal near what the other person wanted, break
-        if (withinStepSize(counter, p2)) return null;
+        if (withinStepSize(counter, p2)) return Optional.empty();
         // Recursively call till we get to there offer or we find an acceptable one.
-        return linearMove(counter, p2, tolerance, stepSize);
+        return linearMove(counter, p2, tolerance);
     }
 
     private boolean withinStepSize (PowerSaleProposal p1, PowerSaleProposal p2) {

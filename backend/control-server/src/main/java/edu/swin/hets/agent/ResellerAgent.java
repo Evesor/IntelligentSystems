@@ -12,8 +12,8 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 /******************************************************************************
- *  Use: A simple example of a reseller agent class that is not dependant
- *       on any events, should be extended later for more detailed classes.
+ *  Use: The primary reseller agent who's negotiation sstrategiescan be
+ *       adapted.
  *  Notes:
  *       To buy: this->CFP :: PROP->this :: this->ACC || this->REJ
  *       When selling: CFP->this :: this->PROP :: ACC->this || REJ->this
@@ -54,8 +54,7 @@ public class ResellerAgent extends NegotiatingAgent {
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _customerDB;
     private HashMap<AID, ArrayList<PowerSaleAgreement>> _sellerDB;
     private ArrayList<INegotiationStrategy> _currentNegotiations;
-    private List<String> _strategyParams;
-
+    private List<String> _inputArgs;
 
     private MessageTemplate CFPMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.CFP),
@@ -65,7 +64,8 @@ public class ResellerAgent extends NegotiatingAgent {
             GoodMessageTemplates.ContatinsString(PowerSaleAgreement.class.getName()));
     private MessageTemplate PropRejectedMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REJECT_PROPOSAL),
-            GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
+            MessageTemplate.or(GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()),
+                    GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName())));
     private MessageTemplate PropMessageTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.PROPOSE),
             GoodMessageTemplates.ContatinsString(PowerSaleProposal.class.getName()));
@@ -86,9 +86,9 @@ public class ResellerAgent extends NegotiatingAgent {
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropMessageTemplate, new ProposalHandler());
         RegisterAMSService(getAID().getName(), "reseller");
-        _strategyParams = (List<String>) getArguments()[0];
-        if (_strategyParams.size() > 0) {
-            _strategyParams.forEach((a) -> LogDebug(" was passed: " + a));
+        _inputArgs = (List<String>) getArguments()[0];
+        if (_inputArgs.size() > 0) {
+            _inputArgs.forEach((a) -> LogDebug(" was passed: " + a));
         }
     }
 
@@ -167,15 +167,15 @@ public class ResellerAgent extends NegotiatingAgent {
                 _nextRequiredAmount - _nextPurchasedAmount,1, getAID(), false);
         for (DFAgentDescription powerPlant : powerPlants) {
             // Make new negotiation for each powerPlant
+            prop.setBuyerAID(getAID());
+            ACLMessage sent = sendCFP(prop, powerPlant.getName());
             INegotiationStrategy strategy;
             try {
-                strategy = makeNegotiationStrategy(prop, powerPlant.getName().getName());
+                strategy = makeNegotiationStrategy(prop, sent.getConversationId(), powerPlant.getName().getName());
             } catch (ExecutionException e) {
                 return;
             }
             _currentNegotiations.add(strategy);
-            prop.setBuyerAID(getAID());
-            sendCFP(prop, powerPlant.getName());
         }
         LogDebug(getName() + " is sending cfp for: " + (_nextRequiredAmount - _nextPurchasedAmount) );
     }
@@ -185,19 +185,24 @@ public class ResellerAgent extends NegotiatingAgent {
         public void Handler(ACLMessage msg) {
             if (_nextRequiredAmount > _nextPurchasedAmount){
                 Optional<INegotiationStrategy> optional = _currentNegotiations.stream().filter(
-                        (x) -> x.getOpponentName().equals(msg.getSender().getName())).findAny();
-                //TODO, make sure we are getting the right negotiation chain for this message ID
+                        (neg) -> neg.getConversationID().equals(msg.getConversationId())).findAny();
                 if (! optional.isPresent()) {
-                    LogError("We got a message from someone we were not negotiating with");
+                    LogError("We got a message with a conversation id not registered from " + msg.getSender());
                     return;
                 }
                 INegotiationStrategy strategy = optional.get();
                 PowerSaleProposal proposed = getPowerSalePorposal(msg);
                 strategy.addNewProposal(proposed, false);
-                IPowerSaleContract offer = strategy.getResponse();
-                if (offer instanceof PowerSaleProposal) {
+                Optional <IPowerSaleContract> offer = strategy.getResponse();
+                if (!offer.isPresent()) { // We should end negotiation
+                    LogDebug("Has stopped negotiating with : " + msg.getSender().getName());
+                    sendRejectProposalMessage(msg, proposed);
+                    _currentNegotiations.remove(strategy);
+                    return;
+                }
+                if (offer.get() instanceof PowerSaleProposal) {
                     // Make counter offer
-                    PowerSaleProposal counterProposal = (PowerSaleProposal) offer;
+                    PowerSaleProposal counterProposal = (PowerSaleProposal) offer.get();
                     strategy.addNewProposal(counterProposal, true);
                     sendProposal(msg, counterProposal);
                     LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
@@ -205,14 +210,15 @@ public class ResellerAgent extends NegotiatingAgent {
                 }
                 else {
                     // Accept the contract
-                    PowerSaleAgreement agreement = (PowerSaleAgreement) offer;
+                    PowerSaleAgreement agreement = (PowerSaleAgreement) offer.get();
                     sendAcceptProposal(msg, agreement);
                     _currentBuyAgreements.add(agreement);
                     sendSaleMade(agreement);
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     updateContracts();
-                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " + _nextRequiredAmount);
+                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
+                            _nextRequiredAmount);
                 }
             }
         }
@@ -269,11 +275,11 @@ public class ResellerAgent extends NegotiatingAgent {
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
             proposed.setSellerAID(getAID());
-            sendProposal(msg, proposed);
+            ACLMessage sent = sendProposal(msg, proposed);
             LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;
             try {
-                strategy = makeNegotiationStrategy(proposed, msg.getSender().getName());
+                strategy = makeNegotiationStrategy(proposed, sent.getConversationId() ,msg.getSender().getName());
             } catch (ExecutionException e) {
                 return;
             }
@@ -281,18 +287,19 @@ public class ResellerAgent extends NegotiatingAgent {
         }
     }
 
-    private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String opponentName)
+    private INegotiationStrategy makeNegotiationStrategy(PowerSaleProposal offer, String conversationID ,
+                                                         String opponentName)
             throws ExecutionException{
-        if (_strategyParams.size() == 0) {
+        if (_inputArgs.size() == 0) {
             LogError("No valid inputs to make negotiation strategy, using default");
-            return new HoldForFirstOfferPrice(offer, opponentName, _current_globals.getTime());
+            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, _current_globals.getTime(), 15);
         }
         try {
-            return NegotiatorFactory.Factory.getNegotiationStrategy(_strategyParams, new BasicUtility(), getName(),
-                    opponentName, offer, _current_globals.getTime());
+            return NegotiatorFactory.Factory.getNegotiationStrategy(_inputArgs, new BasicUtility(), getName(),
+                    opponentName, offer, _current_globals.getTime(), conversationID);
         } catch (ExecutionException e) {
             String error = "Negotiator factory failed to initialize with: " ;
-            for (String a : _strategyParams) { error += ("  " + a); }
+            for (String a : _inputArgs) { error += ("  " + a); }
             error += (" due to: " + e.getMessage());
             LogError(error);
             throw new ExecutionException(new Throwable("Not good baby"));
@@ -304,7 +311,8 @@ public class ResellerAgent extends NegotiatingAgent {
     private class ResellerAgentData implements Serializable {
             private AgentData data;
             private String Name;
-            ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases, String name) {
+            ResellerAgentData(double buy_price, double sell_price, double current_sales, double current_purchases,
+                              String name) {
                 Name = name;
                 data = new AgentData(buy_price, sell_price,current_sales, current_purchases, name);
             }
@@ -340,7 +348,7 @@ public class ResellerAgent extends NegotiatingAgent {
     private class BasicUtility implements IUtilityFunction {
         private double _costImperative = 5;
         private double _supplyImperative = 5;
-        private double _timeImperative = 0.05;
+        private double _timeImperative = 0.1;
         private double _idealPrice = 0.5;
         private GlobalValues _createdTime;
 

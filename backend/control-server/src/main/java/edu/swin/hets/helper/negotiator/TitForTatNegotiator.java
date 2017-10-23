@@ -4,6 +4,9 @@ import edu.swin.hets.helper.INegotiationStrategy;
 import edu.swin.hets.helper.PowerSaleProposal;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.IPowerSaleContract;
+
+import java.util.Optional;
+
 /******************************************************************************
  *  Use: A common type of negotiator that simply mirrors what the opponent
  *       counters with.
@@ -15,12 +18,17 @@ public class TitForTatNegotiator implements INegotiationStrategy {
     }
 
     @Override
-    public IPowerSaleContract getResponse() {
-        return null;
+    public Optional<IPowerSaleContract> getResponse() {
+        return Optional.empty();
     }
 
     @Override
     public String getOpponentName() {
+        return null;
+    }
+
+    @Override
+    public String getConversationID() {
         return null;
     }
 

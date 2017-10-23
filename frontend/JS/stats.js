@@ -28,6 +28,7 @@ function two1dto2d(aList, name) {
   	return completeOutput
 }
 
+
 function drawStats(data) {
 	drawChart(two1dto2d(data.averagePrice, 'Price'), "Average price", "average-price-chart");
 	drawChart(two1dto2d(data.averageVolume, 'Sales'), "Average volume of sales", "average-volume-chart");

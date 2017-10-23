@@ -1,5 +1,7 @@
 package edu.swin.hets.agent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.GlobalValues;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
@@ -9,6 +11,7 @@ import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +19,7 @@ import java.util.Vector;
 
 public class ApplianceAgent extends BaseAgent
 {
+	private static int DEFAULT_WATT_VALUE;
 	boolean on;
 	//TODO current array
 	//should be vector
@@ -61,9 +65,17 @@ public class ApplianceAgent extends BaseAgent
 			forecast[i] = 0;
 		}
 		Object[] args = getArguments();
-		//watt = Integer.parseInt(args[0].toString());
 		List<String> argument = (List<String>) args[0];
-		watt = Integer.parseInt(argument.get(0));
+		if (argument.size() == 0) {
+			LogError("was not passed a value to use for power consumption, using default");
+			watt = DEFAULT_WATT_VALUE;
+		} else {
+			try	{ watt = Integer.parseInt(argument.get(0)); }
+			catch (NumberFormatException e ) {
+				LogError("Was passed a value that is not a valid int for initialization");
+				watt = DEFAULT_WATT_VALUE;
+			}
+		}
 
 		updateForecastUsage();
 	}
@@ -186,7 +198,26 @@ public class ApplianceAgent extends BaseAgent
 
 	//TODO Override getJSON
 	@Override
-	protected String getJSON(){return "Not implimented";}
+	protected String getJSON(){
+		String json = "";
+		try {
+			json = new ObjectMapper().writeValueAsString(
+					new ApplianceAgentData());
+		}
+		catch (JsonProcessingException e) {
+			LogError("Error parsing data to json in " + getName() + " exeption thrown");
+		}
+		return json;
+	}
+	/******************************************************************************
+	 *  Use: Used by JSON serializing library to make JSON objects.
+	 *****************************************************************************/
+	private class ApplianceAgentData implements Serializable{
+		public Integer getWattage () {return watt;}
+		public Boolean getOn() {return on; }
+		public int[] getCurrent () { return current; }
+		public int[] getForecast() { return forecast; }
+	}
 }
 //TODO other list
 //appliance send electricity request / home approve before turning it on?

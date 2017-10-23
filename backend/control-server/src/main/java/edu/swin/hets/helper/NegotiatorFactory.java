@@ -1,9 +1,7 @@
 package edu.swin.hets.helper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import edu.swin.hets.helper.negotiator.LinearUtilityDecentNegotiator;
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.List;
 /******************************************************************************
@@ -15,19 +13,32 @@ public class NegotiatorFactory {
     public static NegotiatorFactory Factory = new NegotiatorFactory();
 
     public INegotiationStrategy getNegotiationStrategy(
-            List<String> input,
+            List<String> arguments,
             IUtilityFunction utilityFun,
             String ourName,
             String opponentName,
             PowerSaleProposal firstOffer,
-            Integer timeSlice)
+            Integer timeSlice,
+            String conversationID)
             throws ExecutionException{
-        switch (input.get(0)) {
-            case ("HoldForFirstOfferPrice"): return new HoldForFirstOfferPrice(firstOffer, opponentName, timeSlice);
+        switch (arguments.get(0)) {
+            case ("HoldForFirstOfferPrice"): return createHoldForFirstOfferPrice(firstOffer, conversationID,
+                    opponentName, timeSlice, arguments);
             case ("LinearUtilityDecentNegotiator"): return createLinearUtilityDecentNegotiator(utilityFun,
-                    ourName, opponentName, firstOffer, timeSlice, input);
+                    ourName, opponentName, firstOffer, timeSlice,conversationID, arguments);
         }
         throw new ExecutionException(new Throwable("Did not find the Negotiation function."));
+    }
+
+    private INegotiationStrategy createHoldForFirstOfferPrice(PowerSaleProposal firstOffer, String conversationID,
+                                                              String opponentName, Integer timeSlice, List<String> args) {
+
+        Integer maxTimes = 20;
+        try {
+            maxTimes = Integer.parseInt(args.get(1));
+        } catch (Exception e) {  } // Leave as default
+        return new HoldForFirstOfferPrice(firstOffer, conversationID,
+                opponentName, timeSlice, maxTimes);
     }
 
     private INegotiationStrategy createLinearUtilityDecentNegotiator (IUtilityFunction utilityFun,
@@ -35,15 +46,15 @@ public class NegotiatorFactory {
                                                                       String opponentName,
                                                                       PowerSaleProposal firstOffer,
                                                                       Integer timeSlice,
+                                                                      String conversationID,
                                                                       List<String> params) throws ExecutionException {
-
         if (params.size() != 4) {
             throw new ExecutionException(new Throwable("Wrong number of inputs"));
         }
         return new LinearUtilityDecentNegotiator(utilityFun, ourName,
                 opponentName, firstOffer , timeSlice, Double.parseDouble(params.get(1)),
                 Double.parseDouble(params.get(2)),
-                Integer.parseInt(params.get(3)));
+                Integer.parseInt(params.get(3)), conversationID);
 
     }
 }
