@@ -1,5 +1,5 @@
 (() => {
-// Establish the WebSocket connection and set up event handlers
+    // Establish the WebSocket connection and set up event handlers
     let webSocket = new WebSocket("ws://localhost:4567/ws");
     var graph = AgentGraph();
 
@@ -29,6 +29,4 @@
     webSocket.onclose = function () {
         console.log("Websocket Closed.");
     };
-
-
 })();

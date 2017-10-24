@@ -73,11 +73,12 @@ var AgentGraph = () => {
         }
     };
 
-        // set up the D3 visualisation in the specified element
+    // set up the D3 visualisation in the specified element
     var w = 960,
         h = 600;
 
     var color = d3.scale.category10();
+    var size = 12;
 
     var vis = d3.select("svg")
         .attr("width", w)
@@ -123,25 +124,36 @@ var AgentGraph = () => {
             .call(force.drag);
 
         nodeEnter.append("svg:circle")
-            .attr("r", 12)
+            .attr("r", size)
+            .style("stroke","black")
             .attr("id", function (d) {
                 return "Node;" + d.id;
             })
             .attr("class", "nodeStrokeClass")
-            .attr("fill", function(d) { return color(d.id); });
+            .attr("fill", function(d) { return color(d.id); })
+                .on("mouseover", function() {
+                  d3.select(this).attr('r', size)
+                    .style("stroke","red")
+                })
+                .on("mouseleave", function() {
+                  d3.select(this).attr('r', size)
+                    .style("stroke","black")
+                })
+                .on("click", function(r) {
+                  getAgentsFromNodes(r.id);
+                });
 
-        nodeEnter.append("svg:text")
-            .attr("class", "textClass")
-            .attr("x", 14)
-            .attr("y", ".31em")
-            .text(function (d) {
-                return d.id;
-            });
+        // nodeEnter.append("svg:text")
+        //     .attr("class", "textClass")
+        //     .attr("x", 14)
+        //     .attr("y", ".31em")
+        //     .text(function (d) {
+        //         return d.id;
+        //     });
 
         node.exit().remove();
 
         force.on("tick", function () {
-
             node.attr("transform", function (d) {
                 return "translate(" + d.x + "," + d.y + ")";
             });
@@ -170,11 +182,8 @@ var AgentGraph = () => {
             .start();
     };
 
-
-        // Make it all go
+    // Make it all go
     update();
-
-
 
     return this;
 };
