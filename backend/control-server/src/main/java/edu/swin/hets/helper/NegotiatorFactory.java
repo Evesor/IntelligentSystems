@@ -19,14 +19,14 @@ public class NegotiatorFactory {
             String ourName,
             String opponentName,
             PowerSaleProposal firstOffer,
-            Integer timeSlice,
+            GlobalValues currentGlobals,
             String conversationID)
             throws ExecutionException{
         switch (arguments.get(0)) {
             case ("HoldForFirstOfferPrice"): return createHoldForFirstOfferPrice(firstOffer, conversationID,
-                    opponentName, timeSlice, arguments);
+                    opponentName, currentGlobals.getTime(), arguments);
             case ("LinearUtilityDecentNegotiator"): return createLinearUtilityDecentNegotiator(utilityFun,
-                    ourName, opponentName, firstOffer, timeSlice,conversationID, arguments);
+                    ourName, opponentName, firstOffer, currentGlobals.getTime() ,conversationID, arguments);
         }
         throw new ExecutionException(new Throwable("Did not find the Negotiation function."));
     }

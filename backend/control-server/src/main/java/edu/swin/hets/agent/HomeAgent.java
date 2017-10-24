@@ -36,6 +36,7 @@ import java.util.*;
  *****************************************************************************/
 public class HomeAgent extends NegotiatingAgent
 {
+	private static final int GROUP_ID = 3;
 	public static String APPLIANCE_LIST_MAP_KEY = "HOME_AGENT_APPLIANCE_LIST";
 	//number of appliances
 	//private int n;
@@ -410,8 +411,19 @@ public class HomeAgent extends NegotiatingAgent
 	 *  Use: Used by JSON serializing library to make JSON objects.
 	 *****************************************************************************/
 	private class HomeAgentData {
-		public Double getNextRequiredAmount () { return  _next_required_amount; }
-		public Double getNextPurchasedAmoutnt () { return _next_purchased_amount; }
+		//TODO, fix
+		private AgentData data;
+		HomeAgentData () {
+			data = new AgentData();
+		}
+		public int getgroup() { return GROUP_ID; }
+		public AgentData getagent() {return data; }
+		public String getid() {return getName();}
+
+		private class AgentData {
+			public Double getNextRequiredAmount () { return  _next_required_amount; }
+			public Double getNextPurchasedAmoutnt () { return _next_purchased_amount; }
+		}
 	}
 }
 

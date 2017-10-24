@@ -19,6 +19,7 @@ import java.util.Vector;
 
 public class ApplianceAgent extends BaseAgent
 {
+	private static final int GROUP_ID = 4;
 	private static int DEFAULT_WATT_VALUE;
 	boolean on;
 	//TODO current array
@@ -213,10 +214,19 @@ public class ApplianceAgent extends BaseAgent
 	 *  Use: Used by JSON serializing library to make JSON objects.
 	 *****************************************************************************/
 	private class ApplianceAgentData implements Serializable{
-		public Integer getWattage () {return watt;}
-		public Boolean getOn() {return on; }
-		public int[] getCurrent () { return current; }
-		public int[] getForecast() { return forecast; }
+		private AgentData data;
+		ApplianceAgentData () {
+			data = new AgentData();
+		}
+		public int getgroup() { return GROUP_ID; }
+		public AgentData getagent() {return data; }
+		public String getid() {return getName();}
+		private class AgentData {
+			public Integer getWattage () {return watt;}
+			public Boolean getOn() {return on; }
+			public int[] getCurrent () { return current; }
+			public int[] getForecast() { return forecast; }
+		}
 	}
 }
 //TODO other list

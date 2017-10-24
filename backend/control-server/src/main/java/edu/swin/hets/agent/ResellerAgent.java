@@ -172,7 +172,6 @@ public class ResellerAgent extends NegotiatingAgent {
             prop = new PowerSaleProposal(_nextRequiredAmount - _nextPurchasedAmount,1,
                     (_current_globals.getAveragePriceLastTime() * 0.5), getAID(),powerPlant.getName());
             // Make new negotiation for each powerPlant
-            prop.setBuyerAID(getAID());
             ACLMessage sent = sendCFP(prop, powerPlant.getName());
             INegotiationStrategy strategy;
             try {
@@ -272,7 +271,6 @@ public class ResellerAgent extends NegotiatingAgent {
                 if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
-            proposed.setSellerAID(getAID());
             ACLMessage sent = sendProposal(msg, proposed);
             LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;

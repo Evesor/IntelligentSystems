@@ -54,7 +54,6 @@ public class LinearUtilityDecentNegotiator extends NegotiatorBase {
         PowerSaleProposal ourOffer = getOurMostRecentOffer();
         PowerSaleProposal thereOffer = getThereMostRecentOffer();
         if (thereOffer == null) return Optional.of(ourOffer);
-        if (ourOffer == null) System.out.println("*************errror *******************");
         // They have made some kind of offer.
         double thereOfferUtil = _utilityFun.evaluate(thereOffer);
         double ourOfferUtil = _utilityFun.evaluate(ourOffer);

@@ -20,10 +20,12 @@
         });
 
         ids.forEach(id => graph.addNode(id));
+
         links
             .filter(link => graph.validateLink(link))
             .map(link => graph.createLink(link.source, link.target, link.value))
             .forEach(link => graph.addLink(link));
+
     };
 
     webSocket.onclose = function () {

@@ -6,7 +6,6 @@ import edu.swin.hets.helper.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -115,7 +114,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
         ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
         // Filter out old contracts
         _currentContracts.stream().filter(
-                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+                (agg) -> agg.getEndTime() <= _current_globals.getTime()).forEach(toRemove::add);
         _currentContracts.removeAll(toRemove);
         // Update how much we now need to produce.
         _currentContracts.forEach((agg) -> _currentProduction += agg.getAmount());
@@ -140,7 +139,6 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 return;
             }
             _currentNegotiations.add(strategy);
-            proposed.setSellerAID(getAID());
             LogVerbose(getName() + " sending a proposal for " +  proposed.getAmount() + " @ " +
                     proposed.getCost() + " to: "  + msg.getSender().getName());
         }

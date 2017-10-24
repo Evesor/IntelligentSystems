@@ -165,7 +165,7 @@ var AgentGraph = () => {
             .gravity(.01)
             .charge(-80000)
             .friction(0)
-            .linkDistance( function(d) { return d.value * 10; } )
+            .linkDistance( function(d) { return d.value * 15 } )
             .size([w, h])
             .start();
     };

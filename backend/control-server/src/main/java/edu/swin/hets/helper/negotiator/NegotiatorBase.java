@@ -37,11 +37,21 @@ public abstract class NegotiatorBase implements INegotiationStrategy{
     }
 
     boolean areWeSeller() {
-        if (getOurMostRecentOffer().getSellerAID() != null)
-            return !getOurMostRecentOffer().getSellerAID().equals(_opponentName);
-        if (getOurMostRecentOffer().getBuyerAID() != null)
-            return !getOurMostRecentOffer().getBuyerAID().equals(_opponentName);
-        return false; //Should not get called, maybe throw something?
+        return  getOurMostRecentOffer().getBuyerAID().getName().equals(_opponentName);
+    }
+    /*
+    *   Figure out if we are just in a constant loop.
+     */
+    boolean sameAsLastNOffers (PowerSaleProposal prop, int n) {
+        if (getNumberOfProps() < n + 1) return false; // We haven't got n offers yet, keep waiting.
+        boolean oneDifferent = false;
+        int lastIndex = getNumberOfProps() - 1;
+        int firstIndex = getNumberOfProps() - n;
+        for (int i = firstIndex; i < lastIndex; i++) {
+            if (getProposal(i) == null) return true;
+            if (!prop.equalValues(getProposal(i))) oneDifferent = true;
+        }
+        return !oneDifferent;
     }
 
     int getNumberOfProps () { return _proposalHistory.size(); }
@@ -62,14 +72,13 @@ public abstract class NegotiatorBase implements INegotiationStrategy{
         return _conversationID;
     }
 
-    @Nullable
     PowerSaleProposal getOurMostRecentOffer () {
         for (int i = _proposalHistory.size() - 1; i >= 0; i--) {
             if (_proposalHistory.get(i)[0] != null) {
                 return _proposalHistory.get(i)[0];
             }
         }
-        return null;
+        return null; //Should not be possible.
     }
 
     @Nullable

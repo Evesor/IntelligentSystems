@@ -1,5 +1,6 @@
 package edu.swin.hets.helper.negotiator;
 
+import edu.swin.hets.helper.GlobalValues;
 import edu.swin.hets.helper.IPowerSaleContract;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.PowerSaleProposal;
@@ -8,7 +9,7 @@ import java.util.Optional;
 
 /******************************************************************************
  *  Use:
- *****************************************************************************/
+ *****************************************************************************
 public class BoulwareNegotiator extends NegotiatorBase {
     private PowerSaleProposal _firstOffer;
     private Integer _currentTime;
@@ -16,18 +17,19 @@ public class BoulwareNegotiator extends NegotiatorBase {
     private double _volumeTolerance;
     private double _costTolerance;
     private double _durationTolerance;
+    private GlobalValues _currentGlobals;
 
     public BoulwareNegotiator(PowerSaleProposal firstOffer,
                               String conversationID,
                               String opponentsName,
-                              Integer currentTime,
+                              GlobalValues currentGlobals,
                               Integer maxNegotiationTime,
                               double costTolerance,
                               double volumeTolerance,
                               double durationTolerance) {
         super(opponentsName, conversationID, firstOffer);
         _firstOffer = firstOffer;
-        _currentTime = currentTime;
+        _currentGlobals = currentGlobals;
         _maxNegotiationTime = maxNegotiationTime;
         _costTolerance = costTolerance;
         _durationTolerance = durationTolerance;
@@ -36,6 +38,14 @@ public class BoulwareNegotiator extends NegotiatorBase {
 
     @Override
     public Optional<IPowerSaleContract> getResponse() {
+        if (_currentGlobals.getTimeLeft() < (GlobalValues.lengthOfTimeSlice() / 4)) {
+            // We have a quarter of a slice left, lets make a better offer.
+            return Optional.of();
+        }
+
+
+
+
         if (getThereMostRecentOffer() == null) return Optional.empty();
         if (sameAsLastNOffers(getThereMostRecentOffer(), 5)) return Optional.empty();
         if (getNumberOfProps() > _maxNegotiationTime) return Optional.empty();
@@ -55,7 +65,8 @@ public class BoulwareNegotiator extends NegotiatorBase {
         return Optional.of(_firstOffer);
     }
 
-    private Optional<IPowerSaleContract> responseWhenWeAreBuyer() {
+
+    private Optional<IPowerSaleContract> goodOfferWhenWeAreBuyer() {
         if (getThereMostRecentOffer() != null) {
             if (getThereMostRecentOffer().getCost() <= _firstOffer.getCost() &&
                     _firstOffer.withinTolorance(getThereMostRecentOffer(), _volumeTolerance, _durationTolerance,
@@ -66,7 +77,7 @@ public class BoulwareNegotiator extends NegotiatorBase {
         return Optional.empty();
     }
 
-    private Optional<IPowerSaleContract> responseWhenWeAreSeller() {
+    private Optional<IPowerSaleContract> goodOfferWhenWeAreSeller() {
         PowerSaleProposal thereMostRecentOffer = getThereMostRecentOffer();
         if (thereMostRecentOffer != null) {
             if (thereMostRecentOffer.getCost() >= _firstOffer.getCost() &&
@@ -77,15 +88,4 @@ public class BoulwareNegotiator extends NegotiatorBase {
         return Optional.empty();
     }
 
-    private boolean sameAsLastNOffers (PowerSaleProposal prop, int n) {
-        if (getNumberOfProps() < n + 1) return false; // We haven't got n offers yet, keep waiting.
-        boolean oneDifferent = false;
-        int lastIndex = getNumberOfProps() - 1;
-        int firstIndex = getNumberOfProps() - n;
-        for (int i = firstIndex; i < lastIndex; i++) {
-            if (getProposal(i) == null) return true;
-            if (!prop.equalValues(getProposal(i))) oneDifferent = true;
-        }
-        return !oneDifferent;
-    }
-}
+}*/

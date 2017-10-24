@@ -38,22 +38,11 @@ public class HoldForFirstOfferPrice extends NegotiatorBase {
 
     @Override
     public Optional<IPowerSaleContract> getResponse() {
-        if (getThereMostRecentOffer() == null) return Optional.empty();
-        if (sameAsLastNOffers(getThereMostRecentOffer(), 5)) return Optional.empty();
+        if (getThereMostRecentOffer() == null) return Optional.of(getOurMostRecentOffer());
+        if (sameAsLastNOffers(getThereMostRecentOffer(), 5)) return Optional.empty(); //Stop negotiation.
         if (getNumberOfProps() > _maxNegotiationTime) return Optional.empty();
-        if (getNumberOfProps() > 1) {
-            // Messy because seller and buyer may not both be initialized.
-            if (_firstOffer.getSellerAID() != null && _firstOffer.getBuyerAID() != null) {
-                // Both filled out, switch on type
-                if (_firstOffer.getSellerAID().getName().equals(getOpponentName())) return responseWhenWeAreBuyer();
-                else if (_firstOffer.getBuyerAID().getName().equals(getOpponentName())) return responseWhenWeAreSeller();
-            }
-            else {
-                if (_firstOffer.getBuyerAID() == null) return responseWhenWeAreSeller();
-                else if (_firstOffer.getSellerAID() == null) return responseWhenWeAreBuyer();
-            }
-            //TODO, add a throw or something, if we get here that is bad.
-        }
+        if (_firstOffer.getSellerAID().getName().equals(getOpponentName())) return responseWhenWeAreBuyer();
+        else if (_firstOffer.getBuyerAID().getName().equals(getOpponentName())) return responseWhenWeAreSeller();
         return Optional.of(_firstOffer);
     }
 
@@ -77,17 +66,5 @@ public class HoldForFirstOfferPrice extends NegotiatorBase {
             return Optional.of(_firstOffer);
         }
         return Optional.empty();
-    }
-
-    private boolean sameAsLastNOffers (PowerSaleProposal prop, int n) {
-        if (getNumberOfProps() < n + 1) return false; // We haven't got n offers yet, keep waiting.
-        boolean oneDifferent = false;
-        int lastIndex = getNumberOfProps() - 1;
-        int firstIndex = getNumberOfProps() - n;
-        for (int i = firstIndex; i < lastIndex; i++) {
-            if (getProposal(i) == null) return true;
-            if (!prop.equalValues(getProposal(i))) oneDifferent = true;
-        }
-        return !oneDifferent;
     }
 }

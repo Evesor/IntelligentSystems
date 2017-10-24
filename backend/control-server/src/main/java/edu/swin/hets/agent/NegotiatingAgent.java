@@ -131,7 +131,7 @@ public abstract class NegotiatingAgent extends BaseAgent{
         }
         try {
             return NegotiatorFactory.Factory.getNegotiationStrategy(negotiationArgs, utilityFunction, getName(),
-                    opponentName, offer, _current_globals.getTime(), conversationID);
+                    opponentName, offer, _current_globals, conversationID);
         } catch (ExecutionException e) {
             String error = "Negotiator factory failed to initialize with: " ;
             for (String a : negotiationArgs) { error += ("  " + a); }

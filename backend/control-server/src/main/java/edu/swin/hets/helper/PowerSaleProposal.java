@@ -12,7 +12,7 @@ public class PowerSaleProposal implements Serializable, IPowerSaleContract{
     private AID _seller_AID;
     private AID _buyer_AID;
 
-    public PowerSaleProposal(double powerAmount, int lengthOfContract,double cost , AID sellerAID, AID buyerAID) {
+    public PowerSaleProposal(double powerAmount, int lengthOfContract, double cost, AID sellerAID, AID buyerAID) {
         _seller_AID = sellerAID;
         _buyer_AID = buyerAID;
         _power_amount = powerAmount;
@@ -50,8 +50,6 @@ public class PowerSaleProposal implements Serializable, IPowerSaleContract{
     public AID getBuyerAID() { return _buyer_AID; }
     // Setters
     public void setCost(double cost) { _cost = cost; }
-    public void setSellerAID (AID aid) { _seller_AID = aid; }
-    public void setBuyerAID (AID aid) { _buyer_AID = aid; }
     // Used to get a details of object in JSON form
     public String getJSON() {
         return "Not implemented";
