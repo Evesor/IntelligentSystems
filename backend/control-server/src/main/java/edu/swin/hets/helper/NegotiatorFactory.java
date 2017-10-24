@@ -38,8 +38,9 @@ public class NegotiatorFactory {
         try {
             maxTimes = Integer.parseInt(args.get(1));
         } catch (Exception e) {  } // Leave as default
+        //TODO, change from defaults.
         return new HoldForFirstOfferPrice(firstOffer, conversationID,
-                opponentName, timeSlice, maxTimes);
+                opponentName, timeSlice, maxTimes, 0.5, 0.5, 0.5);
     }
 
     private INegotiationStrategy createLinearUtilityDecentNegotiator (IUtilityFunction utilityFun,
@@ -55,7 +56,9 @@ public class NegotiatorFactory {
         return new LinearUtilityDecentNegotiator(utilityFun, ourName,
                 opponentName, firstOffer , timeSlice, Double.parseDouble(params.get(1)),
                 Double.parseDouble(params.get(2)),
-                Integer.parseInt(params.get(3)), conversationID);
+                Integer.parseInt(params.get(3)),
+                0.99,
+                conversationID);
 
     }
 }

@@ -265,7 +265,7 @@ public class ResellerAgent extends NegotiatingAgent {
             if (_nextRequiredAmount > _nextPurchasedAmount) { // We have sold all the electricity we have purchased.
                 if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
                     // %75 percent of a cycle left, make an offer at increased price.
-                    if (proposed.getCost() < 0) { // No cost added, make up one at +%25
+                    if (proposed.getCost() == null) { // No cost added, make up one at +%25
                         proposed.setCost(_currentSellPrice * 1.25);
                     }
                     else {
@@ -276,7 +276,8 @@ public class ResellerAgent extends NegotiatingAgent {
                 }
             }
             else {
-                if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
+                if (proposed.getCost() == null) proposed.setCost(_currentSellPrice); // They have not filled out the price.
+                else if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
             proposed.setSellerAID(getAID());
@@ -346,7 +347,7 @@ public class ResellerAgent extends NegotiatingAgent {
     private class BasicUtility implements IUtilityFunction {
         private double _costImperative = 5;
         private double _supplyImperative = 5;
-        private double _timeImperative = 0.1;
+        private double _timeImperative = 0.5;
         private double _idealPrice = 0.5;
         private GlobalValues _createdTime;
 

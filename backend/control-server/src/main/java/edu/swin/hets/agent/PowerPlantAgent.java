@@ -130,7 +130,8 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 LogVerbose(getName() + " was asked to sell electricity than it can make.");
                 return;
             }
-            if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
+            if (proposed.getCost() == null) proposed.setCost(_currentIdealSellPrice);
+            else if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
             ACLMessage sent = sendProposal(msg, proposed);
             INegotiationStrategy strategy;
             try {

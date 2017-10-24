@@ -3,17 +3,13 @@ package edu.swin.hets.helper.negotiator;
 import edu.swin.hets.helper.IPowerSaleContract;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.PowerSaleProposal;
+
 import java.util.Optional;
 
 /******************************************************************************
- *  Use: A very basic strategy where we don't care about how the contract gets
- *       changed so long as the price remains the same as our first offer.
- *       Otherwise will return the same offer.
- * Note: Returns null when we should terminate the conversation.
- *       TODO, we should not be able to make this type of negotiation without
- *       a price set in first offer. Throw something maybe?
+ *  Use:
  *****************************************************************************/
-public class HoldForFirstOfferPrice extends NegotiatorBase {
+public class BoulwareNegotiator extends NegotiatorBase {
     private PowerSaleProposal _firstOffer;
     private Integer _currentTime;
     private Integer _maxNegotiationTime;
@@ -21,14 +17,14 @@ public class HoldForFirstOfferPrice extends NegotiatorBase {
     private double _costTolerance;
     private double _durationTolerance;
 
-    public HoldForFirstOfferPrice(PowerSaleProposal firstOffer,
-                                  String conversationID,
-                                  String opponentsName,
-                                  Integer currentTime,
-                                  Integer maxNegotiationTime,
-                                  double costTolerance,
-                                  double volumeTolerance,
-                                  double durationTolerance) {
+    public BoulwareNegotiator(PowerSaleProposal firstOffer,
+                              String conversationID,
+                              String opponentsName,
+                              Integer currentTime,
+                              Integer maxNegotiationTime,
+                              double costTolerance,
+                              double volumeTolerance,
+                              double durationTolerance) {
         super(opponentsName, conversationID, firstOffer);
         _firstOffer = firstOffer;
         _currentTime = currentTime;
@@ -36,8 +32,6 @@ public class HoldForFirstOfferPrice extends NegotiatorBase {
         _costTolerance = costTolerance;
         _durationTolerance = durationTolerance;
         _volumeTolerance = volumeTolerance;
-        if(_firstOffer.getCost() == null) System.out.println(
-                "##############ERROR IN HoldForFirstOfferPrice###################");
     }
 
     @Override

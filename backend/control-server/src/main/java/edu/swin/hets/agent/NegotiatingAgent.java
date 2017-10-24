@@ -7,8 +7,6 @@ import jade.core.AID;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-import sun.rmi.runtime.Log;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -128,7 +126,8 @@ public abstract class NegotiatingAgent extends BaseAgent{
         if(negotiationArgs.size() < NegotiatorFactory.MIN_NUMBER_OF_ARGS ) {
             LogError("Does not have any details to make negotiators with, using a default");
             negotiationArgs.forEach((arg) -> LogError("was passed: " + arg));
-            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, currentTime, 8);
+            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, currentTime,
+                    8, 0.5, 0.5, 0.5);
         }
         try {
             return NegotiatorFactory.Factory.getNegotiationStrategy(negotiationArgs, utilityFunction, getName(),
