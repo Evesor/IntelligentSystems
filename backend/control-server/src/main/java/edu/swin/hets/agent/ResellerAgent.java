@@ -7,11 +7,13 @@ import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
+
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 /******************************************************************************
- *  Use: The primary reseller agent who's negotiation sstrategiescan be
+ *  Use: The primary reseller agent who's negotiation strategies can be
  *       adapted.
  *  Notes:
  *       To buy: this->CFP :: PROP->this :: this->ACC || this->REJ
@@ -29,6 +31,8 @@ import java.util.concurrent.ExecutionException;
  *       - PROPOSAL : Used when someone wants to propose selling or buying
  *                    electricity from us.
  *             content Object: A PowerSaleProposal object
+ *       - REQUEST : Used to ask agent to change its negotiation mechanism
+ *             content Object: List<String>, arguments to change the strategy
  *  Messages sent:
  *       - CFP : Used to negotiate purchasing electricity from power plant agent
  *             content Object: A PowerSaleProposal object
@@ -85,6 +89,7 @@ public class ResellerAgent extends NegotiatingAgent {
         addMessageHandler(CFPMessageTemplate, new CFPHandler());
         addMessageHandler(PropMessageTemplate, new ProposalHandler());
         RegisterAMSService(getAID().getName(), "reseller");
+        addMessageHandler(ChangeNegotiationStrategyTemplate, new ChangeNegotiationStrategyHandler());
         _negotiationArgs = (List<String>) getArguments()[0];
         if (_negotiationArgs.size() > 0) {
             _negotiationArgs.forEach((a) -> LogDebug(" was passed: " + a));
@@ -285,6 +290,17 @@ public class ResellerAgent extends NegotiatingAgent {
                 return;
             }
             _currentNegotiations.add(strategy);
+        }
+    }
+
+    private class ChangeNegotiationStrategyHandler implements IMessageHandler {
+        @Override
+        public void Handler(ACLMessage msg) {
+            try {
+                _negotiationArgs = (List<String>) msg.getContentObject();
+            } catch (UnreadableException e) {
+                LogError("was sent details for negotiation that were not valid format.");
+            }
         }
     }
      /******************************************************************************
