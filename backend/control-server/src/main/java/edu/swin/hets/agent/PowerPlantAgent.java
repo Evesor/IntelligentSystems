@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +25,8 @@ import java.util.concurrent.ExecutionException;
  *       - REJECT_PROPOSAL : Used to signify failed proposal, can also be used
  *                           invalidate an agreement that came back to late
  *             content Object: A PowerSaleProposal object
+ *       - REQUEST : Used to ask agent to change its negotiation mechanism
+ *             content Object: List<String>, arguments to change the strategy
  *   Messages Sent:
  *       - NOT-UNDERSTOOD : Used to signal that there was no attached prop obj
  *              content: "no proposal found"
@@ -70,6 +74,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
         addMessageHandler(PropAcceptedMessageTemplate, new QuoteAcceptedHandler());
         addMessageHandler(PropRejectedMessageTemplate, new QuoteRejectedHandler());
         addMessageHandler(ProposeTemplate, new ProposeHandler());
+        addMessageHandler(ChangeNegotiationStrategyTemplate, new ChangeNegotiationStrategyHandler());
         _negotiationArgs = (List<String>) getArguments()[0];
         if (_negotiationArgs.size() > 0) {
             _negotiationArgs.forEach((arg) -> LogDebug("was passed: " + arg));
@@ -208,6 +213,17 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 _currentContracts.add(agreement);
                 updateContracts();
                 LogVerbose(getName() + " has just agreed to sell " + agreement.getAmount() + " from " + agreement);
+            }
+        }
+    }
+
+    private class ChangeNegotiationStrategyHandler implements IMessageHandler {
+        @Override
+        public void Handler(ACLMessage msg) {
+            try {
+                _negotiationArgs = (List<String>) msg.getContentObject();
+            } catch (UnreadableException e) {
+                LogError("was sent details for negotiation that were not valid format.");
             }
         }
     }

@@ -5,6 +5,7 @@ import edu.swin.hets.helper.*;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import sun.rmi.runtime.Log;
 
@@ -18,6 +19,10 @@ import java.util.concurrent.ExecutionException;
  *       that any negotiating agent would do repeatedly.
  *****************************************************************************/
 public abstract class NegotiatingAgent extends BaseAgent{
+    // Used to define external message to change the negotiation strategy.
+    MessageTemplate ChangeNegotiationStrategyTemplate = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
+            GoodMessageTemplates.ContatinsString("Change")); //TODO, fix
     @Override
     protected void setup () {
         super.setup();
