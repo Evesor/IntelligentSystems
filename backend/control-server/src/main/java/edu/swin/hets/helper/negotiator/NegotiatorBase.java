@@ -64,8 +64,10 @@ public abstract class NegotiatorBase implements INegotiationStrategy{
 
     @Nullable
     PowerSaleProposal getOurMostRecentOffer () {
-        for (int i = _proposalHistory.size() - 1; i > 0; i--) {
-            if (_proposalHistory.get(i)[0] != null) return _proposalHistory.get(i)[0];
+        for (int i = _proposalHistory.size() - 1; i >= 0; i--) {
+            if (_proposalHistory.get(i)[0] != null) {
+                return _proposalHistory.get(i)[0];
+            }
         }
         return null;
     }

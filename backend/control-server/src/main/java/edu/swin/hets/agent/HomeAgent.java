@@ -219,37 +219,7 @@ public class HomeAgent extends NegotiatingAgent
 		_next_purchased_amount -= sumWatt();
 		_next_purchased_amount = 0;
 		_next_required_amount = forecast(1)*1.5;
-		Vector<PowerSaleAgreement> toRemove = new Vector<>();
-		for (PowerSaleAgreement agreement : _current_buy_agreements) {
-			if (agreement.getEndTime() < _current_globals.getTime()) {
-				// No longer valid
-				toRemove.add(agreement);
-			}
-		}
-		for (PowerSaleAgreement rem: toRemove) {
-			LogDebug("Removing a contract");
-			_current_buy_agreements.removeElement(rem);
-		}
-		for (PowerSaleAgreement agreement : _current_buy_agreements) {
-			// We have purchased this electricty.
-			_next_purchased_amount += agreement.getAmount();
-		}
-
-		for (PowerSaleAgreement agreement : _current_sell_agreements) {
-			if (agreement.getEndTime() < _current_globals.getTime()) {
-				// No longer valid
-				toRemove.add(agreement);
-			}
-		}
-		for (PowerSaleAgreement rem: toRemove) {
-			LogDebug("Removing a contract");
-			_current_sell_agreements.removeElement(rem);
-		}
-		for (PowerSaleAgreement agreement : _current_sell_agreements) {
-			// We have purchased this electricty.
-			_next_purchased_amount -= agreement.getAmount();
-		}
-
+		updateBookkeeping();
 		if(_next_required_amount > _next_purchased_amount) {
 			sendBuyCFP();
 		}
@@ -258,7 +228,23 @@ public class HomeAgent extends NegotiatingAgent
 		}
 	}
 
-	//TODO Override TimePush
+	private void updateBookkeeping() {
+		_next_purchased_amount = 0;
+		_next_required_amount = 0;
+		// Get rid of old contracts that are no longer valid
+		ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
+		_current_buy_agreements.stream().filter(
+				(agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+		_current_buy_agreements.removeAll(toRemove);
+		toRemove.clear();
+		_current_sell_agreements.stream().filter(
+				(agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+		_current_sell_agreements.removeAll(toRemove);
+		// Re calculate usage for this time slice
+		for (PowerSaleAgreement agreement : _current_buy_agreements) _next_purchased_amount += agreement.getAmount();
+		for (PowerSaleAgreement agreement: _current_sell_agreements) _next_required_amount += agreement.getAmount();
+	}
+
 	@Override
 	protected void TimePush(int ms_left)
 	{
@@ -292,7 +278,6 @@ public class HomeAgent extends NegotiatingAgent
 		}
 	}
 
-	//TODO Override getJSON
 	@Override
 	protected String getJSON(){
 		String json = "";
@@ -328,11 +313,12 @@ public class HomeAgent extends NegotiatingAgent
 //		LogDebug("SEND CFP DONE");
 
 		double toBuy = _next_required_amount - _next_purchased_amount;
-		PowerSaleProposal prop = new PowerSaleProposal(toBuy,1,getAID(),false);
-		prop.setBuyerAID(getAID());
 		DFAgentDescription[] resellers = getService("reseller");
+		PowerSaleProposal prop;
 		for(DFAgentDescription reseller : resellers)
 		{
+			prop = new PowerSaleProposal(toBuy,1,
+					(_current_by_price * 1.25), getAID(),reseller.getName());
 			ACLMessage sent = sendCFP(prop, reseller.getName());
 			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
 					,reseller.getName().getName(),_current_globals.getTime(), 20, 0.5,
@@ -350,6 +336,9 @@ public class HomeAgent extends NegotiatingAgent
 			if (agreement.getSellerAID().getName().equals(getName())) _current_sell_agreements.add(agreement);
 			else _current_buy_agreements.add(agreement);
 			sendSaleMade(agreement);
+			_currentNegotiations.clear();
+			updateBookkeeping();
+			//TODO, update state.
 			LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
 					" @ " + agreement.getCost());
 		}
@@ -397,18 +386,19 @@ public class HomeAgent extends NegotiatingAgent
 					send(acceptMsg);
 				}
 			}
-			else{LogError("opt is not present : " + msg.getSender().getLocalName());}
+			//else{LogError("opt is not present : " + msg.getSender().getLocalName());}
 		}
 	}
 
 	private void sendSellCFP()
 	{
 		double toSell = _next_purchased_amount - _next_required_amount;
-		PowerSaleProposal prop = new PowerSaleProposal(toSell,1,getAID(),true);
-		prop.setSellerAID(getAID());
+		PowerSaleProposal prop;
 		DFAgentDescription[] resellers = getService("reseller");
 		for(DFAgentDescription reseller : resellers)
 		{
+			prop = new PowerSaleProposal(toSell,1,
+					_current_by_price ,getAID(),reseller.getName());
 			ACLMessage sent = sendCFP(prop, reseller.getName());
 			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
 					, reseller.getName().getName(),

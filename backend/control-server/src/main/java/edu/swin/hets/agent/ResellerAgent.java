@@ -139,11 +139,11 @@ public class ResellerAgent extends NegotiatingAgent {
         // Get rid of old contracts that are no longer valid
         ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
         _currentBuyAgreements.stream().filter(
-                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+                (agg) -> agg.getEndTime() <= _current_globals.getTime()).forEach(toRemove::add);
         _currentBuyAgreements.removeAll(toRemove);
         toRemove.clear();
         _currentSellAgreements.stream().filter(
-                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+                (agg) -> agg.getEndTime() <= _current_globals.getTime()).forEach(toRemove::add);
         _currentSellAgreements.removeAll(toRemove);
         // Re calculate usage for this time slice
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
@@ -167,9 +167,10 @@ public class ResellerAgent extends NegotiatingAgent {
         DFAgentDescription[] powerPlants = getService("powerplant");
         _currentNegotiations.clear(); // We have just received a push or new timeSlice, clear list.
         //TODO make more complicated logic for initial offer.
-        PowerSaleProposal prop = new PowerSaleProposal(
-                _nextRequiredAmount - _nextPurchasedAmount,1, getAID(), false);
+        PowerSaleProposal prop;
         for (DFAgentDescription powerPlant : powerPlants) {
+            prop = new PowerSaleProposal(_nextRequiredAmount - _nextPurchasedAmount,1,
+                    (_current_globals.getAveragePriceLastTime() * 0.5), getAID(),powerPlant.getName());
             // Make new negotiation for each powerPlant
             prop.setBuyerAID(getAID());
             ACLMessage sent = sendCFP(prop, powerPlant.getName());
@@ -264,20 +265,11 @@ public class ResellerAgent extends NegotiatingAgent {
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (_nextRequiredAmount > _nextPurchasedAmount) { // We have sold all the electricity we have purchased.
                 if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
-                    // %75 percent of a cycle left, make an offer at increased price.
-                    if (proposed.getCost() == null) { // No cost added, make up one at +%25
-                        proposed.setCost(_currentSellPrice * 1.25);
-                    }
-                    else {
-                        if (proposed.getCost() < _currentSellPrice * 1.25) {
-                            return; // There is already a price and it is to low
-                        }
-                    }
+                    //TODO, Send back proposal at high price.
                 }
             }
             else {
-                if (proposed.getCost() == null) proposed.setCost(_currentSellPrice); // They have not filled out the price.
-                else if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
+                if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
             proposed.setSellerAID(getAID());

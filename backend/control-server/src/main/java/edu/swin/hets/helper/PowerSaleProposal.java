@@ -4,7 +4,6 @@ import jade.core.AID;
 import java.io.Serializable;
 /******************************************************************************
  *  Use: To hold the details of a negotiation between two agents.
- *  NOTES: The cost of the contract is set to null on initialization.
  *****************************************************************************/
 public class PowerSaleProposal implements Serializable, IPowerSaleContract{
     private double _power_amount;
@@ -13,9 +12,9 @@ public class PowerSaleProposal implements Serializable, IPowerSaleContract{
     private AID _seller_AID;
     private AID _buyer_AID;
 
-    public PowerSaleProposal(double powerAmount, int lengthOfContract,double cost , AID your_id, boolean seller) {
-        if (seller) _seller_AID = your_id;
-        else _buyer_AID = your_id;
+    public PowerSaleProposal(double powerAmount, int lengthOfContract,double cost , AID sellerAID, AID buyerAID) {
+        _seller_AID = sellerAID;
+        _buyer_AID = buyerAID;
         _power_amount = powerAmount;
         _duration = lengthOfContract;
         _cost = cost;
@@ -50,6 +49,7 @@ public class PowerSaleProposal implements Serializable, IPowerSaleContract{
     public AID getSellerAID() { return _seller_AID; }
     public AID getBuyerAID() { return _buyer_AID; }
     // Setters
+    public void setCost(double cost) { _cost = cost; }
     public void setSellerAID (AID aid) { _seller_AID = aid; }
     public void setBuyerAID (AID aid) { _buyer_AID = aid; }
     // Used to get a details of object in JSON form

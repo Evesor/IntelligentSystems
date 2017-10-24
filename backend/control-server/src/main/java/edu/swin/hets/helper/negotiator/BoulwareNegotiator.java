@@ -57,15 +57,6 @@ public class BoulwareNegotiator extends NegotiatorBase {
 
     private Optional<IPowerSaleContract> responseWhenWeAreBuyer() {
         if (getThereMostRecentOffer() != null) {
-            if (getThereMostRecentOffer().getCost() == null &&
-                    _firstOffer.withinTolorance(getThereMostRecentOffer(), _volumeTolerance, _durationTolerance,
-                            _costTolerance)) {
-                // What they want to negotiate for is close to what we want except cost.
-                PowerSaleProposal counter = getThereMostRecentOffer();
-                counter.setCost(_firstOffer.getCost());
-                return Optional.of(counter);
-            }
-            if (getThereMostRecentOffer().getCost() == null) return Optional.empty(); // Stop negotiating
             if (getThereMostRecentOffer().getCost() <= _firstOffer.getCost() &&
                     _firstOffer.withinTolorance(getThereMostRecentOffer(), _volumeTolerance, _durationTolerance,
                             _costTolerance)) return Optional.of(new PowerSaleAgreement(getThereMostRecentOffer(),
@@ -78,13 +69,6 @@ public class BoulwareNegotiator extends NegotiatorBase {
     private Optional<IPowerSaleContract> responseWhenWeAreSeller() {
         PowerSaleProposal thereMostRecentOffer = getThereMostRecentOffer();
         if (thereMostRecentOffer != null) {
-            if (thereMostRecentOffer.getCost() == null &&
-                    _firstOffer.withinTolorance(thereMostRecentOffer, 0.5, 0.5, 1)) {
-                PowerSaleProposal counter = thereMostRecentOffer;
-                counter.setCost(_firstOffer.getCost());
-                return Optional.of(counter);
-            }
-            if (thereMostRecentOffer.getCost() == null) return Optional.empty(); //Stop negotiating.
             if (thereMostRecentOffer.getCost() >= _firstOffer.getCost() &&
                     _firstOffer.withinTolorance(getThereMostRecentOffer(), 0.5, 0.5, 1))
                 return Optional.of(new PowerSaleAgreement(getThereMostRecentOffer(), _currentTime));

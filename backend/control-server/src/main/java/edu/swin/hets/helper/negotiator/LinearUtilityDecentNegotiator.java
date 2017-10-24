@@ -71,14 +71,15 @@ public class LinearUtilityDecentNegotiator extends NegotiatorBase {
 
     // Recursive function that looks for an offer that is closer to the one offered that is still acceptable.
     // Note : Step size and tolerance are percentages, DO NOT EXCEEDED 0<->1
-    private Optional<IPowerSaleContract> linearMove(PowerSaleProposal ourProposal, PowerSaleProposal thereProposal,
+    private Optional<IPowerSaleContract> linearMove(PowerSaleProposal ourProposal,
+                                                    PowerSaleProposal thereProposal,
                                                     double tolerance) {
         PowerSaleProposal counter = new PowerSaleProposal(
                 changeVolume(thereProposal, ourProposal, _volumeJump),
                 changeTime(thereProposal, ourProposal, _timeJump),
-                new AID(_ourName, AID.ISLOCALNAME),
-                areWeSeller());
-        counter.setCost(changeCost(thereProposal, ourProposal, _priceJump));
+                changeCost(thereProposal, ourProposal, _priceJump),
+                ourProposal.getSellerAID(),
+                ourProposal.getBuyerAID());
         if (_utilityFun.evaluate(ourProposal) * tolerance < _utilityFun.evaluate(counter)) {
             // This counter is pretty good, return it.
             return Optional.of(counter);

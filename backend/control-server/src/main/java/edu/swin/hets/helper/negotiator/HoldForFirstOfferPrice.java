@@ -10,8 +10,6 @@ import java.util.Optional;
  *       changed so long as the price remains the same as our first offer.
  *       Otherwise will return the same offer.
  * Note: Returns null when we should terminate the conversation.
- *       TODO, we should not be able to make this type of negotiation without
- *       a price set in first offer. Throw something maybe?
  *****************************************************************************/
 public class HoldForFirstOfferPrice extends NegotiatorBase {
     private PowerSaleProposal _firstOffer;
@@ -36,8 +34,6 @@ public class HoldForFirstOfferPrice extends NegotiatorBase {
         _costTolerance = costTolerance;
         _durationTolerance = durationTolerance;
         _volumeTolerance = volumeTolerance;
-        if(_firstOffer.getCost() == null) System.out.println(
-                "##############ERROR IN HoldForFirstOfferPrice###################");
     }
 
     @Override
@@ -63,15 +59,6 @@ public class HoldForFirstOfferPrice extends NegotiatorBase {
 
     private Optional<IPowerSaleContract> responseWhenWeAreBuyer() {
         if (getThereMostRecentOffer() != null) {
-            if (getThereMostRecentOffer().getCost() == null &&
-                    _firstOffer.withinTolorance(getThereMostRecentOffer(), _volumeTolerance, _durationTolerance,
-                            _costTolerance)) {
-                // What they want to negotiate for is close to what we want except cost.
-                PowerSaleProposal counter = getThereMostRecentOffer();
-                counter.setCost(_firstOffer.getCost());
-                return Optional.of(counter);
-            }
-            if (getThereMostRecentOffer().getCost() == null) return Optional.empty(); // Stop negotiating
             if (getThereMostRecentOffer().getCost() <= _firstOffer.getCost() &&
                     _firstOffer.withinTolorance(getThereMostRecentOffer(), _volumeTolerance, _durationTolerance,
                             _costTolerance)) return Optional.of(new PowerSaleAgreement(getThereMostRecentOffer(),
@@ -84,13 +71,6 @@ public class HoldForFirstOfferPrice extends NegotiatorBase {
     private Optional<IPowerSaleContract> responseWhenWeAreSeller() {
         PowerSaleProposal thereMostRecentOffer = getThereMostRecentOffer();
         if (thereMostRecentOffer != null) {
-            if (thereMostRecentOffer.getCost() == null &&
-                    _firstOffer.withinTolorance(thereMostRecentOffer, 0.5, 0.5, 1)) {
-                PowerSaleProposal counter = thereMostRecentOffer;
-                counter.setCost(_firstOffer.getCost());
-                return Optional.of(counter);
-            }
-            if (thereMostRecentOffer.getCost() == null) return Optional.empty(); //Stop negotiating.
             if (thereMostRecentOffer.getCost() >= _firstOffer.getCost() &&
                     _firstOffer.withinTolorance(getThereMostRecentOffer(), 0.5, 0.5, 1))
                 return Optional.of(new PowerSaleAgreement(getThereMostRecentOffer(), _currentTime));
