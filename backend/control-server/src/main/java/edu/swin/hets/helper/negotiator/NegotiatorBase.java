@@ -13,7 +13,7 @@ import java.util.Optional;
  *      Max negotiation time should be more than max stall time.
  *****************************************************************************/
 public abstract class NegotiatorBase implements INegotiationStrategy{
-    private ArrayList<PowerSaleProposal[]> _proposalHistory; // Will always be a 2 wide array
+    protected ArrayList<PowerSaleProposal[]> _proposalHistory; // Will always be a 2 wide array
     private String _opponentName;
     private String _conversationID;
     private int _maxStallTime;
@@ -61,20 +61,6 @@ public abstract class NegotiatorBase implements INegotiationStrategy{
 
     boolean areWeSeller() {
         return  getOurMostRecentOffer().getBuyerAID().getName().equals(_opponentName);
-    }
-    /*
-    *   Figure out if we are just in a constant loop, look for the same props in last n operations.
-     */
-    private boolean sameAsLastNOffers (PowerSaleProposal prop, int n) {
-        if (getNumberOfProps() < n + 1) return false; // We haven't got n offers yet, keep waiting.
-        boolean oneDifferent = false;
-        int lastIndex = getNumberOfProps() - 1;
-        int firstIndex = getNumberOfProps() - n;
-        for (int i = firstIndex; i < lastIndex; i++) {
-            if (getProposal(i) == null) return true;
-            if (!prop.equalValues(getProposal(i))) oneDifferent = true;
-        }
-        return !oneDifferent;
     }
 
     boolean conversationStalled () {
@@ -135,6 +121,20 @@ public abstract class NegotiatorBase implements INegotiationStrategy{
         if (withinStepSize(counter, thereProposal, timeJump, volumeJump, priceJump)) return Optional.empty();
         // Recursively call till we get to there offer or we find an acceptable one.
         return linearMove(counter, thereProposal, utility, volumeJump, timeJump, priceJump, acceptanceLimit);
+    }
+    /*
+    *   Figure out if we are just in a constant loop, look for the same props in last n operations.
+    */
+    private boolean sameAsLastNOffers (PowerSaleProposal prop, int n) {
+        if (getNumberOfProps() < n + 1) return false; // We haven't got n offers yet, keep waiting.
+        boolean oneDifferent = false;
+        int lastIndex = getNumberOfProps() - 1;
+        int firstIndex = getNumberOfProps() - n;
+        for (int i = firstIndex; i < lastIndex; i++) {
+            if (getProposal(i) == null) return true;
+            if (!prop.equalValues(getProposal(i))) oneDifferent = true;
+        }
+        return !oneDifferent;
     }
 
     private double changeCost(PowerSaleProposal thereProp, PowerSaleProposal ourProp, double change) {

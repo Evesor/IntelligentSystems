@@ -53,6 +53,7 @@ public abstract class BaseAgent extends Agent{
         _messages_this_timeslice = new ArrayList<ACLMessage>();
         this.addMessageHandlingBehavior();
         _current_globals = getCurrentGlobalValuesBlocking();
+        LogVerbose(getName()+ " is up and running");
     }
 
     // Called to signal that the time has expired

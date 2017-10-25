@@ -1,15 +1,6 @@
 // Websocket Server
-//var ws = new WebSocket("ws://localhost:4567/ws");
 
 google.charts.load('current', {'packages':['corechart']});
-
-// ws.onmessage = function(data) 
-// { 
-// 	try {
-// 		var jsonData = JSON.parse(data.data);
-// 		drawMessages(jsonData);
-// 	} catch (err) {}
-// };
 
 function two1dto2d(aList, name) {
 	var final_index = aList.length; // Limit to 50

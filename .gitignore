@@ -227,8 +227,10 @@ gradle-app.setting
 # Backend-specific configuration
 **/servers.properties
 **/system.properties
-**/system-definition.json
 
 # Keystore
 **/control-server/keystore/
 **/*.pem
+
+# Bundled frontend resources
+**/src/main/resources/public/

@@ -38,6 +38,17 @@ dependencies {
 
 }
 
+task cleanPublicWebDirectory {
+    delete 'src/main/resources/public'
+}
+
+task copyFrontend(type: Copy, dependsOn: cleanPublicWebDirectory) {
+    from '../../frontend'
+    into 'src/main/resources/public'
+}
+
+compileJava.dependsOn(copyFrontend)
+
 jar {
     manifest {
         attributes 'Main-Class': 'edu.swin.hets.ApplicationKt'

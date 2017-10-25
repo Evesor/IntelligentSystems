@@ -1,24 +1,14 @@
-// Websocket Server
-//var ws = new WebSocket("ws://localhost:4567/ws");
-
-// ws.onmessage = function(data) 
-// { 
-// 	try {
-// 		var jsonData = JSON.parse(data.data);
-// 		drawMessages(jsonData);
-// 	} catch (err) {}
-// };
 
 //Draw the logging messages to the screen 
 function drawMessages(data) {
 	if (data.hasOwnProperty('verboseLogs')) {
-		var messages = data;
-		var verboseLogs = messages.verboseLogs;
-		var errorLogs = messages.errorLogs;
-		var debugLogs = messages.debugLogs;
-		var verboseList = document.getElementById("verbose-message-table");
-		var errorList = document.getElementById("error-message-table");
-		var debugList = document.getElementById("debug-message-table");
+		let messages = data;
+		let verboseLogs = messages.verboseLogs;
+		let errorLogs = messages.errorLogs;
+		let debugLogs = messages.debugLogs;
+		let verboseList = document.getElementById("verbose-message-table");
+		let errorList = document.getElementById("error-message-table");
+		let debugList = document.getElementById("debug-message-table");
 		addMessagesToList(verboseLogs, verboseList);
 		addMessagesToList(errorLogs, errorList);
 		addMessagesToList(debugLogs, debugList);

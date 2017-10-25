@@ -11,15 +11,13 @@
     };
 
     let handleAgentData = (jsonData) => {
-        let ids = jsonData.nodes.map(nodes => {
-            return nodes.id;
-        }); 
+        let nodes = jsonData.nodes;
 
         let links = jsonData.nodes.flatMap((x) => {
             return x.links;
         });
 
-        ids.forEach(id => graph.addNode(id));
+        nodes.forEach(node => graph.addNode(node.id, node.agent));
 
         links
             .filter(link => graph.validateLink(link))
