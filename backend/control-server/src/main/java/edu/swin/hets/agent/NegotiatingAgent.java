@@ -126,11 +126,11 @@ public abstract class NegotiatingAgent extends BaseAgent{
         if(negotiationArgs.size() < NegotiatorFactory.MIN_NUMBER_OF_ARGS ) {
             LogError("Does not have any details to make negotiators with, using a default");
             negotiationArgs.forEach((arg) -> LogError("was passed: " + arg));
-            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, currentTime,
-                    8, 0.5, 0.5, 0.5);
+            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, _current_globals,
+                    10, 8, 0.1, 0.1, 0.5);
         }
         try {
-            return NegotiatorFactory.Factory.getNegotiationStrategy(negotiationArgs, utilityFunction, getName(),
+            return NegotiatorFactory.Factory.getNegotiationStrategy(negotiationArgs, utilityFunction,
                     opponentName, offer, _current_globals, conversationID);
         } catch (ExecutionException e) {
             String error = "Negotiator factory failed to initialize with: " ;
