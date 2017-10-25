@@ -1,14 +1,15 @@
 package edu.swin.hets.helper.negotiator;
 
-
-import org.jetbrains.annotations.Nullable;
 import edu.swin.hets.helper.INegotiationStrategy;
 import edu.swin.hets.helper.PowerSaleProposal;
 import edu.swin.hets.helper.PowerSaleAgreement;
 import edu.swin.hets.helper.IPowerSaleContract;
 import edu.swin.hets.helper.IUtilityFunction;
+import jade.core.AID;
 
 import java.util.ArrayList;
+import java.util.Optional;
+
 /******************************************************************************
  *  Use: A basic implementation of negotiating to test interface.
  *  Notes:
@@ -18,15 +19,15 @@ import java.util.ArrayList;
  *         between each offer. Smaller values may lead to more optimum
  *         solutions but with longer negotiation times.
  *****************************************************************************/
-public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
-    private ArrayList<PowerSaleProposal[]> _proposalHistory; // Will always be a 2 wide array
+public class LinearUtilityDecentNegotiator extends NegotiatorBase {
     private IUtilityFunction _utilityFun;
     private String _ourName;
     private Integer _timeSlice;
-    private String _opponentName;
     private double _priceJump;
     private double _volumeJump;
+    private double _acceptTolerance;
     private Integer _timeJump;
+    //TODO, put hard limit on negotiation lengths.
 
     public LinearUtilityDecentNegotiator(IUtilityFunction utilityFun,
                                          String ourName,
@@ -35,72 +36,85 @@ public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
                                          Integer timeSlice,
                                          double priceJump,
                                          double volumeJump,
-                                         Integer timeJump) {
+                                         Integer timeJump,
+                                         double acceptTolerance,
+                                         String conversationID) {
+        super(opponentName, conversationID, firstOffer);
         _utilityFun = utilityFun;
-        _proposalHistory = new ArrayList<>();
-        _proposalHistory.add(new PowerSaleProposal[2]);
-        _proposalHistory.get(0)[0] = firstOffer;
         _ourName = ourName;
         _timeSlice = timeSlice;
-        _opponentName = opponentName;
         _priceJump = priceJump;
         _volumeJump = volumeJump;
         _timeJump = timeJump;
-    }
-
-    public String getOpponentName() { return _opponentName; }
-
-    @Override
-    public void addNewProposal(PowerSaleProposal proposal, boolean fromUs) {
-        if (fromUs) {
-            _proposalHistory.add(new PowerSaleProposal[2]);
-            _proposalHistory.get(_proposalHistory.size() - 1)[0] = proposal;
-        }
-        else {
-            _proposalHistory.get(_proposalHistory.size() - 1)[1] = proposal;
-        }
+        _acceptTolerance = acceptTolerance;
     }
 
     @Override
-    public IPowerSaleContract getResponse() {
-        PowerSaleProposal ourOffer = _proposalHistory.get(_proposalHistory.size() - 1)[0];
-        PowerSaleProposal thereOffer = _proposalHistory.get(_proposalHistory.size() - 1)[1];
-        if (thereOffer == null && _proposalHistory.size() > 1) {
-            // They have not made an offer for our last one, use previous.
-            thereOffer = _proposalHistory.get(_proposalHistory.size() - 2)[1];
-        }
-        if (thereOffer == null) return ourOffer;
+    public Optional<IPowerSaleContract> getResponse() {
+        PowerSaleProposal ourOffer = getOurMostRecentOffer();
+        PowerSaleProposal thereOffer = getThereMostRecentOffer();
+        if (thereOffer == null) return Optional.of(ourOffer);
         // They have made some kind of offer.
         double thereOfferUtil = _utilityFun.evaluate(thereOffer);
         double ourOfferUtil = _utilityFun.evaluate(ourOffer);
         //TODO, Remove
-        System.out.println(_ourName + " had initial offer of util: " + ourOfferUtil + " and was offered " + thereOfferUtil + " worth of utility");
-        if (thereOfferUtil > ourOfferUtil * 0.9) {
-            // We are within %90 utility of what we want. Accept the offer.
-            return new PowerSaleAgreement(thereOffer, _timeSlice);
+        System.out.println(_ourName + " had initial offer of util: " + ourOfferUtil +
+                " and was offered " + thereOfferUtil + " worth of utility");
+        if (thereOfferUtil > ourOfferUtil * _acceptTolerance) {
+            // We are within tolerance utility of what we want. Accept the offer.
+            return Optional.of(new PowerSaleAgreement(thereOffer, _timeSlice));
         }
         // Move linearly towards there offer, provided it is within %90 of our best offer.
-        return linearMove(ourOffer, thereOffer, 0.9, 1);
+        return linearMove(ourOffer, thereOffer, _acceptTolerance);
     }
+
     // Recursive function that looks for an offer that is closer to the one offered that is still acceptable.
     // Note : Step size and tolerance are percentages, DO NOT EXCEEDED 0<->1
-    @Nullable
-    private PowerSaleProposal linearMove(PowerSaleProposal p1, PowerSaleProposal p2,
-                                         double tolerance, double stepSize) {
+    private Optional<IPowerSaleContract> linearMove(PowerSaleProposal ourProposal,
+                                                    PowerSaleProposal thereProposal,
+                                                    double tolerance) {
         PowerSaleProposal counter = new PowerSaleProposal(
-                (p1.getAmount() - p2.getAmount()) * _volumeJump,
-                (int) Math.round((p1.getDuration() - p2.getDuration()) * _timeJump),
-                p2.getSellerAID(),
-                (p2.getSellerAID().getName().equals(_ourName)));
-        counter.setCost((p1.getCost() - p2.getCost()) * _priceJump);
-        if (_utilityFun.evaluate(p1) * tolerance < _utilityFun.evaluate(counter)) {
+                changeVolume(thereProposal, ourProposal, _volumeJump),
+                changeTime(thereProposal, ourProposal, _timeJump),
+                changeCost(thereProposal, ourProposal, _priceJump),
+                ourProposal.getSellerAID(),
+                ourProposal.getBuyerAID());
+        if (_utilityFun.evaluate(ourProposal) * tolerance < _utilityFun.evaluate(counter)) {
             // This counter is pretty good, return it.
-            return counter;
+            return Optional.of(counter);
         }
         // We have just evaluated the quality of a deal near what the other person wanted, break
-        if (withinStepSize(counter, p2)) return null;
+        if (withinStepSize(counter, thereProposal)) return Optional.empty();
         // Recursively call till we get to there offer or we find an acceptable one.
-        return linearMove(counter, p2, tolerance, stepSize);
+        return linearMove(counter, thereProposal, tolerance);
+    }
+
+    private double changeCost(PowerSaleProposal thereProp, PowerSaleProposal ourProp, double change) {
+        if (thereProp.getCost() - ourProp.getCost() < change) return thereProp.getCost();
+        else if ((thereProp.getCost() - ourProp.getCost()) > 0) {// We need to increase
+            return ourProp.getCost() + change;
+        }
+        else {// We need to decrease
+            return ourProp.getCost() - change;
+        }
+    }
+    private double changeVolume(PowerSaleProposal thereProp, PowerSaleProposal ourProp, double change) {
+        if (thereProp.getAmount() - ourProp.getAmount() < change) return thereProp.getAmount();
+        else if ((thereProp.getAmount() - ourProp.getAmount()) > 0) {// We need to increase
+            return ourProp.getAmount() + change;
+        }
+        else {// We need to decrease
+            return ourProp.getAmount() - change;
+        }
+    }
+    private int changeTime(PowerSaleProposal thereProp, PowerSaleProposal ourProp, int change) {
+        if (thereProp.getDuration() - ourProp.getDuration() < change) return thereProp.getDuration();
+        else if ((thereProp.getDuration() - ourProp.getDuration()) > 0) {// We need to increase
+            return ourProp.getDuration() + change;
+        }
+        else {// We need to decrease
+            return ourProp.getDuration() - change;
+        }
     }
 
     private boolean withinStepSize (PowerSaleProposal p1, PowerSaleProposal p2) {

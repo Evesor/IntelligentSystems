@@ -25,6 +25,7 @@ public class MessageHistory {
                 if (msg.getSender().getName().contains("GlobalValues")) continue;
                 if (msg.getSender().getName().contains("LoggingAgent")) continue;
                 if (msg.getSender().getName().contains("WebServer")) continue;
+                if (msg.getSender().getName().contains("ams@")) continue;
                 if (!_agentsNames.containsKey(msg.getSender().getName())) {
                     _agentsNames.put(msg.getSender().getName(), 0);
                 }

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <link rel="icon" href="favicon.ico"/>
+
+    <!-- Index stylesheet -->
+  <link rel="stylesheet" href="../CSS/index-style.css">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="../bower-components/font-awesome/css/font-awesome.min.css">
+  <!-- Bootstrap stylesheet -->
+  <link rel="stylesheet" href="../bower-components/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../bower-components/bootstrap/css/bootstrap-3_3_7.min.css">
+
+  <style>
+    .link {
+      stroke: #2E2E2E;
+      stroke-width: 2px;
+    }
+
+    .node {
+      stroke: #fff;
+      stroke-width: 2px;
+    }
+
+    .textClass {
+      stroke: #323232;
+      font-family: "Lucida Grande", "Droid Sans", Arial, Helvetica, sans-serif;
+      font-weight: normal;
+      stroke-width: .5;
+      font-size: 14px;
+    }
+  </style>
+
+  <style type="text/css">
+        th, td {
+          padding: 10px;
+        }
+        table tr:nth-child(even) {
+         background-color: #eee;
+        }
+        table tr:nth-child(odd) {
+          background-color: #fff;
+        }
+        table th {
+          color: black;
+          background-color: white;
+        }
+    </style>
+
+    <title>Intelligent Systems Project 3</title>
+  </head>
+  <body>
+
+  <header>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+      <a class="navbar-brand" href="#index">IS-7</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation-bar" aria-controls="navigation-bar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navigation-bar">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="#index">Home <span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#agents">Agents</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#logs">Logs</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#stats">Stats</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+   <div id="main-content">
+
+      <section id="index">
+        <div class="email-container">
+          <h1>Intelligent Systems Group 7</h1>
+          <br/>
+          <h4>Charles</h4>
+          101312298@student.swin.edu.au   <br/>
+
+          <h4>Varian</h4>
+          100669113@student.swin.edu.au   <br/>
+          
+          <h4>Huan</h4>
+          9724435@student.swin.edu.au     <br/>
+
+          <h4>Blake</h4>
+          100586937@student.swin.edu.au   <br/>
+        </div>
+      </section>
+
+      <section id="agents">
+        <div class="container">
+          <div class="row">
+            <div class="col">
+              <svg width="960" height="600"></svg>
+            </div>
+
+            <div class="col">
+              <div class="box">
+                <div id="agent-data"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="logs">
+        <ul class="list-group">
+          <li class="list-group-item">
+              <span class="badge" id="number-verbose-messages">0</span>
+              <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#verbose-message-table">Verbose</button>
+              <table id="verbose-message-table" class="collapse">
+              <tr>
+                <th>Logged By</th>
+                <th>Logged At Time</th>
+                <th>Time Left</th>
+                <th>Message</th>
+              </tr>
+              </table>
+          </li>
+          <li class="list-group-item">
+            <span class="badge" id="number-error-messages">0</span>
+            <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#error-message-table">Error</button>
+            <table id="error-message-table" class="collapse">
+              <tr>
+                <th>Logged By</th>
+                <th>Logged At Time</th>
+                <th>Time Left</th>
+                <th>Message</th>
+              </tr>
+              </table>
+          </li> 
+          <li class="list-group-item">
+            <span class="badge" id="number-debug-messages">0</span>
+            <button type="button" class="btn btn-warning" data-toggle="collapse" data-target="#debug-message-table">Debug</button>
+            <table id="debug-message-table" class="collapse">
+              <tr>
+                <th>Logged By</th>
+                <th>Logged At Time</th>
+                <th>Time Left</th>
+                <th>Message</th>
+              </tr>
+              </table>
+          </li> 
+        </ul>
+      </section>
+
+      <section id="stats">
+        <div style="width: 82%; margin: auto;">
+          <table>
+            <tr>
+              <th><div id="average-price-chart"></div></th>
+              <th> <div id="average-volume-chart"></div></th>
+            </tr>
+            <tr>
+              <th><div id="average-time-chart"></div></th>
+              <th><div id="sales-made-chart"></div></th>
+            </tr>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Jquery javascript AJAX -->
+    <script src="../bower-components/jquery/jquery-3.2.1.min.js"></script>
+    <!-- <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+
+    <!-- Bootstrap javascript at the end so page loads faster -->
+    <script src="../bower-components/bootstrap/js/popper.min.js"></script>
+    <script src="../bower-components/bootstrap/js/bootstrap.min.js"></script>
+
+      <!-- Google charts -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <!-- Javascript Functions -->
+    <script src="../JS/functions.js"></script>
+    <script src="../JS/pages.js"></script>
+
+    <!-- d3 Graphs for siq interactive agent data -->
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="../JS/polyfills.js"></script>
+    <script src="../JS/agent-graph.js"></script>
+    <script src="../JS/ws-handler.js"></script>
+
+      <!-- Javascript Functions -->
+    <script src="../JS/stats.js"></script>
+    <script src="../JS/logging.js"></script>
+  </body>
+</html>

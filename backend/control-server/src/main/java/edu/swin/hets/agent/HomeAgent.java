@@ -1,5 +1,7 @@
 package edu.swin.hets.agent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
@@ -7,15 +9,34 @@ import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
-import sun.rmi.runtime.Log;
-
-import java.io.IOException;
 import java.lang.*;
 import java.util.*;
-
+/******************************************************************************
+ *  Use: The primary home agent.
+ *  Messages Understood:
+ *       - ACCEPT_PROPOSAL : Used to signify a proposal has been accepted by
+ *                           someone selling or buying from us.
+ *             content Object: A PowerSaleAgreement object
+ *       - REJECT_PROPOSAL : Used to signify failed proposal from someone we
+ *                           wanted to buy / sell to.
+ *             content Object: A PowerSaleProposal object
+ *       - PROPOSAL : Used when someone wants to negotiate selling or buying
+ *                    electricity from us.
+ *             content Object: A PowerSaleProposal object
+ *  Messages sent:
+ *       - CFP : Used to negotiate purchasing electricity from reseller agents
+ *             content Object: A PowerSaleProposal object
+ *       - ACCEPT_PROPOSAL : Used to signify a proposal has been accepted.
+ *             content Object: A PowerSaleAgreement object
+ *       - REJECT_PROPOSAL : Used to signify failed proposal and request to
+ *       					 cancel ongoing negotiations with that agent.
+ *             content Object: A PowerSaleProposal object
+ *       - PROPOSAL : Used to send a counter proposal back to a reseller.
+ *             content Object: A PowerSaleProposal object
+ *****************************************************************************/
 public class HomeAgent extends NegotiatingAgent
 {
+	private static final int GROUP_ID = 3;
 	public static String APPLIANCE_LIST_MAP_KEY = "HOME_AGENT_APPLIANCE_LIST";
 	//number of appliances
 	//private int n;
@@ -199,37 +220,7 @@ public class HomeAgent extends NegotiatingAgent
 		_next_purchased_amount -= sumWatt();
 		_next_purchased_amount = 0;
 		_next_required_amount = forecast(1)*1.5;
-		Vector<PowerSaleAgreement> toRemove = new Vector<>();
-		for (PowerSaleAgreement agreement : _current_buy_agreements) {
-			if (agreement.getEndTime() < _current_globals.getTime()) {
-				// No longer valid
-				toRemove.add(agreement);
-			}
-		}
-		for (PowerSaleAgreement rem: toRemove) {
-			LogDebug("Removing a contract");
-			_current_buy_agreements.removeElement(rem);
-		}
-		for (PowerSaleAgreement agreement : _current_buy_agreements) {
-			// We have purchased this electricty.
-			_next_purchased_amount += agreement.getAmount();
-		}
-
-		for (PowerSaleAgreement agreement : _current_sell_agreements) {
-			if (agreement.getEndTime() < _current_globals.getTime()) {
-				// No longer valid
-				toRemove.add(agreement);
-			}
-		}
-		for (PowerSaleAgreement rem: toRemove) {
-			LogDebug("Removing a contract");
-			_current_sell_agreements.removeElement(rem);
-		}
-		for (PowerSaleAgreement agreement : _current_sell_agreements) {
-			// We have purchased this electricty.
-			_next_purchased_amount -= agreement.getAmount();
-		}
-
+		updateBookkeeping();
 		if(_next_required_amount > _next_purchased_amount) {
 			sendBuyCFP();
 		}
@@ -238,7 +229,23 @@ public class HomeAgent extends NegotiatingAgent
 		}
 	}
 
-	//TODO Override TimePush
+	private void updateBookkeeping() {
+		_next_purchased_amount = 0;
+		_next_required_amount = 0;
+		// Get rid of old contracts that are no longer valid
+		ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
+		_current_buy_agreements.stream().filter(
+				(agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+		_current_buy_agreements.removeAll(toRemove);
+		toRemove.clear();
+		_current_sell_agreements.stream().filter(
+				(agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+		_current_sell_agreements.removeAll(toRemove);
+		// Re calculate usage for this time slice
+		for (PowerSaleAgreement agreement : _current_buy_agreements) _next_purchased_amount += agreement.getAmount();
+		for (PowerSaleAgreement agreement: _current_sell_agreements) _next_required_amount += agreement.getAmount();
+	}
+
 	@Override
 	protected void TimePush(int ms_left)
 	{
@@ -272,9 +279,17 @@ public class HomeAgent extends NegotiatingAgent
 		}
 	}
 
-	//TODO Override getJSON
 	@Override
-	protected String getJSON(){return "Not implemented";}
+	protected String getJSON(){
+		String json = "";
+		try {
+			json = new ObjectMapper().writeValueAsString(
+					new HomeAgentData());
+		}
+		catch (JsonProcessingException e) {
+			LogError("Error parsing data to json in " + getName() + " exeption thrown");
+		}
+		return json;}
 
 	//send buy CFP
 	private void sendBuyCFP()
@@ -299,18 +314,17 @@ public class HomeAgent extends NegotiatingAgent
 //		LogDebug("SEND CFP DONE");
 
 		double toBuy = _next_required_amount - _next_purchased_amount;
-		PowerSaleProposal prop = new PowerSaleProposal(toBuy,1,getAID(),false);
-		prop.setBuyerAID(getAID());
 		DFAgentDescription[] resellers = getService("reseller");
+		PowerSaleProposal prop;
 		for(DFAgentDescription reseller : resellers)
 		{
-			ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-			cfp.addReceiver(reseller.getName());
-			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,reseller.getName().getName(),_current_globals.getTime());
+			prop = new PowerSaleProposal(toBuy,1,
+					(_current_by_price * 1.25), getAID(),reseller.getName());
+			ACLMessage sent = sendCFP(prop, reseller.getName());
+			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
+					,reseller.getName().getName(),_current_globals.getTime(), 20, 0.5,
+					0.5, 0.5);
 			_currentNegotiations.add(strategy);
-			addPowerSaleProposal(cfp,prop);
-			cfp.setConversationId(UUID.randomUUID().toString());
-			send(cfp);
 			LogDebug("sending buy CFP");
 		}
 	}
@@ -323,6 +337,9 @@ public class HomeAgent extends NegotiatingAgent
 			if(agreement.getSellerAID().getName().equals(getName()))_current_sell_agreements.add(agreement);
 			else _current_buy_agreements.add(agreement);
 			sendSaleMade(agreement);
+			_currentNegotiations.clear();
+			updateBookkeeping();
+			//TODO, update state.
 			LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
 					" @ " + agreement.getCost());
 		}
@@ -338,16 +355,23 @@ public class HomeAgent extends NegotiatingAgent
 				INegotiationStrategy negotiation = opt.get();
 				PowerSaleProposal prop = getPowerSalePorposal(msg);
 				negotiation.addNewProposal(prop, false);
-				IPowerSaleContract response = negotiation.getResponse();
-				if(response instanceof PowerSaleProposal) {
+				Optional<IPowerSaleContract> response = negotiation.getResponse();
+				if (! response.isPresent()) { //End negotiation
+					sendRejectProposalMessage(msg, prop);
+					_currentNegotiations.remove(negotiation);
+					LogDebug("has stopped negotiating with " + msg.getSender());
+					return;
+				}
+				if(response.get() instanceof PowerSaleProposal) {
 					// We should send back a counter proposal.
-					PowerSaleProposal counterProposal = (PowerSaleProposal) response;
-					negotiation.addNewProposal(counterProposal, true);
-					_currentNegotiations.add(negotiation);
-					ACLMessage replyMsg = msg.createReply();
-					replyMsg.setPerformative(ACLMessage.PROPOSE);
-					addPowerSaleProposal(replyMsg, counterProposal);
-					send(replyMsg);
+
+//					PowerSaleProposal counterProposal = (PowerSaleProposal) response;
+//					negotiation.addNewProposal(counterProposal, true);
+//					_currentNegotiations.add(negotiation);
+//					ACLMessage replyMsg = msg.createReply();
+//					replyMsg.setPerformative(ACLMessage.PROPOSE);
+//					addPowerSaleProposal(replyMsg, counterProposal);
+//					send(replyMsg);
 					//TODO sendProposal(ACLMessage origionalMSG, PowerSaleProposal prop)
 				}
 				else {
@@ -367,26 +391,42 @@ public class HomeAgent extends NegotiatingAgent
 					send(acceptMsg);
 				}
 			}
-			else{LogError("opt is not present : " + msg.getSender().getLocalName());}
+			//else{LogError("opt is not present : " + msg.getSender().getLocalName());}
 		}
 	}
 
 	private void sendSellCFP()
 	{
 		double toSell = _next_purchased_amount - _next_required_amount;
-		PowerSaleProposal prop = new PowerSaleProposal(toSell,1,getAID(),true);
-		prop.setSellerAID(getAID());
+		PowerSaleProposal prop;
 		DFAgentDescription[] resellers = getService("reseller");
 		for(DFAgentDescription reseller : resellers)
 		{
-			ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-			cfp.addReceiver(reseller.getName());
-			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop, reseller.getName().getName(),
-				 _current_globals.getTime());
+			prop = new PowerSaleProposal(toSell,1,
+					_current_by_price ,getAID(),reseller.getName());
+			ACLMessage sent = sendCFP(prop, reseller.getName());
+			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
+					, reseller.getName().getName(),
+				 _current_globals.getTime(), 20, 0.5, 0.5, 0.5);
 			_currentNegotiations.add(strategy);
-			addPowerSaleProposal(cfp, prop);
-			cfp.setConversationId(UUID.randomUUID().toString());
-			send(cfp);
+		}
+	}
+	/******************************************************************************
+	 *  Use: Used by JSON serializing library to make JSON objects.
+	 *****************************************************************************/
+	private class HomeAgentData {
+		//TODO, fix
+		private AgentData data;
+		HomeAgentData () {
+			data = new AgentData();
+		}
+		public int getgroup() { return GROUP_ID; }
+		public AgentData getagent() {return data; }
+		public String getid() {return getName();}
+
+		private class AgentData {
+			public Double getNextRequiredAmount () { return  _next_required_amount; }
+			public Double getNextPurchasedAmoutnt () { return _next_purchased_amount; }
 		}
 	}
 }
@@ -395,7 +435,7 @@ public class HomeAgent extends NegotiatingAgent
 //TODO receive request from user to turn on/off an appliance
 //TODO receive request from user to initiate energy saver mode
 //TODO
-//sell condition, battery max capacity >> sell
+//		sell condition, battery max capacity >> sell
 //		forecast using simple regression
 //		use arraylist in appliance agent
 //		JSON

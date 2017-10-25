@@ -45,6 +45,7 @@ public class WebAgent extends BaseAgent {
 
     protected void TimeExpired() {
         //clientWebSocketHandler.broadcast("wow");
+        if (messages.size() == 0) return;
         String output = "{\"nodes\":[";
         for (String message : messages) {
             output = output.concat(message + ",");
@@ -67,9 +68,11 @@ public class WebAgent extends BaseAgent {
      */
     private class InformMessageHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            //LogVerbose("Web agent just got: " + msg.getContent());
+            //TODO, need to deal with names being different.
             if (msg.getSender().getName().contains("Reseller")
-                    || msg.getSender().getName().contains("PowerPlant")) {
+                    || msg.getSender().getName().contains("PowerPlant")
+                    || msg.getSender().getName().contains("Home")
+                    || msg.getSender().getName().contains("Appliance")) {
                 messages.add(msg.getContent());
             }
             if (msg.getSender().getName().contains("LoggingAgent")) {

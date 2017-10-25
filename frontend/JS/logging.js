@@ -1,28 +1,31 @@
 // Websocket Server
-var ws = new WebSocket("ws://localhost:4567/ws");
+//var ws = new WebSocket("ws://localhost:4567/ws");
 
-ws.onmessage = function(data) 
-{ 
-	try {
-		var jsonData = JSON.parse(data.data);
-		drawMessages(jsonData);
-	} catch (err) {}
-};
+// ws.onmessage = function(data) 
+// { 
+// 	try {
+// 		var jsonData = JSON.parse(data.data);
+// 		drawMessages(jsonData);
+// 	} catch (err) {}
+// };
 
 //Draw the logging messages to the screen 
-function drawMessages(messages) {
-	var verboseLogs = messages.verboseLogs;
-	var errorLogs = messages.errorLogs;
-	var debugLogs = messages.debugLogs;
-	var verboseList = document.getElementById("verbose-message-table");
-	var errorList = document.getElementById("error-message-table");
-	var debugList = document.getElementById("debug-message-table");
-	addMessagesToList(verboseLogs, verboseList);
-	addMessagesToList(errorLogs, errorList);
-	addMessagesToList(debugLogs, debugList);
-	document.getElementById("number-verbose-messages").innerHTML=verboseLogs.length;
-	document.getElementById("number-error-messages").innerHTML=errorLogs.length;
-	document.getElementById("number-debug-messages").innerHTML=debugLogs.length;
+function drawMessages(data) {
+	if (data.hasOwnProperty('verboseLogs')) {
+		var messages = data;
+		var verboseLogs = messages.verboseLogs;
+		var errorLogs = messages.errorLogs;
+		var debugLogs = messages.debugLogs;
+		var verboseList = document.getElementById("verbose-message-table");
+		var errorList = document.getElementById("error-message-table");
+		var debugList = document.getElementById("debug-message-table");
+		addMessagesToList(verboseLogs, verboseList);
+		addMessagesToList(errorLogs, errorList);
+		addMessagesToList(debugLogs, debugList);
+		document.getElementById("number-verbose-messages").innerHTML=verboseLogs.length;
+		document.getElementById("number-error-messages").innerHTML=errorLogs.length;
+		document.getElementById("number-debug-messages").innerHTML=debugLogs.length;
+	}
 };
 
 // Add the messages to the tables

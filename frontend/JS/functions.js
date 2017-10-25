@@ -3,14 +3,14 @@ var ws = new WebSocket("ws://localhost:4567/ws");
 
 ws.onopen = function(data)
 {
-	alert("Connected...");
+	console.log("Connected to websocket...");
 };
 
 ws.onmessage = function(data) 
 { 
 	try {
 		var jsonData = JSON.parse(data.data);
-		//console.log(jsonData);
+		console.log(jsonData);
 		drawMessages(jsonData);
 		drawStats(jsonData);
 		console.log(update);
@@ -62,5 +62,3 @@ function getAgentsFromNodes(a) {
 		link.replaceChild(node, link.childNodes[0]);
 	}
 }
-
-

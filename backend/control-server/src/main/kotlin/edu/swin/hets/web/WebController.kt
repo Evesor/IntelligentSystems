@@ -24,6 +24,7 @@ class WebController(
         logger.info("Starting up Web Services...")
         port(if (!systemConfig.devMode) 80 else 4567)
         webSocket(ClientWebSocketHandler.PATH, clientWebSocketHandler)
+        staticFiles.location("/public")
         path("/api") {
             get("/hello") { req, res ->
                 "hello world!"

@@ -73,6 +73,8 @@ public abstract class BaseAgent extends Agent{
         response.setContent(content);
         response.setSender(getAID());
         send(response);
+        LogError(" did not understand " + originalMsg.getContent() + " sent with preformative " +
+                originalMsg.getPerformative()+ " from " + originalMsg.getSender());
     }
 
     void RegisterAMSService (String serviceName,String serviceType) {
@@ -188,6 +190,7 @@ public abstract class BaseAgent extends Agent{
                         String toSend = deets.substring(0, deets.length() - 1) + ',' + msgs.substring(1, msgs.length());
                         sendAgentDetailsToServer(toSend);
                         TimeExpired();
+                        _messages_this_timeslice.clear();
                     } else {
                         _current_globals = newGlobals;
                         TimePush(_current_globals.getTimeLeft() * 1000);

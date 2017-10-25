@@ -1,38 +1,42 @@
 // Websocket Server
-var ws = new WebSocket("ws://localhost:4567/ws");
+//var ws = new WebSocket("ws://localhost:4567/ws");
 
 google.charts.load('current', {'packages':['corechart']});
 
-ws.onmessage = function(data) 
-{ 
-	try {
-		var jsonData = JSON.parse(data.data);
-		if (jsonData.hasOwnProperty('averagePrice')) {
-			drawStats(jsonData);
-		}
-	} catch (err) {}
-};
+// ws.onmessage = function(data) 
+// { 
+// 	try {
+// 		var jsonData = JSON.parse(data.data);
+// 		drawMessages(jsonData);
+// 	} catch (err) {}
+// };
 
-function two1dto2d(a, name) {
-	var final_index = a.length; // Limit to 50
-	var start_index = a.length > 50 ? a.length - 50: 0;
+function two1dto2d(aList, name) {
+	var final_index = aList.length; // Limit to 50
+	var start_index = aList.length > 50 ? aList.length - 50: 0;
 	var list = [];
-	var c = [];
-	c.push(['time', name]);
-	for (var i = 0; i < a.length; i++) {
+	var completeOutput = [];
+	completeOutput.push(['time', name]);
+	for (var i = 0; i < aList.length; i++) {
     	list.push(i.toString());
 	}
   	for (var i = start_index; i < final_index; i++) {
-    	c.push([list[i], a[i]]);
+    	completeOutput.push([list[i], aList[i]]);
   	}
-  	return c
+  	return completeOutput
 }
 
-function drawStats(data) {
-	drawChart(two1dto2d(data.averagePrice, 'Price'), "Average price", "average-price-chart");
-	drawChart(two1dto2d(data.averageVolume, 'Sales'), "Average volume of sales", "average-volume-chart");
-	drawChart(two1dto2d(data.averageTime, 'Length'), "Average time of contracts", "average-time-chart");
-	drawChart(two1dto2d(data.numberOfSalesMade, 'Sales'), "Number of sales made", "sales-made-chart");
+
+function drawStats(jsonData) {
+	try {
+		if (jsonData.hasOwnProperty('averagePrice')) {
+			drawChart(two1dto2d(jsonData.averagePrice, 'Price'), "Average price", "average-price-chart");
+			drawChart(two1dto2d(jsonData.averageVolume, 'Sales'), "Average volume of sales", "average-volume-chart");
+			drawChart(two1dto2d(jsonData.averageTime, 'Length'), "Average time of contracts", "average-time-chart");
+			drawChart(two1dto2d(jsonData.numberOfSalesMade, 'Sales'), "Number of sales made", "sales-made-chart");
+		}
+	} catch (err) {}
+
 }
 
 
