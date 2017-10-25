@@ -91,6 +91,7 @@ public class ApplianceAgent extends BaseAgent
 		}
 		addBehaviour(findHomeBehavior);
 		updateForecastUsage();
+		on = true;
 	}
 
 	@Override
