@@ -44,7 +44,8 @@ function addNegotiationMethods (agentId) {
 		//TODO, add styles.
 		button.addEventListner('click', function(event) {
 			//TODO, find way to add agent id to list.
-			let response = prompt("Params for " + element + " : ").split(" ").unshift(element);
+			let response = prompt("Params for " + element + " : ");
+			response = element + ' ' +response;
 			pushToJade(response);
 		}, false);	
 		li.appendChild(node);

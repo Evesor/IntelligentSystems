@@ -74,9 +74,9 @@ public class PowerPlantAgent extends NegotiatingAgent {
         addMessageHandler(ProposeTemplate, new ProposeHandler());
         addMessageHandler(ChangeNegotiationStrategyTemplate, new ChangeNegotiationStrategyHandler());
         _negotiationArgs = (List<String>) getArguments()[0];
-        if (_negotiationArgs.size() > 0) {
-            _negotiationArgs.forEach((arg) -> LogDebug("was passed: " + arg));
-        }
+//        if (_negotiationArgs.size() > 0) {
+//            _negotiationArgs.forEach((arg) -> LogDebug("was passed: " + arg));
+//        }
     }
 
     // Update bookkeeping.
@@ -191,7 +191,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             strategy.addNewProposal(prop, false);
             Optional<IPowerSaleContract> response = strategy.getResponse();
             if (!response.isPresent()) { // We should end negotiations.
-                LogDebug("has stopped negotiating with: " + msg.getSender());
+                //LogDebug("has stopped negotiating with: " + msg.getSender());
                 _currentNegotiations.remove(strategy);
                 sendRejectProposalMessage(msg, prop);
                 return;
@@ -201,8 +201,8 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 PowerSaleProposal counter = (PowerSaleProposal) response.get();
                 sendProposal(msg, counter);
                 strategy.addNewProposal(counter, true);
-                LogDebug(getName() + " offered to pay " + counter.getCost()  +
-                        " for electricity negotiating with " + msg.getSender().getName());
+//                LogDebug(getName() + " offered to pay " + counter.getCost()  +
+//                        " for electricity negotiating with " + msg.getSender().getName());
             }
             else { // Accept
                 PowerSaleAgreement agreement = (PowerSaleAgreement) response.get();

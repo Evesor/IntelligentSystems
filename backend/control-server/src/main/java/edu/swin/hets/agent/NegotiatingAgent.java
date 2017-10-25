@@ -1,6 +1,5 @@
 package edu.swin.hets.agent;
 
-import com.hierynomus.msdtyp.ACL;
 import edu.swin.hets.helper.*;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
@@ -17,10 +16,11 @@ import java.util.concurrent.ExecutionException;
  *       that any negotiating agent would do repeatedly.
  *****************************************************************************/
 public abstract class NegotiatingAgent extends BaseAgent{
+    public static String CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY = "ChangeStrategy";
     // Used to define external message to change the negotiation strategy.
-    MessageTemplate ChangeNegotiationStrategyTemplate = MessageTemplate.and(
+    MessageTemplate ChangeNegotiationStrategyTemplate = MessageTemplate.and( //TODO, Fix
             MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
-            GoodMessageTemplates.ContatinsString("Change")); //TODO, fix
+            MessageTemplate.MatchOntology(CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY));
     @Override
     protected void setup () {
         super.setup();

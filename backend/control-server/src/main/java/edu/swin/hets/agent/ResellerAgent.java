@@ -8,7 +8,6 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -91,9 +90,9 @@ public class ResellerAgent extends NegotiatingAgent {
         RegisterAMSService(getAID().getName(), "reseller");
         addMessageHandler(ChangeNegotiationStrategyTemplate, new ChangeNegotiationStrategyHandler());
         _negotiationArgs = (List<String>) getArguments()[0];
-        if (_negotiationArgs.size() > 0) {
-            _negotiationArgs.forEach((a) -> LogDebug(" was passed: " + a));
-        }
+//        if (_negotiationArgs.size() > 0) {
+//            _negotiationArgs.forEach((a) -> LogDebug(" was passed: " + a));
+//        }
     }
 
     protected String getJSON() {
@@ -149,7 +148,7 @@ public class ResellerAgent extends NegotiatingAgent {
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
         //TODO, Remove once home is sorted again
-        _nextRequiredAmount = 300;
+        _nextRequiredAmount = new java.util.Random().nextDouble() * 150 + 150;
     }
 
     // Time is expiring, make sure we have purchased enough electricity
@@ -182,7 +181,7 @@ public class ResellerAgent extends NegotiatingAgent {
             }
             _currentNegotiations.add(strategy);
         }
-        LogDebug(getName() + " is sending cfp for: " + (_nextRequiredAmount - _nextPurchasedAmount) );
+        //LogDebug(getName() + " is sending cfp for: " + (_nextRequiredAmount - _nextPurchasedAmount) );
     }
 
     // Someone is negotiating with us.
@@ -200,7 +199,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 strategy.addNewProposal(proposed, false);
                 Optional <IPowerSaleContract> offer = strategy.getResponse();
                 if (!offer.isPresent()) { // We should end negotiation
-                    LogDebug("Has stopped negotiating with : " + msg.getSender().getName());
+                    //LogDebug("Has stopped negotiating with : " + msg.getSender().getName());
                     sendRejectProposalMessage(msg, proposed);
                     _currentNegotiations.remove(strategy);
                     return;
@@ -210,8 +209,8 @@ public class ResellerAgent extends NegotiatingAgent {
                     PowerSaleProposal counterProposal = (PowerSaleProposal) offer.get();
                     strategy.addNewProposal(counterProposal, true);
                     sendProposal(msg, counterProposal);
-                    LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
-                            " for electricity negotiating with " + msg.getSender().getName());
+//                    LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
+//                            " for electricity negotiating with " + msg.getSender().getName());
                 }
                 else {
                     // Accept the contract
@@ -222,8 +221,8 @@ public class ResellerAgent extends NegotiatingAgent {
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     updateContracts();
-                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
-                            _nextRequiredAmount);
+//                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
+//                            _nextRequiredAmount);
                 }
             }
         }
@@ -236,8 +235,8 @@ public class ResellerAgent extends NegotiatingAgent {
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _currentSellAgreements.add(agreement);
             sendSaleMade(agreement);
-            LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
-                " @ " + agreement.getCost());
+//            LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
+//                " @ " + agreement.getCost());
         }
     }
 
@@ -272,7 +271,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 // else, leave the price alone, they have offered to pay more than we charge.
             }
             ACLMessage sent = sendProposal(msg, proposed);
-            LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
+            //LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;
             try {
                 strategy = makeNegotiationStrategy(proposed, sent.getConversationId(), new BasicUtility()
@@ -288,7 +287,8 @@ public class ResellerAgent extends NegotiatingAgent {
         @Override
         public void Handler(ACLMessage msg) {
             try {
-                _negotiationArgs = (List<String>) msg.getContentObject();
+                String[] input = (String []) msg.getContentObject();
+                _negotiationArgs = Arrays.asList(input);
             } catch (UnreadableException e) {
                 LogError("was sent details for negotiation that were not valid format.");
             }
