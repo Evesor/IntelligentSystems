@@ -8,8 +8,10 @@ import edu.swin.hets.helper.IMessageHandler;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import test.common.agentConfigurationOntology.AddBehaviour;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -22,6 +24,13 @@ public class ApplianceAgent extends BaseAgent
 	private static final int GROUP_ID = 4;
 	private static int DEFAULT_WATT_VALUE;
 	boolean on;
+	private String _simpleHomeName;
+	private TickerBehaviour findHomeBehavior = new TickerBehaviour(this, 100) {
+		@Override
+		protected void onTick() {
+			findHome();
+		}
+	};
 	//TODO current array
 	//should be vector
 	private ArrayList<Integer> current;
@@ -78,8 +87,9 @@ public class ApplianceAgent extends BaseAgent
 				LogError("Was passed a value that is not a valid int for initialization");
 				watt = DEFAULT_WATT_VALUE;
 			}
+			_simpleHomeName = argument.get(1);
 		}
-
+		addBehaviour(findHomeBehavior);
 		updateForecastUsage();
 	}
 
@@ -93,6 +103,21 @@ public class ApplianceAgent extends BaseAgent
 		addMessageHandler(I_Electricity, new ApplianceAgent.ElectricityHandler());
 		sendCurrentUsage();
 		sendForecastUsage();
+	}
+
+	private void findHome() {
+		DFAgentDescription[] agents = getService(_simpleHomeName);
+		if (agents.length > 1) LogError("Warning multiple agents registered as: " + _simpleHomeName);
+		else if (agents.length == 1) sendIAmYoursToHome(agents[0].getName());
+	}
+
+	private void sendIAmYoursToHome(AID homeAID) {
+		ACLMessage iAmYours = new ACLMessage(ACLMessage.INFORM);
+		iAmYours.setContent("ApplianceDetail," + getName());
+		iAmYours.addReceiver(homeAID);
+		send(iAmYours);
+		LogDebug("sending message to " + homeAID.getName());
+		removeBehaviour(findHomeBehavior);
 	}
 
 	private class OnHandler implements IMessageHandler
