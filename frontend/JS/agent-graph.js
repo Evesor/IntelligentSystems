@@ -1,10 +1,15 @@
-var AgentGraph = () => {
+let AgentGraph = () => {
 
-    // Add and remove elements on the graph object
-    this.addNode = function (id) {
+    /**
+     * Adds a node to the graph
+     * @param {string} id
+     * @param {ws-agent} agent
+     */
+    this.addNode = function (id, agent) {
         Array.of(id)
             .filter(val => !nodes.some(node => node.id === val))
             .forEach(id => nodes.push({"id": id}));
+        findNode(id).agent = agent;
         update();
     };
 
@@ -50,6 +55,9 @@ var AgentGraph = () => {
         update();
     };
 
+    /**
+     * @param {ws-link} link
+     */
     this.validateLink = function (link) {
         let result = Array.of(link)
             .filter(element => nodes.some(node => node.id === element.source))
@@ -59,18 +67,22 @@ var AgentGraph = () => {
         return !!result; 
     };
 
-    var findNode = function (id) {
-        for (var i in nodes) {
-            if (nodes[i]["id"] === id) return nodes[i];
-        }
+    /**
+     * Finds the first node with id
+     * @param {string} id 
+     * @returns {(node|undefined)} the node from the node list
+     */
+    this.findNode = function (id) {
+        return nodes.find(node => node.id === id)
     };
 
-    var findNodeIndex = function (id) {
-        for (var i = 0; i < nodes.length; i++) {
-            if (nodes[i].id == id) {
-                return i;
-            }
-        }
+    /**
+     * Finds the index of the node id
+     * @param {string} id 
+     * @returns {number} index of the node, -1 if it doesn't exist
+     */
+    this.findNodeIndex = function (id) {
+        return nodes.findIndex(node => node.id === id)
     };
 
         // set up the D3 visualisation in the specified element
@@ -135,7 +147,7 @@ var AgentGraph = () => {
             .attr("x", 14)
             .attr("y", ".31em")
             .text(function (d) {
-                return d.id;
+                return d.agent.name;
             });
 
         node.exit().remove();
