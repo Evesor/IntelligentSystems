@@ -2,7 +2,6 @@ package edu.swin.hets.agent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.swin.hets.helper.GlobalValues;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import jade.core.AID;
@@ -14,10 +13,8 @@ import jade.lang.acl.MessageTemplate;
 import test.common.agentConfigurationOntology.AddBehaviour;
 
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class ApplianceAgent extends BaseAgent
 {
@@ -33,21 +30,21 @@ public class ApplianceAgent extends BaseAgent
 	};
 	//TODO current array
 	//should be vector
-	private ArrayList<Integer> current;
-	//int[] current = new int[48];
+	private ArrayList<Integer> historyOfCurrentUsage;
+	//int[] historyOfCurrentUsage = new int[48];
 	//TODO forecast array
 	//should be vector, should store enumeration instead of int
-	private ArrayList<Integer> forecast;
+	//private ArrayList<Integer> forecast;
 	//int[] forecast = new int[48];
 	int watt;
 
-	//turn on this appliance
+	//askHomeIfWeCanTurnOn_Off on this appliance
 	//ACLMessage.REQUEST, "on"
 	private MessageTemplate R_On = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
 		GoodMessageTemplates.ContatinsString("on"));
 
-	//turn off this appliance
+	//askHomeIfWeCanTurnOn_Off off this appliance
 	//ACLMessage.REQUEST, "off"
 	private MessageTemplate R_Off = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
@@ -62,18 +59,21 @@ public class ApplianceAgent extends BaseAgent
 	//initialize variables
 	private void init()
 	{
-		on = false;
-		current = new ArrayList<>();
-		current.add(0);
-		current.add(0);
-		forecast = new ArrayList<>();
-		forecast.add(0);
-		forecast.add(0);
+		on = true;
+		historyOfCurrentUsage = new ArrayList<>();
+		historyOfCurrentUsage.add(0);
+		historyOfCurrentUsage.add(0);
+//		historyOfCurrentUsage.add(0);
+//		historyOfCurrentUsage.add(0);
+		//forecast = new ArrayList<>();
+//		forecast.add(0);
+//		forecast.add(0);
+//		forecast.add(0);
 
 //		int i;
 //		for(i=0;i<48;i++)
 //		{
-//			current[i] = 0;
+//			historyOfCurrentUsage[i] = 0;
 //			forecast[i] = 0;
 //		}
 		Object[] args = getArguments();
@@ -90,7 +90,7 @@ public class ApplianceAgent extends BaseAgent
 			_simpleHomeName = argument.get(1);
 		}
 		addBehaviour(findHomeBehavior);
-		updateForecastUsage();
+		//updateForecastUsage();
 		on = true;
 	}
 
@@ -123,12 +123,14 @@ public class ApplianceAgent extends BaseAgent
 
 	private class OnHandler implements IMessageHandler
 	{
-		public void Handler(ACLMessage msg){turn(true);}
+		public void Handler(ACLMessage msg){
+			askHomeIfWeCanTurnOn_Off(true);}
 	}
 
 	private class OffHandler implements IMessageHandler
 	{
-		public void Handler(ACLMessage msg){turn(false);}
+		public void Handler(ACLMessage msg){
+			askHomeIfWeCanTurnOn_Off(false);}
 	}
 
 	private class ElectricityHandler implements IMessageHandler
@@ -148,29 +150,33 @@ public class ApplianceAgent extends BaseAgent
 	private void sendCurrentUsage()
 	{
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		//msg.setContent("electricity current," + current[_current_globals.getTime()]);
-		msg.setContent("electricity current," + current.get(_current_globals.getTime()));
+		//msg.setContent("electricity historyOfCurrentUsage," + historyOfCurrentUsage[_current_globals.getTime()]);
+		msg.setContent("electricity historyOfCurrentUsage," + historyOfCurrentUsage.get(_current_globals.getTime()));
 		msg.addReceiver(new AID("home1", AID.ISLOCALNAME));
 		send(msg);
 	}
 
 	private void sendForecastUsage()
 	{
-		updateForecastUsage();
+		//updateForecastUsage();
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		//msg.setContent("electricity forecast," + forecast[_current_globals.getTime()]);
-		msg.setContent("electricity forecast," + forecast.get(_current_globals.getTime()));
+		msg.setContent("electricity forecast," + makeNewForecast());
 		msg.addReceiver(new AID("home1", AID.ISLOCALNAME));
 		send(msg);
 	}
 
+	private double makeNewForecast() {
+		//TODO, Make average of usage
+		return watt*5;
+	}
+
 	//TODO updateForcastUsage function
 	//calculate forecast usage and update variable
-	private void updateForecastUsage()
-	{
-		//forecast[_current_globals.getTime()] = watt*5;
-		forecast.set(_current_globals.getTime(),watt*5);
-	}
+//	private void updateForecastUsage()
+//	{
+//		//forecast[_current_globals.getTime()] = watt*5;
+//		forecast.set(_current_globals.getTime(),watt*5);
+//	}
 
 	private void sendElectricityRequest()
 	{
@@ -180,16 +186,16 @@ public class ApplianceAgent extends BaseAgent
 		send(msg);
 	}
 
-	private void turn(boolean on)
+	private void askHomeIfWeCanTurnOn_Off(boolean on)
 	{
-		//compare with current state
+		//compare with historyOfCurrentUsage state
 		if(this.on!=on)
 		{
 			if(on==true)
 			{
 				//send electricity request to home agent
-				//home agent check current usage with max usage
-				//if current + request < max usage, approve
+				//home agent check historyOfCurrentUsage usage with max usage
+				//if historyOfCurrentUsage + request < max usage, approve
 				sendElectricityRequest();
 
 				LogDebug(getLocalName() + " sent an electricity request");
@@ -208,14 +214,14 @@ public class ApplianceAgent extends BaseAgent
 		//count electricity usage
 		if(on == true)
 		{
-			//current.add(new Integer[4]);
-			current.set(_current_globals.getTime(),current.get(_current_globals.getTime())+watt);
-			//current[_current_globals.getTime()] += watt;
-			LogDebug("current : " + current.get(_current_globals.getTime()));
+			//historyOfCurrentUsage.add(new Integer[4]);
+			//current.set(_current_globals.getTime(),historyOfCurrentUsage.get(_current_globals.getTime())+watt);
+			//historyOfCurrentUsage[_current_globals.getTime()] += watt;
+			historyOfCurrentUsage.add(watt);
+			LogDebug("historyOfCurrentUsage : " + historyOfCurrentUsage.get(_current_globals.getTime()));
 			sendForecastUsage();
 		}
-		current.add(0);
-		forecast.add(0);
+		historyOfCurrentUsage.add(0);
 	}
 
 	@Override
@@ -224,11 +230,11 @@ public class ApplianceAgent extends BaseAgent
 		//count electricity usage
 		if(on == true)
 		{
-			current.set(_current_globals.getTime(),current.get(_current_globals.getTime())+watt);
-			//current[_current_globals.getTime()] += watt;
-			//current.get(_current_globals.getTime())[5 - (ms_left/ GlobalValues.pushTimeLength())] =
-			//current.set(_current_globals.getTime(),current.get(_current_globals.getTime())+watt);
-			LogDebug("current : " + current.get(_current_globals.getTime()));
+			historyOfCurrentUsage.set(_current_globals.getTime(), historyOfCurrentUsage.get(_current_globals.getTime())+watt);
+			//historyOfCurrentUsage[_current_globals.getTime()] += watt;
+			//historyOfCurrentUsage.get(_current_globals.getTime())[5 - (ms_left/ GlobalValues.pushTimeLength())] =
+			//historyOfCurrentUsage.set(_current_globals.getTime(),historyOfCurrentUsage.get(_current_globals.getTime())+watt);
+			LogDebug("historyOfCurrentUsage : " + historyOfCurrentUsage.get(_current_globals.getTime()));
 		}
 	}
 
@@ -259,8 +265,8 @@ public class ApplianceAgent extends BaseAgent
 		private class AgentData {
 			public Integer getWattage () {return watt;}
 			public Boolean getOn() {return on; }
-			public ArrayList<Integer> getCurrent() { return current; }
-			public ArrayList<Integer> getForecast() { return forecast; }
+			public ArrayList<Integer> getCurrent() { return historyOfCurrentUsage; }
+			//public ArrayList<Integer> getForecast() { return forecast; }
 		}
 	}
 }
@@ -268,3 +274,4 @@ public class ApplianceAgent extends BaseAgent
 //appliance send electricity request / home approve before turning it on?
 //1 day history for usage and forecast, time index??
 //send electricity usage for each time push / home calculate electricity usage?
+//Forecast

@@ -43,7 +43,7 @@ public class HomeAgent extends NegotiatingAgent
 	//number of appliances
 	//private int n;
 	//electricity forecast for next time slice for each appliance
-	private Map<String,Integer> electricityForecast;
+	private Map<String,Double> electricityForecast;
 	//wattage of each appliance
 	private Map<String, Integer> watt;
 	//list of appliance name
@@ -56,6 +56,8 @@ public class HomeAgent extends NegotiatingAgent
 	private int energySaverWatt;
 	//purchased electricity for next time slice
 	private double _next_purchased_amount;
+	//
+	private double currentElectricityLeft;
 	//purchased contracts
 	private Vector<PowerSaleAgreement> _current_buy_agreements;
 	//electricity required in next time slice
@@ -93,7 +95,7 @@ public class HomeAgent extends NegotiatingAgent
 		//applianceName = (java.util.List<String>) map.get(APPLIANCE_LIST_MAP_KEY);
 		on = new HashMap<String,Boolean>();
 		watt = new HashMap<String,Integer>();
-		electricityForecast = new HashMap<String,Integer>();
+		electricityForecast = new HashMap<String,Double>();
 //		applianceName.forEach((appliance) -> {
 //			on.put(appliance, false);
 //			watt.put(appliance,10);//TODO get appliance watt from JSON
@@ -123,7 +125,6 @@ public class HomeAgent extends NegotiatingAgent
 		addMessageHandler(PropMessageTemplate, new ProposalHandler());
 		addMessageHandler(QuoteAcceptedTemplate, new ProposalAcceptedHandler());
 		addMessageHandler(ApplianceDetailMT, new ApplianceDetailHandler());
-		turn("lamp1",true);
 	}
 
 	//example message : ACLMessage.INFORM from appliance,"electricity forecast,10"
@@ -133,7 +134,7 @@ public class HomeAgent extends NegotiatingAgent
 		public void Handler(ACLMessage msg)
 		{
 			String senderName = msg.getSender().getLocalName();
-			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
+			double value = Double.parseDouble(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
 			electricityForecast.put(senderName,value);
 			LogDebug("forecast = " + forecast(1));
 		}
@@ -151,7 +152,7 @@ public class HomeAgent extends NegotiatingAgent
 			LogDebug(getLocalName() + " received electricity request");
 			boolean approve = true;
 			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-			if((sumWatt()+value > maxWatt) || (sumWatt()+value > _next_purchased_amount))
+			if((sumWatt()+value > maxWatt) || (sumWatt()+value > currentElectricityLeft))
 				{approve = false;}
 			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
 			if(approve == true)
@@ -212,7 +213,8 @@ public class HomeAgent extends NegotiatingAgent
 	@Override
 	protected void TimeExpired()
 	{
-		_next_purchased_amount -= sumWatt();
+		currentElectricityLeft = _next_purchased_amount;
+		currentElectricityLeft -= sumWatt();
 		_next_purchased_amount = 0;
 		_next_required_amount = forecast(1)*1.5;
 		updateBookkeeping();
@@ -245,7 +247,7 @@ public class HomeAgent extends NegotiatingAgent
 	protected void TimePush(int ms_left)
 	{
 		//LogDebug("Time Left : " + _current_globals.getTimeLeft());
-		_next_purchased_amount -= sumWatt();
+		currentElectricityLeft -= sumWatt();
 		if(sumWatt() > _next_purchased_amount)
 		{
 			if(energySaverWatt < _next_purchased_amount){energySaverMode();}
@@ -311,9 +313,9 @@ public class HomeAgent extends NegotiatingAgent
 			if(splitValue.length == 2)
 			{
 				applianceName.add(splitValue[1]);
-				on.put(splitValue[1], false);
+				on.put(splitValue[1], true);
 				watt.put(splitValue[1],10);//TODO get appliance watt from JSON
-				electricityForecast.put(splitValue[1],0);
+				electricityForecast.put(splitValue[1],0.0);
 				LogVerbose(splitValue[1] + " has been added to " + getLocalName());
 			}
 			else
@@ -436,3 +438,4 @@ public class HomeAgent extends NegotiatingAgent
 //		_next_purchased + battery = total electricity owned
 //		use negotiation agent
 //		ask appliance for current, dont count at home
+//		currentElectricityLeft
