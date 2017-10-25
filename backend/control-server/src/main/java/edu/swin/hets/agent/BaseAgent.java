@@ -216,7 +216,7 @@ public abstract class BaseAgent extends Agent{
     // Used to send the server the object details as a JSON string
     private void sendAgentDetailsToServer(String detailsAsJSON) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.addReceiver(new AID("WebServer", AID.ISLOCALNAME));
+        msg.addReceiver(new AID(WebAgent.AGENT_NAME,AID.ISLOCALNAME));
         msg.setContent(detailsAsJSON);
         msg.setSender(getAID());
         send(msg);

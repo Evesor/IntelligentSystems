@@ -23,6 +23,8 @@ import java.util.Vector;
  *          - content-obj : Serialized global values object
  *****************************************************************************/
 public class GlobalValuesAgent extends Agent {
+    public static final String AGENT_NAME = "GlobalValues";
+
     private GlobalValues _currentGlobalValue;
     private int _currentTime;
     private int _timeLeft;

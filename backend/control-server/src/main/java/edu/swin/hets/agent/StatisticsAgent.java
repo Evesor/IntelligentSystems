@@ -20,6 +20,7 @@ import java.util.function.ToDoubleFunction;
  *             content: "An PowerSaleAgreement object."
  *****************************************************************************/
 public class StatisticsAgent extends NegotiatingAgent {
+    public static final String AGENT_NAME = "StatisticsAgent";
     private ArrayList<ArrayList<PowerSaleAgreement>> _agreements;
 
     private MessageTemplate _saleInformMessageTemplate = MessageTemplate.and(

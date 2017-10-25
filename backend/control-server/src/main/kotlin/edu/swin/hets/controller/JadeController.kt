@@ -41,8 +41,8 @@ class JadeController(private val runtime: Runtime,
         logger.info("Spinning up the JADE platform...")
         mainContainer = runtime.createMainContainer(profile).apply {
             createNewAgent(LoggingAgent.AGENT_NAME, LoggingAgent::class.java.name, arrayOf()).start()
-            createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
-            createNewAgent("StatisticsAgent", StatisticsAgent::class.java.name, arrayOf())?.start()
+            createNewAgent(WebAgent.AGENT_NAME, WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
+            createNewAgent(StatisticsAgent.AGENT_NAME, StatisticsAgent::class.java.name, arrayOf())?.start()
         }
 
         JadeGateway.init(null,
@@ -62,7 +62,7 @@ class JadeController(private val runtime: Runtime,
         }
 
         Thread.sleep(1000)
-        mainContainer?.createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf())?.start()
+        mainContainer?.createNewAgent(GlobalValuesAgent.AGENT_NAME, GlobalValuesAgent::class.java.name, arrayOf())?.start()
     }
 
     fun stop() {

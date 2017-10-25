@@ -16,13 +16,14 @@ import java.util.List;
 
 /******************************************************************************
  *  Use: Used to dump data periodically to file for the WS
- *  Name: Always only have one of these on the main container, have it name set
- *        to "WebServer"
+ *  This agent should be unique
  *  Preformatives used:
  *       - INFORM : Used to send info to server
  *             content: "any info that the server needs, as JSON"
  *****************************************************************************/
 public class WebAgent extends BaseAgent {
+    public static final String AGENT_NAME = "WebAgent";
+
     private static final Logger logger = LoggerFactory.getLogger(WebAgent.class);
     private List<String> messages;
     private MessageTemplate InformMessageTemplate = MessageTemplate.and(
@@ -83,7 +84,7 @@ public class WebAgent extends BaseAgent {
                 clientWebSocketHandler.broadcast(msg.getContent());
             }
 
-            if (msg.getSender().getName().contains("StatisticsAgent")) {
+            if (msg.getSender().getName().contains(StatisticsAgent.AGENT_NAME)) {
                 clientWebSocketHandler.broadcast(msg.getContent());
             }
         }
