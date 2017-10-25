@@ -42,6 +42,7 @@ public abstract class NegotiatingAgent extends BaseAgent{
         send(acceptMsg);
     }
 
+    //dont use this
     void sendCounterOffer (ACLMessage origionalMSG, PowerSaleProposal counter) {
         ACLMessage counterMsg = origionalMSG.createReply();
         counterMsg.setPerformative(ACLMessage.PROPOSE);

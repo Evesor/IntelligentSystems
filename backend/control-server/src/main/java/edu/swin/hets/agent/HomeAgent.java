@@ -320,7 +320,7 @@ public class HomeAgent extends NegotiatingAgent
 		public void Handler(ACLMessage msg) {
 			//TODO, check this is a valid proposal still.
 			PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
-			if (agreement.getSellerAID().getName().equals(getName())) _current_sell_agreements.add(agreement);
+			if(agreement.getSellerAID().getName().equals(getName()))_current_sell_agreements.add(agreement);
 			else _current_buy_agreements.add(agreement);
 			sendSaleMade(agreement);
 			LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
@@ -334,8 +334,7 @@ public class HomeAgent extends NegotiatingAgent
 			//_currentNegotiations.forEach((neg) -> LogDebug("Negotiating with: " + neg.getOpponentName()));
 			Optional<INegotiationStrategy> opt = _currentNegotiations.stream().filter(
 				(agg) -> agg.getOpponentName().equals(msg.getSender().getName())).findAny();
-			if (opt.isPresent()) {
-				//LogError("opt PRESENT" + msg.getSender());
+			if (opt.isPresent()){
 				INegotiationStrategy negotiation = opt.get();
 				PowerSaleProposal prop = getPowerSalePorposal(msg);
 				negotiation.addNewProposal(prop, false);
@@ -349,6 +348,7 @@ public class HomeAgent extends NegotiatingAgent
 					replyMsg.setPerformative(ACLMessage.PROPOSE);
 					addPowerSaleProposal(replyMsg, counterProposal);
 					send(replyMsg);
+					//TODO sendProposal(ACLMessage origionalMSG, PowerSaleProposal prop)
 				}
 				else {
 					// We should accept the contract.
@@ -356,7 +356,10 @@ public class HomeAgent extends NegotiatingAgent
 					PowerSaleAgreement contract = new PowerSaleAgreement(prop, _current_globals.getTime());
 					LogVerbose(" has accepted a contract from " + msg.getSender().getName() +
 							" for " + contract.getCost());
-					_current_sell_agreements.add(contract);
+					//_current_sell_agreements.add(contract);
+					if(contract.getSellerAID().getName().equals(getName()))_current_sell_agreements.add(contract);
+					else _current_buy_agreements.add(contract);
+					sendSaleMade(contract);
 					_next_purchased_amount -= contract.getAmount();
 					ACLMessage acceptMsg = msg.createReply();
 					acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
@@ -391,3 +394,10 @@ public class HomeAgent extends NegotiatingAgent
 //TODO behaviour to negotiate price for buy & sell
 //TODO receive request from user to turn on/off an appliance
 //TODO receive request from user to initiate energy saver mode
+//TODO
+//sell condition, battery max capacity >> sell
+//		forecast using simple regression
+//		use arraylist in appliance agent
+//		JSON
+//		_next_purchased + battery = total electricity owned
+//		use negotiation agent
