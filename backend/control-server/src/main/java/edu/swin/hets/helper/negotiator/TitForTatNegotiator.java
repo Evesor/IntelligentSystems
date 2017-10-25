@@ -11,7 +11,7 @@ import java.util.Optional;
  *  Use: A common type of negotiator that simply mirrors what the opponent
  *       counters with provided the Utility of the counter is equil to or better
  *       than the utility of our first offer.
- *****************************************************************************/
+ *****************************************************************************
 public class TitForTatNegotiator implements INegotiationStrategy {
 
     @Override
@@ -35,3 +35,4 @@ public class TitForTatNegotiator implements INegotiationStrategy {
     }
 
 }
+*/

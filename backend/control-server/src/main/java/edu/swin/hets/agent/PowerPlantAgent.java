@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
  *       on any events, should be extended later for more detailed classes.

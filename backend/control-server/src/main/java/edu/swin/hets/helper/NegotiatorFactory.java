@@ -1,5 +1,6 @@
 package edu.swin.hets.helper;
 
+import edu.swin.hets.helper.negotiator.BoulwareNegotiator;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import edu.swin.hets.helper.negotiator.LinearUtilityDecentNegotiator;
 import java.util.concurrent.ExecutionException;
@@ -16,7 +17,6 @@ public class NegotiatorFactory {
     public INegotiationStrategy getNegotiationStrategy(
             List<String> arguments,
             IUtilityFunction utilityFun,
-            String ourName,
             String opponentName,
             PowerSaleProposal firstOffer,
             GlobalValues currentGlobals,
@@ -24,41 +24,103 @@ public class NegotiatorFactory {
             throws ExecutionException{
         switch (arguments.get(0)) {
             case ("HoldForFirstOfferPrice"): return createHoldForFirstOfferPrice(firstOffer, conversationID,
-                    opponentName, currentGlobals.getTime(), arguments);
-            case ("LinearUtilityDecentNegotiator"): return createLinearUtilityDecentNegotiator(utilityFun,
-                    ourName, opponentName, firstOffer, currentGlobals.getTime() ,conversationID, arguments);
+                    opponentName, currentGlobals, arguments);
+            case ("LinearUtilityDecentNegotiator"): return createLinearUtilityDecentNegotiator(firstOffer,
+                    conversationID, opponentName, currentGlobals, utilityFun, arguments);
+            case ("BoulwareNegotiator") : return createBoulwareNegotiator(firstOffer,
+                    conversationID, opponentName, currentGlobals, utilityFun, arguments);
         }
-        throw new ExecutionException(new Throwable("Did not find the Negotiation function."));
+        throw new ExecutionException(new Throwable("Did not find the Negotiation function type"));
     }
 
-    private INegotiationStrategy createHoldForFirstOfferPrice(PowerSaleProposal firstOffer, String conversationID,
-                                                              String opponentName, Integer timeSlice, List<String> args) {
-
-        Integer maxTimes = 20;
-        try {
-            maxTimes = Integer.parseInt(args.get(1));
-        } catch (Exception e) {  } // Leave as default
-        //TODO, change from defaults.
-        return new HoldForFirstOfferPrice(firstOffer, conversationID,
-                opponentName, timeSlice, maxTimes, 0.5, 0.5, 0.5);
+    /*
+    *  Args order: maxNegotiationTime, maxStallTime, costTolerance, volumeTolerance, timeTolerance
+     */
+    private INegotiationStrategy createHoldForFirstOfferPrice(PowerSaleProposal firstOffer,
+                                                              String conversationID,
+                                                              String opponentName,
+                                                              GlobalValues currentGlobals,
+                                                              List<String> args) throws ExecutionException {
+        int maxNegotiationTime = 20;
+        int maxStallTime = 10;
+        double costTolerance = 0.1;
+        double volumeTolerance = 0.1;
+        double timeTolerance = 0.1;
+        if (args.size() == 6) {
+            try {
+                maxNegotiationTime = Integer.parseInt(args.get(1));
+                maxStallTime = Integer.parseInt(args.get(2));
+                costTolerance = Double.parseDouble(args.get(3));
+                volumeTolerance = Double.parseDouble(args.get(4));
+                timeTolerance = Double.parseDouble(args.get(5));
+            } catch (Exception e) {
+                throw new ExecutionException(new Throwable("Was passed invalid params to HoldForFirstOfferPrice"));
+            }
+        }// Leave as default
+               return new HoldForFirstOfferPrice(firstOffer, conversationID, opponentName, currentGlobals,
+                maxNegotiationTime, maxStallTime, costTolerance, volumeTolerance, timeTolerance);
     }
-
-    private INegotiationStrategy createLinearUtilityDecentNegotiator (IUtilityFunction utilityFun,
-                                                                      String ourName,
-                                                                      String opponentName,
-                                                                      PowerSaleProposal firstOffer,
-                                                                      Integer timeSlice,
+    /*
+    *  Args order: maxNegotiationTime, maxStallTime, priceJump, volumeJump, timeJump, acceptTolerance.
+     */
+    private INegotiationStrategy createLinearUtilityDecentNegotiator (PowerSaleProposal firstOffer,
                                                                       String conversationID,
-                                                                      List<String> params) throws ExecutionException {
-        if (params.size() != 4) {
-            throw new ExecutionException(new Throwable("Wrong number of inputs"));
-        }
-        return new LinearUtilityDecentNegotiator(utilityFun, ourName,
-                opponentName, firstOffer , timeSlice, Double.parseDouble(params.get(1)),
-                Double.parseDouble(params.get(2)),
-                Integer.parseInt(params.get(3)),
-                0.99,
-                conversationID);
+                                                                      String opponentsName,
+                                                                      GlobalValues currentGlobals,
+                                                                      IUtilityFunction utilityFunction,
+                                                                      List<String> args) throws ExecutionException {
+        int maxNegotiationTime = 20;
+        int maxStallTime = 10;
+        double priceJump = 0.1;
+        double volumeJump = 0.1;
+        int timeJump = 1;
+        double acceptTolerance = 0.99;
+        if (args.size() == 7) {
+            try {
+                maxNegotiationTime = Integer.parseInt(args.get(1));
+                maxStallTime = Integer.parseInt(args.get(2));
+                priceJump = Double.parseDouble(args.get(3));
+                volumeJump = Double.parseDouble(args.get(4));
+                timeJump = Integer.parseInt(args.get(5));
+                acceptTolerance = Double.parseDouble(args.get(6));
+            } catch (Exception e) {
+                throw new ExecutionException(new Throwable("Was passed invalid params to linerDecentNegotiator"));
+            }
+        }// Leave as default
+        return new LinearUtilityDecentNegotiator(firstOffer, conversationID, opponentsName, currentGlobals,
+                maxNegotiationTime, maxStallTime, priceJump, volumeJump, timeJump, acceptTolerance, utilityFunction);
+
+    }
+    /*
+    *  Args order: maxNegotiationTime, maxStallTime, priceJump, volumeJump, timeJump, acceptTolerance.
+     */
+    private INegotiationStrategy createBoulwareNegotiator (PowerSaleProposal firstOffer,
+                                                           String conversationID,
+                                                           String opponentsName,
+                                                           GlobalValues currentGlobals,
+                                                           IUtilityFunction utilityFunction,
+                                                           List<String> args) throws ExecutionException {
+        int maxNegotiationTime = 20;
+        int maxStallTime = 10;
+        double priceJump = 0.1;
+        double volumeJump = 0.1;
+        int timeJump = 1;
+        double acceptTolerance = 0.99;
+        if (args.size() == 7) {
+            try {
+                maxNegotiationTime = Integer.parseInt(args.get(1));
+                maxStallTime = Integer.parseInt(args.get(2));
+                priceJump = Double.parseDouble(args.get(3));
+                volumeJump = Double.parseDouble(args.get(4));
+                timeJump = Integer.parseInt(args.get(5));
+                acceptTolerance = Double.parseDouble(args.get(6));
+            } catch (Exception e) {
+                throw new ExecutionException(new Throwable("Was passed invalid params to linerDecentNegotiator"));
+            }
+        }// Leave as default
+        return new BoulwareNegotiator(firstOffer, conversationID, opponentsName, currentGlobals,
+                maxNegotiationTime, maxStallTime, priceJump, volumeJump, timeJump, acceptTolerance, utilityFunction);
+
 
     }
 }

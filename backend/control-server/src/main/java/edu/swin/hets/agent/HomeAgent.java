@@ -322,8 +322,8 @@ public class HomeAgent extends NegotiatingAgent
 					(_current_by_price * 1.25), getAID(),reseller.getName());
 			ACLMessage sent = sendCFP(prop, reseller.getName());
 			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
-					,reseller.getName().getName(),_current_globals.getTime(), 20, 0.5,
-					0.5, 0.5);
+					,reseller.getName().getName(),_current_globals, 20, 10,
+					0.1, 0.1, 0.5);
 			_currentNegotiations.add(strategy);
 			LogDebug("sending buy CFP");
 		}
@@ -406,8 +406,8 @@ public class HomeAgent extends NegotiatingAgent
 					_current_by_price ,getAID(),reseller.getName());
 			ACLMessage sent = sendCFP(prop, reseller.getName());
 			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
-					, reseller.getName().getName(),
-				 _current_globals.getTime(), 20, 0.5, 0.5, 0.5);
+					,reseller.getName().getName(),_current_globals, 20, 10,
+					0.1, 0.1, 0.5);
 			_currentNegotiations.add(strategy);
 		}
 	}
