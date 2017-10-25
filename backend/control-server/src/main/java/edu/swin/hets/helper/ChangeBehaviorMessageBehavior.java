@@ -12,7 +12,7 @@ public class ChangeBehaviorMessageBehavior extends OneShotBehaviour {
     private String _agentName;
 
     public ChangeBehaviorMessageBehavior (String message) {
-        _agentName = message.split("")[0];
+        _agentName = message.split(" ")[0];
         _messages = (String []) Arrays.asList(message.split(" ")).subList(0, message.length()).toArray();
     }
 
@@ -20,7 +20,7 @@ public class ChangeBehaviorMessageBehavior extends OneShotBehaviour {
     public void action() {
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
         msg.setOntology(CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY);
-        msg.addReceiver(new AID());
+        msg.addReceiver(new AID(_agentName, AID.ISLOCALNAME));
         try {
             msg.setContentObject(_messages);
         } catch (IOException e) {

@@ -56,7 +56,6 @@ public class WebAgent extends BaseAgent {
         // Remove last comma
         output = output.substring(0, output.length() - 1);
         output = output.concat("]}");
-        LogVerbose(output);
         messages.clear();
         clientWebSocketHandler.broadcast(output);
     }
