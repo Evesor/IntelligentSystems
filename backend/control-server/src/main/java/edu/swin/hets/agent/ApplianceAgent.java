@@ -263,6 +263,7 @@ public class ApplianceAgent extends BaseAgent
 		public AgentData getagent() {return data; }
 		public String getid() {return getName();}
 		private class AgentData {
+			public String getName () { return getLocalName();}
 			public Integer getWattage () {return watt;}
 			public Boolean getOn() {return on; }
 			public ArrayList<Integer> getCurrent() { return historyOfCurrentUsage; }

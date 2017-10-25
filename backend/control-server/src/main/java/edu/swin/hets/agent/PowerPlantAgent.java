@@ -248,7 +248,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             }
             public double getCurrent_Production() { return current_production; }
             public double getCurrent_Sell_Price() { return current_sell_price; }
-            public String getName () { return Name.split("@")[0];}
+            public String getName () { return getLocalName(); }
         }
     }
     /******************************************************************************
