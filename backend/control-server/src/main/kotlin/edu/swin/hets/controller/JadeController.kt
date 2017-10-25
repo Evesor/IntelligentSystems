@@ -40,7 +40,7 @@ class JadeController(private val runtime: Runtime,
     fun start() {
         logger.info("Spinning up the JADE platform...")
         mainContainer = runtime.createMainContainer(profile).apply {
-            createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
+            createNewAgent(LoggingAgent.AGENT_NAME, LoggingAgent::class.java.name, arrayOf()).start()
             createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
             createNewAgent("StatisticsAgent", StatisticsAgent::class.java.name, arrayOf())?.start()
         }

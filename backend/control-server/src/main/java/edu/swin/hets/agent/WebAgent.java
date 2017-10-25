@@ -79,7 +79,7 @@ public class WebAgent extends BaseAgent {
                     || msg.getSender().getName().contains("Appliance")) {
                 messages.add(msg.getContent());
             }
-            if (msg.getSender().getName().contains("LoggingAgent")) {
+            if (msg.getSender().getName().contains(LoggingAgent.AGENT_NAME)) {
                 clientWebSocketHandler.broadcast(msg.getContent());
             }
 

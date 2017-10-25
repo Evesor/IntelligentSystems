@@ -2,6 +2,7 @@ package edu.swin.hets.helper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.swin.hets.agent.LoggingAgent;
 import jade.lang.acl.ACLMessage;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -23,7 +24,7 @@ public class MessageHistory {
         for (ACLMessage msg : msgs) {
             if (msg != null) {
                 if (msg.getSender().getName().contains("GlobalValues")) continue;
-                if (msg.getSender().getName().contains("LoggingAgent")) continue;
+                if (msg.getSender().getName().contains(LoggingAgent.AGENT_NAME)) continue;
                 if (msg.getSender().getName().contains("WebServer")) continue;
                 if (msg.getSender().getName().contains("ams@")) continue;
                 if (!_agentsNames.containsKey(msg.getSender().getName())) {
