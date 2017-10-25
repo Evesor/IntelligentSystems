@@ -17,10 +17,10 @@ apply plugin: 'com.moowork.node'
 
 node {
     version = '8.8.0'
-    npmVersion = '3.8.9'
     download = true
 }
 
 task startDevServer(type: NpmTask) {
+    dependsOn npmInstall
     args = ['run', 'start']
 }
