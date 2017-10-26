@@ -347,9 +347,18 @@ public class HomeAgent extends NegotiatingAgent
 					LogVerbose(" has accepted a contract from " + msg.getSender().getName() +
 							" for " + contract.getCost());
 					//_current_sell_agreements.add(contract);
-					if(contract.getSellerAID().getName().equals(getName()))_current_sell_agreements.add(contract);
-					else _current_buy_agreements.add(contract);
+					if(contract.getSellerAID().getName().equals(getName()))
+					{
+						_current_sell_agreements.add(contract);
+						_next_required_amount += contract.getAmount();
+					}
+					else
+					{
+						_current_buy_agreements.add(contract);
+						_next_purchased_amount += contract.getAmount();
+					}
 					sendSaleMade(contract);
+
 					updateBookkeeping();
 					sendAcceptProposal(msg, contract);
 				}
@@ -367,7 +376,7 @@ public class HomeAgent extends NegotiatingAgent
 			data = new AgentData();
 		}
 		public int getgroup() { return GROUP_ID; }
-		public AgentData getagent() {return data; }
+		public AgentData getagentData() {return data; }
 		public String getid() {return getName();}
 
 		private class AgentData {
