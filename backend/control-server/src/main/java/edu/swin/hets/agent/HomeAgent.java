@@ -5,11 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import org.jetbrains.annotations.NotNull;
 
 import java.lang.*;
 import java.util.*;
@@ -45,13 +43,13 @@ public class HomeAgent extends NegotiatingAgent
 	//electricity forecast for next time slice for each appliance
 	private Map<String,Double> electricityForecast;
 	//wattage of each appliance
-	private Map<String, Integer> watt;
+	private Map<String, Integer> applianceWattMap;
 	//list of appliance name
 	private List<String> applianceName;
-	//max watt threshold of a house
+	//max applianceWattMap threshold of a house
 	private int maxWatt;
 	//current state of each appliance
-	private Map<String, Boolean> on;
+	private Map<String, Boolean> applianceNameOnMap;
 	//wattage used in energy saver mode
 	private int energySaverWatt;
 	//purchased electricity for next time slice
@@ -93,12 +91,12 @@ public class HomeAgent extends NegotiatingAgent
 		//Object[] args = getArguments();
 		//java.util.Map<String, Object> map = (java.util.Map<String, Object>) args[1];
 		//applianceName = (java.util.List<String>) map.get(APPLIANCE_LIST_MAP_KEY);
-		on = new HashMap<String,Boolean>();
-		watt = new HashMap<String,Integer>();
+		applianceNameOnMap = new HashMap<String,Boolean>();
+		applianceWattMap = new HashMap<String,Integer>();
 		electricityForecast = new HashMap<String,Double>();
 //		applianceName.forEach((appliance) -> {
-//			on.put(appliance, false);
-//			watt.put(appliance,10);//TODO get appliance watt from JSON
+//			applianceNameOnMap.put(appliance, false);
+//			applianceWattMap.put(appliance,10);//TODO get appliance applianceWattMap from JSON
 //			electricityForecast.put(appliance,0);//TODO check sequence of execution
 //			LogVerbose(appliance + " has been added to " + getLocalName());
 //		});
@@ -156,7 +154,8 @@ public class HomeAgent extends NegotiatingAgent
 				{approve = false;}
 			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
 			if(approve == true)
-				{on.put(msg.getSender().getLocalName(),true);
+				{
+					applianceNameOnMap.put(msg.getSender().getLocalName(),true);
 				reply.setContent("electricity,1");}
 			else{reply.setContent("electricity,0");}
 			reply.addReceiver(new AID(msg.getSender().getLocalName(), AID.ISLOCALNAME));
@@ -164,12 +163,12 @@ public class HomeAgent extends NegotiatingAgent
 		}
 	}
 
-	//sum of every on appliance watt
+	//sum of every applianceNameOnMap appliance applianceWattMap
 	private int sumWatt()
 	{
 		return applianceName.stream()
-			.filter((appliance) -> on.get(appliance))
-			.mapToInt((appliance) -> watt.get(appliance))
+			.filter((appliance) -> applianceNameOnMap.get(appliance))
+			.mapToInt((appliance) -> applianceWattMap.get(appliance))
 			.sum();
 	}
 	
@@ -179,14 +178,14 @@ public class HomeAgent extends NegotiatingAgent
 	private int forecast(int x)
 	{
 		int result = applianceName.stream()
-			.mapToInt((appliance) -> watt.get(appliance))
+			.mapToInt((appliance) -> applianceWattMap.get(appliance))
 			.sum();
 
 		return x*result;
 	}
 	
 	//when use too much electricity, Home agent could turn off unimportant appliances to prevent overload
-	//this mode will turn on important appliances and turn off the other based on basic template
+	//this mode will turn applianceNameOnMap important appliances and turn off the other based applianceNameOnMap basic template
 	private void energySaverMode()
 	{
 		LogVerbose("initiating energy saver mode, " + _current_globals.getTimeLeft());
@@ -195,14 +194,14 @@ public class HomeAgent extends NegotiatingAgent
 		//turn("fridge1",true);
 	}
 
-	//send request message to turn an appliance on or off
+	//send request message to turn an appliance applianceNameOnMap or off
 	private void turn(String name, boolean on)
 	{
 		LogDebug(getLocalName() + " is trying to turn " + name + " " + on);
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-		if(on==true){msg.setContent("on");}
+		if(on==true){msg.setContent("applianceNameOnMap");}
 		else if(on==false)
-			{this.on.put(name,false);
+			{this.applianceNameOnMap.put(name,false);
 			msg.setContent("off");}
 		msg.addReceiver(new AID(name,AID.ISLOCALNAME));
 		msg.setSender(getAID());
@@ -228,7 +227,6 @@ public class HomeAgent extends NegotiatingAgent
 
 	private void updateBookkeeping() {
 		_next_purchased_amount = 0;
-		_next_required_amount = 0;
 		// Get rid of old contracts that are no longer valid
 		ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
 		_current_buy_agreements.stream().filter(
@@ -313,10 +311,11 @@ public class HomeAgent extends NegotiatingAgent
 			if(splitValue.length == 2)
 			{
 				applianceName.add(splitValue[1]);
-				on.put(splitValue[1], true);
-				watt.put(splitValue[1],10);//TODO get appliance watt from JSON
+				applianceNameOnMap.put(splitValue[1], false);
+				applianceWattMap.put(splitValue[1],10);//TODO get appliance applianceWattMap from JSON
 				electricityForecast.put(splitValue[1],0.0);
 				LogVerbose(splitValue[1] + " has been added to " + getLocalName());
+				turn(splitValue[1],true);
 			}
 			else
 			{
@@ -428,14 +427,13 @@ public class HomeAgent extends NegotiatingAgent
 }
 
 //TODO behaviour to negotiate price for buy & sell
-//TODO receive request from user to turn on/off an appliance
+//TODO receive request from user to turn applianceNameOnMap/off an appliance
 //TODO receive request from user to initiate energy saver mode
 //TODO
 //		sell condition, battery max capacity >> sell
 //		forecast using simple regression
-//		use arraylist in appliance agent
 //		JSON
-//		_next_purchased + battery = total electricity owned
+//		_next_purchased + battery = total electricity owned, might as well combine in currentElectricityLeft variable
 //		use negotiation agent
-//		ask appliance for current, dont count at home
+//		appliance sends current applianceWattMap every edit to home, home store in variable, sums all when needed
 //		currentElectricityLeft

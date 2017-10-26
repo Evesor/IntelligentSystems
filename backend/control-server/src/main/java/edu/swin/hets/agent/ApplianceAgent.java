@@ -59,7 +59,7 @@ public class ApplianceAgent extends BaseAgent
 	//initialize variables
 	private void init()
 	{
-		on = true;
+		on = false;
 		historyOfCurrentUsage = new ArrayList<>();
 		historyOfCurrentUsage.add(0);
 		historyOfCurrentUsage.add(0);
@@ -167,6 +167,7 @@ public class ApplianceAgent extends BaseAgent
 
 	private double makeNewForecast() {
 		//TODO, Make average of usage
+		LogDebug("OSSU" + watt);
 		return watt*5;
 	}
 
