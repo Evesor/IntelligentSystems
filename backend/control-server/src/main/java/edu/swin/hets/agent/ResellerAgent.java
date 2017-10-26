@@ -148,7 +148,7 @@ public class ResellerAgent extends NegotiatingAgent {
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
         //TODO, Remove once home is sorted again
-        _nextRequiredAmount = new java.util.Random().nextDouble() * 150 + 150;
+        //_nextRequiredAmount = new java.util.Random().nextDouble() * 150 + 150;
     }
 
     // Time is expiring, make sure we have purchased enough electricity
