@@ -4,8 +4,12 @@
     "agents" : [ {
       "name" : "PowerPlant1",
       "className" : "edu.swin.hets.agent.PowerPlantAgent",
-      "arguments" : "HoldForFirstOfferPrice,5"
+      "arguments" : "BoulwareNegotiator,9,5,0.2,0.1,1,0.95"
     }, {
+      "name" : "PowerPlant3",
+      "className" : "edu.swin.hets.agent.PowerPlantAgent",
+      "arguments" : "LinearUtilityDecentNegotiator,9,5,0.2,0.1,1,0.95"
+    },{
       "name" : "PowerPlant2",
       "className" : "edu.swin.hets.agent.PowerPlantAgent",
       "arguments" : "HoldForFirstOfferPrice,8"

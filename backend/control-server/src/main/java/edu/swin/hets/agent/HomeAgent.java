@@ -188,8 +188,9 @@ public class HomeAgent extends NegotiatingAgent
 	//this mode will turn applianceNameOnMap important appliances and turn off the other based applianceNameOnMap basic template
 	private void energySaverMode()
 	{
+		//TODO, go through appliance list and ask some of them to turn off.
 		LogVerbose("initiating energy saver mode, " + _current_globals.getTimeLeft());
-		turn("lamp1",true);
+		//turn("lamp1",true);
 		//turn("heater1",false);
 		//turn("fridge1",true);
 	}
@@ -420,6 +421,7 @@ public class HomeAgent extends NegotiatingAgent
 		public String getid() {return getName();}
 
 		private class AgentData {
+			public String getName () { return getLocalName(); }
 			public Double getNextRequiredAmount () { return  _next_required_amount; }
 			public Double getNextPurchasedAmoutnt () { return _next_purchased_amount; }
 		}

@@ -20,6 +20,8 @@ import java.util.List;
  *          - content : Information about the system.
  *****************************************************************************/
 public class LoggingAgent extends BaseAgent{
+    public static final String AGENT_NAME = "LoggingAgent";
+
     private ArrayList<LoggedData> _logged_debug;
     private ArrayList<LoggedData> _logged_errors;
     private ArrayList<LoggedData> _logged_verbose;

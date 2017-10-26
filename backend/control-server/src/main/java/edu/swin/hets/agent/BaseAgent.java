@@ -1,21 +1,24 @@
 package edu.swin.hets.agent;
 
-import edu.swin.hets.helper.*;
+import edu.swin.hets.helper.GlobalValues;
+import edu.swin.hets.helper.GoodMessageTemplates;
+import edu.swin.hets.helper.IMessageHandler;
+import edu.swin.hets.helper.MessageHistory;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.domain.AMSService;
 import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-import java.io.IOException;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+
 /******************************************************************************
  *  Use: An abstract base agent class used to provide all of the default global
  *       value management and checking we need.
@@ -121,7 +124,7 @@ public abstract class BaseAgent extends Agent{
     void LogError (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("error: ".concat(toLog));
-        msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.addReceiver(new AID(LoggingAgent.AGENT_NAME, AID.ISLOCALNAME));
         msg.setSender(getAID());
         send(msg);
     }
@@ -129,7 +132,7 @@ public abstract class BaseAgent extends Agent{
     void LogDebug (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("debug: ".concat(toLog));
-        msg.addReceiver( new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.addReceiver( new AID(LoggingAgent.AGENT_NAME, AID.ISLOCALNAME));
         msg.setSender(getAID());
         send(msg);
     }
@@ -137,7 +140,7 @@ public abstract class BaseAgent extends Agent{
     void LogVerbose (String toLog) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("verbose: ".concat(toLog));
-        msg.addReceiver(new AID("LoggingAgent", AID.ISLOCALNAME));
+        msg.addReceiver(new AID(LoggingAgent.AGENT_NAME, AID.ISLOCALNAME));
         msg.setSender(getAID());
         send(msg);
     }
@@ -213,7 +216,7 @@ public abstract class BaseAgent extends Agent{
     // Used to send the server the object details as a JSON string
     private void sendAgentDetailsToServer(String detailsAsJSON) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-        msg.addReceiver(new AID("WebServer", AID.ISLOCALNAME));
+        msg.addReceiver(new AID(WebAgent.AGENT_NAME,AID.ISLOCALNAME));
         msg.setContent(detailsAsJSON);
         msg.setSender(getAID());
         send(msg);

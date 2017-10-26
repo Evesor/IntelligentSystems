@@ -43,7 +43,7 @@ task cleanPublicWebDirectory {
 }
 
 task copyFrontend(type: Copy, dependsOn: cleanPublicWebDirectory) {
-    from '../../frontend'
+    from '../../frontend/src'
     into 'src/main/resources/public'
 }
 

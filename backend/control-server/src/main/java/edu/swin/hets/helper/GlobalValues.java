@@ -15,7 +15,10 @@ public class GlobalValues implements Serializable{
         _time_left = timeLeft;
         _averagePriceLastTime = averagePriceLastTime;
     }
-
+    public boolean sameTime (GlobalValues val) {
+        return (val.getTimeLeft() == getTimeLeft() && (val.getTime() == getTime()));
+    }
+    // Getters
     public Weather getWeather() {
         return _weather;
     }
@@ -24,6 +27,7 @@ public class GlobalValues implements Serializable{
     }
     public int getTimeLeft () { return _time_left; }
     public double getAveragePriceLastTime () { return _averagePriceLastTime; }
+    // Static
     public static int lengthOfTimeSlice () { return 5000;}
     public static int pushTimeLength () { return 1000; }
 }

@@ -322,7 +322,7 @@ public class ResellerAgent extends NegotiatingAgent {
                     current_purchase_volume = current_purchases;
                     Name = name;
                 }
-                public String getName () { return Name.split("@")[0];}
+                public String getName () { return getLocalName(); }
                 public String getType () { return TYPE; }
                 public double getCurrent_Sell_Price() { return current_sell_price; }
                 public double getCurrent_Buy_Price() { return current_buy_price; }
@@ -359,7 +359,7 @@ public class ResellerAgent extends NegotiatingAgent {
 
         @Override
         public boolean equals(IUtilityFunction utility) {
-            return _createdTime == _current_globals;
+            return _createdTime.sameTime(_current_globals);
         }
 
     }

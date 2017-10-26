@@ -234,3 +234,6 @@ gradle-app.setting
 
 # Bundled frontend resources
 **/src/main/resources/public/
+
+# frontend packages
+**/node_modules/

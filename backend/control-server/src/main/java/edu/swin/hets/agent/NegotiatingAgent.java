@@ -30,7 +30,7 @@ public abstract class NegotiatingAgent extends BaseAgent{
     ACLMessage sendSaleMade(PowerSaleAgreement agg) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         addPowerSaleAgreement(msg, agg);
-        msg.addReceiver(new AID("StatisticsAgent", AID.ISLOCALNAME));
+        msg.addReceiver(new AID(StatisticsAgent.AGENT_NAME, AID.ISLOCALNAME));
         send(msg);
         return msg;
     }
