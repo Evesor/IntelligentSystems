@@ -23,6 +23,13 @@ import java.util.*;
  *       - PROPOSAL : Used when someone wants to negotiate selling or buying
  *                    electricity from us.
  *             content Object: A PowerSaleProposal object
+ *       - INFORM : Used to handle appliances registering that they are a
+ *       			member of the home.
+ *       	   content: ApplianceDetail,
+ *       - INFORM : Used to send amount of electricity being used by an
+ *       			alliance to the home.
+ *       		content: electricity forecast
+ *       	//TODO, finish
  *  Messages sent:
  *       - CFP : Used to negotiate purchasing electricity from reseller agents
  *             content Object: A PowerSaleProposal object
@@ -56,6 +63,8 @@ public class HomeAgent extends NegotiatingAgent
 	private double _next_purchased_amount;
 	//
 	private double currentElectricityLeft;
+
+	private List<String> _negotiationArgs;
 	//purchased contracts
 	private Vector<PowerSaleAgreement> _current_buy_agreements;
 	//electricity required in next time slice
@@ -106,6 +115,7 @@ public class HomeAgent extends NegotiatingAgent
 		_current_by_price = 10;
 		_currentNegotiations = new ArrayList<>();
 		RegisterAMSService(getAID().getName(), getLocalName());
+		_negotiationArgs = (List<String>) getArguments()[0];
 	}
 
 
@@ -384,6 +394,44 @@ public class HomeAgent extends NegotiatingAgent
 			public Double getNextRequiredAmount () { return  _next_required_amount; }
 			public Double getNextPurchasedAmoutnt () { return _next_purchased_amount; }
 		}
+	}
+
+	/******************************************************************************
+	 *  Use: A basic utility function to test new negotiation system.
+	 *  Notes: For the moment is lazy and coupled to home, will fix later.
+	 *****************************************************************************/
+	private class BasicUtility implements IUtilityFunction {
+		private double _costImperative = 5;
+		private double _supplyImperative = 5;
+		private double _timeImperative = 0.5;
+		private double _idealBuyPrice = _current_globals.getAveragePriceLastTime() * 0.5;
+		private double _idealSellPrice = _current_globals.getAveragePriceLastTime() * 1.5;
+		private GlobalValues _createdTime;
+
+		BasicUtility () {
+			_createdTime = _current_globals;
+		}
+
+		@Override
+		public double evaluate(PowerSaleProposal proposal) {
+			double required = _next_required_amount - _next_purchased_amount;
+			double requiredUtil = (_supplyImperative / (Math.abs(required) < 0.1 ? 0.1 : required));
+			double costDifference;
+			double timeImperative =  Math.abs((GlobalValues.lengthOfTimeSlice() -
+					_current_globals.getTimeLeft()) * _timeImperative);
+			if (proposal.getBuyerAID().getName().equals(getName()))
+				costDifference = (_idealBuyPrice - proposal.getCost());
+			else costDifference = (_idealSellPrice - proposal.getCost());
+			double costDifferenceUtil = costDifference * _costImperative;
+			return (requiredUtil + costDifferenceUtil + timeImperative);
+		}
+
+
+		@Override
+		public boolean equals(IUtilityFunction utility) {
+			return _createdTime.sameTime(_current_globals);
+		}
+
 	}
 }
 

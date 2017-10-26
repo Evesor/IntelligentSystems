@@ -74,8 +74,8 @@ public class ResellerAgent extends NegotiatingAgent {
 
     protected void setup() {
         super.setup();
-        _currentByPrice = 1;
-        _currentSellPrice = 1.0;
+        _currentByPrice = _current_globals.getAveragePriceLastTime() * 0.75;
+        _currentSellPrice = _current_globals.getAveragePriceLastTime() * 1.25;
         _nextRequiredAmount = 0;
         _money = 500;
         _currentBuyAgreements = new ArrayList<>();
@@ -97,7 +97,7 @@ public class ResellerAgent extends NegotiatingAgent {
 
     protected String getJSON() {
         String json = "test";
-        try {
+        try  {
             json = new ObjectMapper().writeValueAsString(
                     new ResellerAgentData(_currentByPrice, _currentSellPrice, _nextRequiredAmount,
                             _nextPurchasedAmount, getName()));
@@ -115,13 +115,17 @@ public class ResellerAgent extends NegotiatingAgent {
             LogError(getName() + " failed to fulfill all its contracts and was fined: " + fine);
             _money -= fine;
         }
+        double moneyMade = _currentSellAgreements.stream().mapToDouble((agg) -> agg.getCost() * agg.getAmount()).sum();
+        double moneySpent = _currentBuyAgreements.stream().mapToDouble((agg) -> agg.getCost() * agg.getAmount()).sum();
+        LogDebug("purchased " + _nextPurchasedAmount + " for " + moneySpent + " and sold "
+                + _nextRequiredAmount + " for " + moneyMade);
         balanceBooks();
         updateContracts();
     }
 
     private void balanceBooks() {
-        for (PowerSaleAgreement agg : _currentBuyAgreements) _money +=  agg.getAmount() * agg.getCost();
-        for (PowerSaleAgreement agg : _currentSellAgreements) _money -=  agg.getAmount() * agg.getCost();
+        _money += (_currentSellAgreements.stream().mapToDouble((agg) -> agg.getCost() * agg.getAmount()).sum());
+        _money -= (_currentBuyAgreements.stream().mapToDouble((agg) -> agg.getCost() * agg.getAmount()).sum());
         if (_money < 0) {
             LogError(getName() + " has gone bankrupt!");
             //TODO, send message to main container to remove agent.
@@ -339,7 +343,8 @@ public class ResellerAgent extends NegotiatingAgent {
         private double _costImperative = 5;
         private double _supplyImperative = 5;
         private double _timeImperative = 0.5;
-        private double _idealPrice = 0.5;
+        private double _idealBuyPrice = _current_globals.getAveragePriceLastTime() * 0.5;
+        private double _idealSellPrice = _current_globals.getAveragePriceLastTime() * 1.5;
         private GlobalValues _createdTime;
 
         BasicUtility () {
@@ -350,10 +355,13 @@ public class ResellerAgent extends NegotiatingAgent {
         public double evaluate(PowerSaleProposal proposal) {
             double required = _nextRequiredAmount - _nextPurchasedAmount;
             double requiredUtil = (_supplyImperative / (Math.abs(required) < 0.1 ? 0.1 : required));
-            double costDifference = (_idealPrice - proposal.getCost());
-            double costDifferenceUtil = costDifference * _costImperative;
+            double costDifference;
             double timeImperative =  Math.abs((GlobalValues.lengthOfTimeSlice() -
                     _current_globals.getTimeLeft()) * _timeImperative);
+            if (proposal.getBuyerAID().getName().equals(getName()))
+                costDifference = (_idealBuyPrice - proposal.getCost());
+            else costDifference = (_idealSellPrice - proposal.getCost());
+            double costDifferenceUtil = costDifference * _costImperative;
             return (requiredUtil + costDifferenceUtil + timeImperative);
         }
 

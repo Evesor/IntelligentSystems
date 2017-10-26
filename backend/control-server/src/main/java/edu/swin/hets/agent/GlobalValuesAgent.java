@@ -35,7 +35,7 @@ public class GlobalValuesAgent extends Agent {
     protected void setup() {
         super.setup();
         addBehaviors();
-        _lastAveragePrice = 1.6; //TODO, change to be the actual average.
+        _lastAveragePrice = 3.4; //TODO, change to be the actual average.
         _currentTime = 0;
         _timeLeft = 5;
         _currentWeather = Weather.getRandom();
