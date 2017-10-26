@@ -16,13 +16,11 @@
 
     let handleAgentData = (jsonData) => {
         let nodes = jsonData.nodes;
-
-        let links = jsonData.nodes.flatMap((x) => {
+        let links = nodes.flatMap((x) => {
             return x.links;
         });
 
-        nodes.forEach(node => graph.addNode(node.id, node.agent));
-
+        nodes.forEach(node => graph.addNode(node.id, node.agentData));
         links
             .filter(link => graph.validateLink(link))
             .map(link => graph.createLink(link.source, link.target, link.value))
@@ -33,6 +31,4 @@
     webSocket.onclose = function () {
         console.log("Websocket Closed.");
     };
-
-
 })();

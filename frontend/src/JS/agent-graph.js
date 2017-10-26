@@ -3,26 +3,26 @@ let AgentGraph = () => {
     /**
      * Adds a node to the graph
      * @param {string} id
-     * @param {ws-agent} agent
+     * @param {ws-agent} agentData
      */
-    this.addNode = function (id, agent) {
+    this.addNode = function (id, agentData) {
         Array.of(id)
             .filter(val => !nodes.some(node => node.id === val))
             .forEach(id => nodes.push({"id": id}));
-        findNode(id).agent = agent;
+        this.findNode(id).agentData = agentData;
         update();
     };
 
     this.removeNode = function (id) {
         var i = 0;
-        var n = findNode(id);
+        var n = this.findNode(id);
         while (i < links.length) {
             if ((links[i]["source"] == n) || (links[i]["target"] == n)) {
                 links.splice(i, 1);
             }
             else i++;
         }
-        nodes.splice(findNodeIndex(id), 1);
+        nodes.splice(this.findNodeIndex(id), 1);
         update();
     };
 
@@ -47,7 +47,7 @@ let AgentGraph = () => {
     };
 
     this.createLink = function (source, target, value) {
-        return {"source": findNode(source), "target": findNode(target), "value": value};
+        return {"source": this.findNode(source), "target": this.findNode(target), "value": value};
     };
 
     this.addLink = function (link) {
@@ -73,7 +73,7 @@ let AgentGraph = () => {
      * @returns {(node|undefined)} the node from the node list
      */
     this.findNode = function (id) {
-        return nodes.find(node => node.id === id)
+        return nodes.find(node => node.id === id);
     };
 
     /**
@@ -82,10 +82,10 @@ let AgentGraph = () => {
      * @returns {number} index of the node, -1 if it doesn't exist
      */
     this.findNodeIndex = function (id) {
-        return nodes.findIndex(node => node.id === id)
+        return nodes.findIndex(node => node.id === id);
     };
 
-        // set up the D3 visualisation in the specified element
+    // set up the D3 visualisation in the specified element
     var w = 960,
         h = 600;
 
@@ -147,7 +147,7 @@ let AgentGraph = () => {
             .attr("x", 14)
             .attr("y", ".31em")
             .text(function (d) {
-                return d.agent.name;
+                return d.agentData.name;
             });
 
         node.exit().remove();
@@ -177,7 +177,7 @@ let AgentGraph = () => {
             .gravity(.01)
             .charge(-80000)
             .friction(0)
-            .linkDistance( function(d) { return d.value * 15 } )
+            .linkDistance( function(d) { return d.value * 15; } )
             .size([w, h])
             .start();
     };
