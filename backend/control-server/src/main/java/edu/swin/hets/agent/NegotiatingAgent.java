@@ -21,6 +21,7 @@ public abstract class NegotiatingAgent extends BaseAgent{
     MessageTemplate ChangeNegotiationStrategyTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
             MessageTemplate.MatchOntology(CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY));
+            //TODO, once we have front end messages sorted check the sender.
     @Override
     protected void setup () {
         super.setup();

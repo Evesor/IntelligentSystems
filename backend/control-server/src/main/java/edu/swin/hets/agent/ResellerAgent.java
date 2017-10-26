@@ -147,8 +147,6 @@ public class ResellerAgent extends NegotiatingAgent {
         // Re calculate usage for this time slice
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
-        //TODO, Remove once home is sorted again
-        //_nextRequiredAmount = new java.util.Random().nextDouble() * 150 + 150;
         // We now know how much we have bought and how much we need to buy, send out CFP's to get electricity we need.
         if (_nextRequiredAmount > _nextPurchasedAmount) {
             sendBuyCFP();
