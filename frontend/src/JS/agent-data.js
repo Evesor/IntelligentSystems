@@ -63,7 +63,8 @@ function prettyName (string) {
 let makeMyButtonClickEvent = ((name) => {
 	return (() => { 
 		let response = prompt ("Please enter the agent behavior and paramaters with spaces");
-		pushToJade(name + " " + response);
+		agentApi.changeBehaviour(name, response);
+		//pushToJade(name + " " + response);
 	});
 });
 

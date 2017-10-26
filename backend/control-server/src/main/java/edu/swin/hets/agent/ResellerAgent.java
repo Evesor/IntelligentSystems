@@ -266,15 +266,6 @@ public class ResellerAgent extends NegotiatingAgent {
         public void Handler(ACLMessage msg) {
             // A request for a price IsOn electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
-//            if (_nextRequiredAmount > _nextPurchasedAmount) { // We have sold all the electricity we have purchased.
-//                if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
-//                    //TODO, Send back proposal at high price.
-//                }
-//            }
-//            else {
-//
-//                // else, leave the price alone, they have offered to pay more than we charge.
-//            }
             if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
             ACLMessage sent = sendProposal(msg, proposed);
             //LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
@@ -292,12 +283,13 @@ public class ResellerAgent extends NegotiatingAgent {
     private class ChangeNegotiationStrategyHandler implements IMessageHandler {
         @Override
         public void Handler(ACLMessage msg) {
-            try {
-                String[] input = (String []) msg.getContentObject();
-                _negotiationArgs = Arrays.asList(input);
-            } catch (UnreadableException e) {
-                LogError("was sent details for negotiation that were not valid format.");
+            String [] arguments = msg.getContent().split(" ");
+            if (arguments.length > 0) {
+                _negotiationArgs = Arrays.asList(arguments);
+                LogDebug("Had its strategy changed to: ");
+                _negotiationArgs.forEach((arg) -> LogDebug(arg));
             }
+            else LogError("tried to have its negation strategy changed to nothing");
         }
     }
      /******************************************************************************
