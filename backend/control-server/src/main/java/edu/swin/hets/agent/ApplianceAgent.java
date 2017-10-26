@@ -5,13 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.GoodMessageTemplates;
 import edu.swin.hets.helper.IMessageHandler;
 import jade.core.AID;
-import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import test.common.agentConfigurationOntology.AddBehaviour;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,79 +18,50 @@ import java.util.List;
 public class ApplianceAgent extends BaseAgent
 {
 	private static final int GROUP_ID = 4;
-	private static int DEFAULT_WATT_VALUE;
-	boolean on;
+	private static int DEFAULT_WATT_VALUE = 15;
+	private boolean _isOn;
+	private int _wattUsage;
 	private String _simpleHomeName;
-	private TickerBehaviour findHomeBehavior = new TickerBehaviour(this, 100) {
+	@Nullable
+	private String _actualHomeName;
+	private ArrayList<Integer> _historyOfCurrentUsage;
+	private TickerBehaviour _findHomeBehavior = new TickerBehaviour(this, 100) {
 		@Override
-		protected void onTick() {
-			findHome();
-		}
+		protected void onTick() { findHome(); }
 	};
-	//TODO current array
-	//should be vector
-	private ArrayList<Integer> historyOfCurrentUsage;
-	//int[] historyOfCurrentUsage = new int[48];
-	//TODO forecast array
-	//should be vector, should store enumeration instead of int
-	//private ArrayList<Integer> forecast;
-	//int[] forecast = new int[48];
-	int watt;
 
-	//askHomeIfWeCanTurnOn_Off on this appliance
-	//ACLMessage.REQUEST, "on"
-	private MessageTemplate R_On = MessageTemplate.and(
+	private MessageTemplate RequestPowerOnMessageTemplate = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
-		GoodMessageTemplates.ContatinsString("on"));
+		GoodMessageTemplates.ContatinsString("_isOn"));
 
-	//askHomeIfWeCanTurnOn_Off off this appliance
-	//ACLMessage.REQUEST, "off"
-	private MessageTemplate R_Off = MessageTemplate.and(
+	private MessageTemplate RequestPowerOffMessageTemplate = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
 		GoodMessageTemplates.ContatinsString("off"));
 
-	//electricity request accepted || declined
-	//ACLMessage.INFORM, "electricity,1" || "electricity,0"
-	private MessageTemplate I_Electricity = MessageTemplate.and(
+	private MessageTemplate ElectricityRequestResponseHandler = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.INFORM),
 		GoodMessageTemplates.ContatinsString("electricity"));
 
 	//initialize variables
 	private void init()
 	{
-		on = false;
-		historyOfCurrentUsage = new ArrayList<>();
-		historyOfCurrentUsage.add(0);
-		historyOfCurrentUsage.add(0);
-//		historyOfCurrentUsage.add(0);
-//		historyOfCurrentUsage.add(0);
-		//forecast = new ArrayList<>();
-//		forecast.add(0);
-//		forecast.add(0);
-//		forecast.add(0);
-
-//		int i;
-//		for(i=0;i<48;i++)
-//		{
-//			historyOfCurrentUsage[i] = 0;
-//			forecast[i] = 0;
-//		}
+		_actualHomeName = null;
+		_historyOfCurrentUsage = new ArrayList<>();
 		Object[] args = getArguments();
 		List<String> argument = (List<String>) args[0];
-		if (argument.size() == 0) {
-			LogError("was not passed a value to use for power consumption, using default");
-			watt = DEFAULT_WATT_VALUE;
+		if (argument.size() != 2) {
+			LogError("was not passed a value to use for power consumption, and home using default");
+			_wattUsage = DEFAULT_WATT_VALUE;
 		} else {
-			try	{ watt = Integer.parseInt(argument.get(0)); }
+			try	{ _wattUsage = Integer.parseInt(argument.get(0)); }
 			catch (NumberFormatException e ) {
 				LogError("Was passed a value that is not a valid int for initialization");
-				watt = DEFAULT_WATT_VALUE;
+				_wattUsage = DEFAULT_WATT_VALUE;
 			}
 			_simpleHomeName = argument.get(1);
 		}
-		addBehaviour(findHomeBehavior);
-		//updateForecastUsage();
-		on = true;
+		addBehaviour(_findHomeBehavior);
+		_isOn = true;
 	}
 
 	@Override
@@ -99,9 +69,9 @@ public class ApplianceAgent extends BaseAgent
 	{
 		super.setup();
 		init();
-		addMessageHandler(R_On, new ApplianceAgent.OnHandler());
-		addMessageHandler(R_Off, new ApplianceAgent.OffHandler());
-		addMessageHandler(I_Electricity, new ApplianceAgent.ElectricityHandler());
+		addMessageHandler(RequestPowerOnMessageTemplate, new ApplianceAgent.OnHandler());
+		addMessageHandler(RequestPowerOffMessageTemplate, new ApplianceAgent.OffHandler());
+		addMessageHandler(ElectricityRequestResponseHandler, new ApplianceAgent.ElectricityHandler());
 		sendCurrentUsage();
 		sendForecastUsage();
 	}
@@ -116,9 +86,10 @@ public class ApplianceAgent extends BaseAgent
 		ACLMessage iAmYours = new ACLMessage(ACLMessage.INFORM);
 		iAmYours.setContent("ApplianceDetail," + getName());
 		iAmYours.addReceiver(homeAID);
+		_actualHomeName = homeAID.getName();
 		send(iAmYours);
 		LogDebug("sending message to " + homeAID.getName());
-		removeBehaviour(findHomeBehavior);
+		removeBehaviour(_findHomeBehavior);
 	}
 
 	private class OnHandler implements IMessageHandler
@@ -141,8 +112,8 @@ public class ApplianceAgent extends BaseAgent
 			if(value==0){LogDebug(getLocalName() + " electricity request declined");}
 			else if(value==1)
 			{
-				LogVerbose(getLocalName() + " electricity request approved. " + getLocalName() + " is now on");
-				on = true;
+				LogVerbose(getLocalName() + " electricity request approved. " + getLocalName() + " is now _isOn");
+				_isOn = true;
 			}
 		}
 	}
@@ -150,10 +121,9 @@ public class ApplianceAgent extends BaseAgent
 	private void sendCurrentUsage()
 	{
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		//msg.setContent("electricity historyOfCurrentUsage," + historyOfCurrentUsage[_current_globals.getTime()]);
-		msg.setContent("electricity historyOfCurrentUsage," + historyOfCurrentUsage.get(_current_globals.getTime()));
-		msg.addReceiver(new AID("home1", AID.ISLOCALNAME));
-		send(msg);
+		//msg.setContent("electricity _historyOfCurrentUsage," + _historyOfCurrentUsage[_current_globals.getTime()]);
+		//msg.setContent("electricity _historyOfCurrentUsage," + _historyOfCurrentUsage.get(_current_globals.getTime()));
+		sendHomeMessage(msg);
 	}
 
 	private void sendForecastUsage()
@@ -161,49 +131,45 @@ public class ApplianceAgent extends BaseAgent
 		//updateForecastUsage();
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		msg.setContent("electricity forecast," + makeNewForecast());
-		msg.addReceiver(new AID("home1", AID.ISLOCALNAME));
-		send(msg);
+		sendHomeMessage(msg);
 	}
 
 	private double makeNewForecast() {
 		//TODO, Make average of usage
-		LogDebug("OSSU" + watt);
-		return watt*5;
+		LogDebug("OSSU" + _wattUsage);
+		return _wattUsage *5;
 	}
-
-	//TODO updateForcastUsage function
-	//calculate forecast usage and update variable
-//	private void updateForecastUsage()
-//	{
-//		//forecast[_current_globals.getTime()] = watt*5;
-//		forecast.set(_current_globals.getTime(),watt*5);
-//	}
 
 	private void sendElectricityRequest()
 	{
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-		msg.setContent("electricity," + watt);
-		msg.addReceiver(new AID("home1",AID.ISLOCALNAME));
-		send(msg);
+		msg.setContent("electricity," + _wattUsage);
+		sendHomeMessage(msg);
+	}
+
+	private void sendHomeMessage(ACLMessage msg) {
+		if(_actualHomeName != null) {
+			msg.addReceiver(new AID(_actualHomeName, AID.ISLOCALNAME));
+		}
 	}
 
 	private void askHomeIfWeCanTurnOn_Off(boolean on)
 	{
-		//compare with historyOfCurrentUsage state
-		if(this.on!=on)
+		//compare with _historyOfCurrentUsage state
+		if(_isOn != on)
 		{
 			if(on==true)
 			{
 				//send electricity request to home agent
-				//home agent check historyOfCurrentUsage usage with max usage
-				//if historyOfCurrentUsage + request < max usage, approve
+				//home agent check _historyOfCurrentUsage usage with max usage
+				//if _historyOfCurrentUsage + request < max usage, approve
 				sendElectricityRequest();
 
 				LogDebug(getLocalName() + " sent an electricity request");
 			}
 			else if(on==false)
 			{
-				this.on = false;
+				this._isOn = false;
 				LogVerbose(getLocalName() + " is now off");
 			}
 		}
@@ -212,31 +178,12 @@ public class ApplianceAgent extends BaseAgent
 	@Override
 	protected void TimeExpired()
 	{
-		//count electricity usage
-		if(on == true)
-		{
-			//historyOfCurrentUsage.add(new Integer[4]);
-			//current.set(_current_globals.getTime(),historyOfCurrentUsage.get(_current_globals.getTime())+watt);
-			//historyOfCurrentUsage[_current_globals.getTime()] += watt;
-			historyOfCurrentUsage.add(watt);
-			LogDebug("historyOfCurrentUsage : " + historyOfCurrentUsage.get(_current_globals.getTime()));
-			sendForecastUsage();
-		}
-		historyOfCurrentUsage.add(0);
+		_historyOfCurrentUsage.add((_isOn ? _wattUsage : 0));
 	}
 
 	@Override
 	protected void TimePush(int ms_left)
 	{
-		//count electricity usage
-		if(on == true)
-		{
-			historyOfCurrentUsage.set(_current_globals.getTime(), historyOfCurrentUsage.get(_current_globals.getTime())+watt);
-			//historyOfCurrentUsage[_current_globals.getTime()] += watt;
-			//historyOfCurrentUsage.get(_current_globals.getTime())[5 - (ms_left/ GlobalValues.pushTimeLength())] =
-			//historyOfCurrentUsage.set(_current_globals.getTime(),historyOfCurrentUsage.get(_current_globals.getTime())+watt);
-			LogDebug("historyOfCurrentUsage : " + historyOfCurrentUsage.get(_current_globals.getTime()));
-		}
 	}
 
 	//TODO Override getJSON
@@ -261,19 +208,19 @@ public class ApplianceAgent extends BaseAgent
 			data = new AgentData();
 		}
 		public int getgroup() { return GROUP_ID; }
-		public AgentData getagent() {return data; }
+		public AgentData getagentData() {return data; }
 		public String getid() {return getName();}
 		private class AgentData {
 			public String getName () { return getLocalName();}
-			public Integer getWattage () {return watt;}
-			public Boolean getOn() {return on; }
-			public ArrayList<Integer> getCurrent() { return historyOfCurrentUsage; }
+			public Integer getWattage () {return _wattUsage;}
+			public Boolean getOn() {return _isOn; }
+			public ArrayList<Integer> getCurrent() { return _historyOfCurrentUsage; }
 			//public ArrayList<Integer> getForecast() { return forecast; }
 		}
 	}
 }
 //TODO other list
-//appliance send electricity request / home approve before turning it on?
+//appliance send electricity request / home approve before turning it _isOn?
 //1 day history for usage and forecast, time index??
 //send electricity usage for each time push / home calculate electricity usage?
 //Forecast
