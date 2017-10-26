@@ -5,11 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import org.jetbrains.annotations.NotNull;
 
 import java.lang.*;
 import java.util.*;
@@ -45,13 +43,13 @@ public class HomeAgent extends NegotiatingAgent
 	//electricity forecast for next time slice for each appliance
 	private Map<String,Double> electricityForecast;
 	//wattage of each appliance
-	private Map<String, Integer> watt;
+	private Map<String, Integer> applianceWattMap;
 	//list of appliance name
 	private List<String> applianceName;
-	//max watt threshold of a house
+	//max applianceWattMap threshold of a house
 	private int maxWatt;
 	//current state of each appliance
-	private Map<String, Boolean> on;
+	private Map<String, Boolean> applianceNameOnMap;
 	//wattage used in energy saver mode
 	private int energySaverWatt;
 	//purchased electricity for next time slice
@@ -87,21 +85,18 @@ public class HomeAgent extends NegotiatingAgent
 			MessageTemplate.MatchPerformative(ACLMessage.INFORM),
 			GoodMessageTemplates.ContatinsString("ApplianceDetail,"));
 	
-	//initialize all variable value
-	private void init()
+	@Override
+	protected void setup()
 	{
-		//Object[] args = getArguments();
-		//java.util.Map<String, Object> map = (java.util.Map<String, Object>) args[1];
-		//applianceName = (java.util.List<String>) map.get(APPLIANCE_LIST_MAP_KEY);
-		on = new HashMap<String,Boolean>();
-		watt = new HashMap<String,Integer>();
+		super.setup();
+		addMessageHandler(electricityForecastMT, new HomeAgent.ForecastHandler());
+		addMessageHandler(electricityRequestMT, new HomeAgent.electricityRequestHandler());
+		addMessageHandler(PropMessageTemplate, new ProposalHandler());
+		addMessageHandler(QuoteAcceptedTemplate, new ProposalAcceptedHandler());
+		addMessageHandler(ApplianceDetailMT, new ApplianceDetailHandler());
+		applianceNameOnMap = new HashMap<String,Boolean>();
+		applianceWattMap = new HashMap<String,Integer>();
 		electricityForecast = new HashMap<String,Double>();
-//		applianceName.forEach((appliance) -> {
-//			on.put(appliance, false);
-//			watt.put(appliance,10);//TODO get appliance watt from JSON
-//			electricityForecast.put(appliance,0);//TODO check sequence of execution
-//			LogVerbose(appliance + " has been added to " + getLocalName());
-//		});
 		applianceName = new ArrayList<>();
 		maxWatt = 10000;
 		energySaverWatt = 10;//TODO calculate energySaverWatt
@@ -109,122 +104,52 @@ public class HomeAgent extends NegotiatingAgent
 		_current_sell_agreements = new Vector<PowerSaleAgreement>();
 		_next_purchased_amount = 0;
 		_current_by_price = 10;
-		LogDebug(getLocalName() + " init is complete!");
 		_currentNegotiations = new ArrayList<>();
-
 		RegisterAMSService(getAID().getName(), getLocalName());
 	}
-	
-	@Override
-	protected void setup()
-	{
-		super.setup();
-		init();
-		addMessageHandler(electricityForecastMT, new HomeAgent.ForecastHandler());
-		addMessageHandler(electricityRequestMT, new HomeAgent.electricityRequestHandler());
-		addMessageHandler(PropMessageTemplate, new ProposalHandler());
-		addMessageHandler(QuoteAcceptedTemplate, new ProposalAcceptedHandler());
-		addMessageHandler(ApplianceDetailMT, new ApplianceDetailHandler());
-	}
 
-	//example message : ACLMessage.INFORM from appliance,"electricity forecast,10"
-	//receive forecast message and save in electricityForecast
-	private class ForecastHandler implements IMessageHandler
-	{
-		public void Handler(ACLMessage msg)
-		{
-			String senderName = msg.getSender().getLocalName();
-			double value = Double.parseDouble(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-			electricityForecast.put(senderName,value);
-			LogDebug("forecast = " + forecast(1));
-		}
-	}
-
-	//TODO electricityRequestHandler
-	//example message : ACLMessage.REQUEST from appliance, "electricity,10"
-	//receive electricity request from appliance
-	//compare with maxWatt & _next_purchased_amount to decide
-	//send decision as reply
-	private class electricityRequestHandler implements IMessageHandler
-	{
-		public void Handler(ACLMessage msg)
-		{
-			LogDebug(getLocalName() + " received electricity request");
-			boolean approve = true;
-			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-			if((sumWatt()+value > maxWatt) || (sumWatt()+value > currentElectricityLeft))
-				{approve = false;}
-			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-			if(approve == true)
-				{on.put(msg.getSender().getLocalName(),true);
-				reply.setContent("electricity,1");}
-			else{reply.setContent("electricity,0");}
-			reply.addReceiver(new AID(msg.getSender().getLocalName(), AID.ISLOCALNAME));
-			send(reply);
-		}
-	}
-
-	//sum of every on appliance watt
-	private int sumWatt()
-	{
-		return applianceName.stream()
-			.filter((appliance) -> on.get(appliance))
-			.mapToInt((appliance) -> watt.get(appliance))
-			.sum();
-	}
-	
-	//sum of all appliance electricity forecast in the next x hour
-	//for now, next x hour forecast = x * next hour forecast
-	//TODO calculate forecast
-	private int forecast(int x)
-	{
-		int result = applianceName.stream()
-			.mapToInt((appliance) -> watt.get(appliance))
-			.sum();
-
-		return x*result;
-	}
-	
-	//when use too much electricity, Home agent could turn off unimportant appliances to prevent overload
-	//this mode will turn on important appliances and turn off the other based on basic template
-	private void energySaverMode()
-	{
-		//TODO, go through appliance list and ask some of them to turn off.
-		LogVerbose("initiating energy saver mode, " + _current_globals.getTimeLeft());
-		//turn("lamp1",true);
-		//turn("heater1",false);
-		//turn("fridge1",true);
-	}
-
-	//send request message to turn an appliance on or off
-	private void turn(String name, boolean on)
-	{
-		LogDebug(getLocalName() + " is trying to turn " + name + " " + on);
-		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-		if(on==true){msg.setContent("on");}
-		else if(on==false)
-			{this.on.put(name,false);
-			msg.setContent("off");}
-		msg.addReceiver(new AID(name,AID.ISLOCALNAME));
-		msg.setSender(getAID());
-		send(msg);
-	}
 
 	//TODO Override TimeExpired
 	@Override
 	protected void TimeExpired()
 	{
+		if (currentElectricityLeft < _next_purchased_amount) {
+			LogError("DId not buy enough electricity!");
+		}
 		currentElectricityLeft = _next_purchased_amount;
 		currentElectricityLeft -= sumWatt();
 		_next_purchased_amount = 0;
-		_next_required_amount = forecast(1)*1.5;
 		updateBookkeeping();
-		if(_next_required_amount > _next_purchased_amount) {
-			sendBuyCFP();
+		LogDebug("Requires:: " + _next_required_amount + " has bout:: " + _next_purchased_amount);
+		if(_next_required_amount > _next_purchased_amount) sendBuyCFP();
+		if(_next_required_amount < _next_purchased_amount) sendSellCFP();
+	}
+
+	@Override
+	protected void TimePush(int ms_left)
+	{
+		//_next_required_amount = forecast(1)*1.5;
+		if (_next_required_amount  > _next_purchased_amount) {
+			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
+			sendBuyCFP(); // We need to buy more electricity
 		}
 		if(_next_required_amount < _next_purchased_amount) {
+			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
 			sendSellCFP();
 		}
+	}
+
+	@Override
+	protected String getJSON(){
+		String json = "";
+		try {
+			json = new ObjectMapper().writeValueAsString(
+					new HomeAgentData());
+		}
+		catch (JsonProcessingException e) {
+			LogError("Error parsing data to json in " + getName() + " exeption thrown");
+		}
+		return json;
 	}
 
 	private void updateBookkeeping() {
@@ -241,52 +166,42 @@ public class HomeAgent extends NegotiatingAgent
 		_current_sell_agreements.removeAll(toRemove);
 		// Re calculate usage for this time slice
 		for (PowerSaleAgreement agreement : _current_buy_agreements) _next_purchased_amount += agreement.getAmount();
-		for (PowerSaleAgreement agreement: _current_sell_agreements) _next_required_amount += agreement.getAmount();
+		_next_required_amount = forecast(1);
 	}
 
-	@Override
-	protected void TimePush(int ms_left)
+	//sum of every applianceNameOnMap appliance applianceWattMap
+	private int sumWatt()
 	{
-		//LogDebug("Time Left : " + _current_globals.getTimeLeft());
-		currentElectricityLeft -= sumWatt();
-		if(sumWatt() > _next_purchased_amount)
-		{
-			if(energySaverWatt < _next_purchased_amount){energySaverMode();}
-			else
-			{
-				int i;
-				applianceName.forEach((appliance) -> {
-					turn(appliance,false);
-				});
-			}
-		}
-		else
-		{
-			energySaverMode();
-		}
-
-		//_next_required_amount = forecast(1)*1.5;
-		if (_next_required_amount  > _next_purchased_amount) {
-			LogVerbose("Required: " + _next_required_amount + " purchased: " + _next_purchased_amount);
-			sendBuyCFP(); // We need to buy more electricity
-		}
-
-		if(_next_required_amount < _next_purchased_amount) {
-			sendSellCFP();
-		}
+		return applianceName.stream()
+				.filter((appliance) -> applianceNameOnMap.get(appliance))
+				.mapToInt((appliance) -> applianceWattMap.get(appliance))
+				.sum();
 	}
 
-	@Override
-	protected String getJSON(){
-		String json = "";
-		try {
-			json = new ObjectMapper().writeValueAsString(
-					new HomeAgentData());
-		}
-		catch (JsonProcessingException e) {
-			LogError("Error parsing data to json in " + getName() + " exeption thrown");
-		}
-		return json;}
+	//sum of all appliance electricity forecast in the next x hour
+	//for now, next x hour forecast = x * next hour forecast
+	private int forecast(int x)
+	{
+		int result = applianceName.stream()
+				.mapToInt((appliance) -> applianceWattMap.get(appliance))
+				.sum();
+
+		return x*result;
+	}
+
+	//send request message to turnOnOff an appliance applianceNameOnMap or off
+	private void turnOnOff(String name, boolean on)
+	{
+		LogDebug(getLocalName() + " is trying to turnOnOff " + name + " " + on);
+		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+		if(on==true){msg.setContent("applianceNameOnMap");}
+		else if(on==false)
+		{this.applianceNameOnMap.put(name,false);
+			msg.setContent("off");}
+		msg.addReceiver(new AID(name,AID.ISLOCALNAME));
+		msg.setSender(getAID());
+		send(msg);
+	}
 
 	//send buy CFP
 	private void sendBuyCFP()
@@ -297,14 +212,67 @@ public class HomeAgent extends NegotiatingAgent
 		for(DFAgentDescription reseller : resellers)
 		{
 			prop = new PowerSaleProposal(toBuy,1,
-					(_current_by_price * 1.25), getAID(),reseller.getName());
+					(_current_by_price), getAID(),reseller.getName());
 			ACLMessage sent = sendCFP(prop, reseller.getName());
 			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
 					,reseller.getName().getName(),_current_globals, 20, 10,
 					0.1, 0.1, 0.5);
 			_currentNegotiations.add(strategy);
 		}
-		LogDebug("sending buy CFP");
+		LogDebug("sending buy CFP for " + toBuy + " @ " + _current_by_price);
+	}
+
+	private void sendSellCFP()
+	{
+		double toSell = _next_purchased_amount - _next_required_amount;
+		PowerSaleProposal prop;
+		DFAgentDescription[] resellers = getService("reseller");
+		for(DFAgentDescription reseller : resellers)
+		{
+			prop = new PowerSaleProposal(toSell,1,
+					_current_by_price ,getAID(),reseller.getName());
+			ACLMessage sent = sendCFP(prop, reseller.getName());
+			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
+					,reseller.getName().getName(),_current_globals, 20, 10,
+					0.1, 0.1, 0.5);
+			_currentNegotiations.add(strategy);
+		}
+	}
+
+	/*                                *\
+	*        BEGIN HANDLERS           *
+	\*								  */
+	//example message : ACLMessage.INFORM from appliance,"electricity forecast,10"
+	//receive forecast message and save in electricityForecast
+	private class ForecastHandler implements IMessageHandler
+	{
+		public void Handler(ACLMessage msg)
+		{
+			String senderName = msg.getSender().getLocalName();
+			double value = Double.parseDouble(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
+			electricityForecast.put(senderName, value);
+			LogDebug("forecast = " + forecast(1));
+		}
+	}
+
+	private class electricityRequestHandler implements IMessageHandler
+	{
+		public void Handler(ACLMessage msg)
+		{
+			LogDebug(getLocalName() + " received electricity request");
+			boolean approve = true;
+			int value = Integer.parseInt(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
+			if((sumWatt()+value > maxWatt) || (sumWatt()+value > currentElectricityLeft))
+			{approve = false;}
+			ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
+			if(approve == true)
+			{
+				applianceNameOnMap.put(msg.getSender().getLocalName(),true);
+				reply.setContent("electricity,1");}
+			else{reply.setContent("electricity,0");}
+			reply.addReceiver(new AID(msg.getSender().getLocalName(), AID.ISLOCALNAME));
+			send(reply);
+		}
 	}
 
 	//example message : ACLMessage.Inform, "ApplianceDetail,lamp1<>"
@@ -314,10 +282,11 @@ public class HomeAgent extends NegotiatingAgent
 			if(splitValue.length == 2)
 			{
 				applianceName.add(splitValue[1]);
-				on.put(splitValue[1], true);
-				watt.put(splitValue[1],10);//TODO get appliance watt from JSON
+				applianceNameOnMap.put(splitValue[1], false);
+				applianceWattMap.put(splitValue[1],10);//TODO get appliance applianceWattMap from JSON
 				electricityForecast.put(splitValue[1],0.0);
 				LogVerbose(splitValue[1] + " has been added to " + getLocalName());
+				turnOnOff(splitValue[1],true);
 			}
 			else
 			{
@@ -381,33 +350,13 @@ public class HomeAgent extends NegotiatingAgent
 					if(contract.getSellerAID().getName().equals(getName()))_current_sell_agreements.add(contract);
 					else _current_buy_agreements.add(contract);
 					sendSaleMade(contract);
-					_next_purchased_amount -= contract.getAmount();
-					ACLMessage acceptMsg = msg.createReply();
-					acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-					addPowerSaleAgreement(acceptMsg, contract);
-					send(acceptMsg);
+					updateBookkeeping();
+					sendAcceptProposal(msg, contract);
 				}
 			}
-			//else{LogError("opt is not present : " + msg.getSender().getLocalName());}
 		}
 	}
 
-	private void sendSellCFP()
-	{
-		double toSell = _next_purchased_amount - _next_required_amount;
-		PowerSaleProposal prop;
-		DFAgentDescription[] resellers = getService("reseller");
-		for(DFAgentDescription reseller : resellers)
-		{
-			prop = new PowerSaleProposal(toSell,1,
-					_current_by_price ,getAID(),reseller.getName());
-			ACLMessage sent = sendCFP(prop, reseller.getName());
-			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
-					,reseller.getName().getName(),_current_globals, 20, 10,
-					0.1, 0.1, 0.5);
-			_currentNegotiations.add(strategy);
-		}
-	}
 	/******************************************************************************
 	 *  Use: Used by JSON serializing library to make JSON objects.
 	 *****************************************************************************/
@@ -430,14 +379,13 @@ public class HomeAgent extends NegotiatingAgent
 }
 
 //TODO behaviour to negotiate price for buy & sell
-//TODO receive request from user to turn on/off an appliance
+//TODO receive request from user to turn applianceNameOnMap/off an appliance
 //TODO receive request from user to initiate energy saver mode
 //TODO
 //		sell condition, battery max capacity >> sell
 //		forecast using simple regression
-//		use arraylist in appliance agent
 //		JSON
-//		_next_purchased + battery = total electricity owned
+//		_next_purchased + battery = total electricity owned, might as well combine in currentElectricityLeft variable
 //		use negotiation agent
-//		ask appliance for current, dont count at home
+//		appliance sends current applianceWattMap every edit to home, home store in variable, sums all when needed
 //		currentElectricityLeft
