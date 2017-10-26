@@ -15,7 +15,7 @@ import java.util.Vector;
 /******************************************************************************
  *  Use:  An agent to push out global values that change each cycle, for the
  *        moment that is just time and weather. We can extend latter
- *  Name: Always only have one of these on the main container, have it name set
+ *  Name: Always only have one of these IsOn the main container, have it name set
  *        to "GlobalValues"
  *  Preformatives Used:
  *       - INFORM : Used to send out all of the global variables for this
@@ -63,7 +63,7 @@ public class GlobalValuesAgent extends Agent {
                 try{
                     msg.setContentObject(_currentGlobalValue);
                 } catch (IOException e) {
-                    return; //TODO Add error logging here, once we agree on a system.
+                    return; //TODO Add error logging here, once we agree IsOn a system.
                 }
                 send(msg);
             }

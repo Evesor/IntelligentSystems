@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
- *       on any events, should be extended later for more detailed classes.
+ *       IsOn any events, should be extended later for more detailed classes.
  *  Services Registered: "powerplant"
  *  Messages understood:
  *       - CFP : Used to ask for a request of electricity
@@ -122,7 +122,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
     // Someone buying from us.
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            // A request for a price on electricity
+            // A request for a price IsOn electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (proposed.getAmount() > (_maxProduction - _currentProduction)) {
                 LogVerbose(getName() + " was asked to sell electricity than it can make.");
