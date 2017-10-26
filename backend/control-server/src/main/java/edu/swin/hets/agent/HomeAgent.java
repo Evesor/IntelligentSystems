@@ -88,18 +88,9 @@ public class HomeAgent extends NegotiatingAgent
 	//initialize all variable value
 	private void init()
 	{
-		//Object[] args = getArguments();
-		//java.util.Map<String, Object> map = (java.util.Map<String, Object>) args[1];
-		//applianceName = (java.util.List<String>) map.get(APPLIANCE_LIST_MAP_KEY);
 		applianceNameOnMap = new HashMap<String,Boolean>();
 		applianceWattMap = new HashMap<String,Integer>();
 		electricityForecast = new HashMap<String,Double>();
-//		applianceName.forEach((appliance) -> {
-//			applianceNameOnMap.put(appliance, false);
-//			applianceWattMap.put(appliance,10);//TODO get appliance applianceWattMap from JSON
-//			electricityForecast.put(appliance,0);//TODO check sequence of execution
-//			LogVerbose(appliance + " has been added to " + getLocalName());
-//		});
 		applianceName = new ArrayList<>();
 		maxWatt = 10000;
 		energySaverWatt = 10;//TODO calculate energySaverWatt
@@ -107,9 +98,7 @@ public class HomeAgent extends NegotiatingAgent
 		_current_sell_agreements = new Vector<PowerSaleAgreement>();
 		_next_purchased_amount = 0;
 		_current_by_price = 10;
-		LogDebug(getLocalName() + " init is complete!");
 		_currentNegotiations = new ArrayList<>();
-
 		RegisterAMSService(getAID().getName(), getLocalName());
 	}
 	
@@ -133,16 +122,11 @@ public class HomeAgent extends NegotiatingAgent
 		{
 			String senderName = msg.getSender().getLocalName();
 			double value = Double.parseDouble(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
-			electricityForecast.put(senderName,value);
+			electricityForecast.put(senderName, value);
 			LogDebug("forecast = " + forecast(1));
 		}
 	}
 
-	//TODO electricityRequestHandler
-	//example message : ACLMessage.REQUEST from appliance, "electricity,10"
-	//receive electricity request from appliance
-	//compare with maxWatt & _next_purchased_amount to decide
-	//send decision as reply
 	private class electricityRequestHandler implements IMessageHandler
 	{
 		public void Handler(ACLMessage msg)
@@ -174,7 +158,6 @@ public class HomeAgent extends NegotiatingAgent
 	
 	//sum of all appliance electricity forecast in the next x hour
 	//for now, next x hour forecast = x * next hour forecast
-	//TODO calculate forecast
 	private int forecast(int x)
 	{
 		int result = applianceName.stream()
@@ -228,6 +211,7 @@ public class HomeAgent extends NegotiatingAgent
 
 	private void updateBookkeeping() {
 		_next_purchased_amount = 0;
+		_next_required_amount = 0;
 		// Get rid of old contracts that are no longer valid
 		ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
 		_current_buy_agreements.stream().filter(
@@ -380,14 +364,10 @@ public class HomeAgent extends NegotiatingAgent
 					if(contract.getSellerAID().getName().equals(getName()))_current_sell_agreements.add(contract);
 					else _current_buy_agreements.add(contract);
 					sendSaleMade(contract);
-					_next_purchased_amount -= contract.getAmount();
-					ACLMessage acceptMsg = msg.createReply();
-					acceptMsg.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-					addPowerSaleAgreement(acceptMsg, contract);
-					send(acceptMsg);
+					updateBookkeeping();
+					sendAcceptProposal(msg, contract);
 				}
 			}
-			//else{LogError("opt is not present : " + msg.getSender().getLocalName());}
 		}
 	}
 

@@ -259,7 +259,7 @@ public class ResellerAgent extends NegotiatingAgent {
     // Someone is wanting to buy electricity off us
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            // A request for a price on electricity
+            // A request for a price IsOn electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (_nextRequiredAmount > _nextPurchasedAmount) { // We have sold all the electricity we have purchased.
                 if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {

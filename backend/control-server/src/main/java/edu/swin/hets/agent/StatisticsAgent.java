@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.function.ToDoubleFunction;
 /******************************************************************************
  *  Use: Creates statistics about the system
- *  Name: Always only have one of these on the main container, have it name set
+ *  Name: Always only have one of these IsOn the main container, have it name set
  *        to "StatisticsAgent"
  *  Preformatives Understood:
  *       - INFORM : Used to tell the stats agent about a new agreement.
@@ -91,7 +91,7 @@ public class StatisticsAgent extends NegotiatingAgent {
             return numberOfSales;
         }
 
-        // Function used to make average of values based on lambda of what value we want.
+        // Function used to make average of values based IsOn lambda of what value we want.
         private ArrayList<Double> average (ToDoubleFunction<PowerSaleAgreement> lambda) {
             ArrayList<Double> averageList = new ArrayList<>();
             for (ArrayList<PowerSaleAgreement> agreements : _agreements) {

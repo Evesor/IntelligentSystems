@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 /******************************************************************************
  *  Use: An agent for dealing with development messages.
- *  Name: Always only have one of these on the main container, have it name set
+ *  Name: Always only have one of these IsOn the main container, have it name set
  *        to "LoggingAgent"
  *  Notes: There is a format to these messages, please use the base log methods
  *         to send a message rather than sending messages directly.
