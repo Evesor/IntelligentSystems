@@ -26,20 +26,17 @@ class WebController(
         webSocket(ClientWebSocketHandler.PATH, clientWebSocketHandler)
         staticFiles.location("/public")
         path("/api") {
-            get("/hello") { req, res ->
-                "hello world!"
-            }
-
-            get("/hostAddress") { req, res ->
-                res.status(200)
-                systemConfig.hostMachineAddress
-            }
-
+            before("/*") { req, _ -> logger.info("received API call from ${req.ip()}") }
             post("/shutdown") { req, res ->
-                logger.info("Stop Requested!")
+                logger.info("JADE shutdown requested!")
                 res.status(200)
                 jadeController.stop()
                 "done"
+            }
+            path("/agent") {
+                post("/change-behaviour") { req, res ->
+                    res.status(200)
+                }
             }
         }
     }

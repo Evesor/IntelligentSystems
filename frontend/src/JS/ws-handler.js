@@ -1,6 +1,10 @@
 (() => {
 // Establish the WebSocket connection and set up event handlers
-    let webSocket = new WebSocket("ws://localhost:4567/ws");
+    let webSocket = new WebSocket("ws://" +
+                        location.hostname +
+                        (location.port ? ":" + 4567 : "") +
+                        "/ws");
+
     var graph = AgentGraph();
 
     webSocket.onmessage = function (msg) {
