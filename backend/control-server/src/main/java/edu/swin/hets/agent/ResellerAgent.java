@@ -266,15 +266,16 @@ public class ResellerAgent extends NegotiatingAgent {
         public void Handler(ACLMessage msg) {
             // A request for a price IsOn electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
-            if (_nextRequiredAmount > _nextPurchasedAmount) { // We have sold all the electricity we have purchased.
-                if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
-                    //TODO, Send back proposal at high price.
-                }
-            }
-            else {
-                if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
-                // else, leave the price alone, they have offered to pay more than we charge.
-            }
+//            if (_nextRequiredAmount > _nextPurchasedAmount) { // We have sold all the electricity we have purchased.
+//                if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
+//                    //TODO, Send back proposal at high price.
+//                }
+//            }
+//            else {
+//
+//                // else, leave the price alone, they have offered to pay more than we charge.
+//            }
+            if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
             ACLMessage sent = sendProposal(msg, proposed);
             //LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;
