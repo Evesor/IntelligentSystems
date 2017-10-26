@@ -23,7 +23,7 @@ public class ApplianceAgent extends BaseAgent
 	private int _wattUsage;
 	private String _simpleHomeName;
 	@Nullable
-	private String _actualHomeName;
+	private AID _homeAID;
 	private ArrayList<Integer> _historyOfCurrentUsage;
 	private TickerBehaviour _findHomeBehavior = new TickerBehaviour(this, 100) {
 		@Override
@@ -45,8 +45,10 @@ public class ApplianceAgent extends BaseAgent
 	//initialize variables
 	private void init()
 	{
-		_actualHomeName = null;
+		_homeAID = null;
 		_historyOfCurrentUsage = new ArrayList<>();
+		_historyOfCurrentUsage.add(0);
+		//_historyOfCurrentUsage.add(0);
 		Object[] args = getArguments();
 		List<String> argument = (List<String>) args[0];
 		if (argument.size() != 2) {
@@ -72,8 +74,8 @@ public class ApplianceAgent extends BaseAgent
 		addMessageHandler(RequestPowerOnMessageTemplate, new ApplianceAgent.OnHandler());
 		addMessageHandler(RequestPowerOffMessageTemplate, new ApplianceAgent.OffHandler());
 		addMessageHandler(ElectricityRequestResponseHandler, new ApplianceAgent.ElectricityHandler());
-		sendCurrentUsage();
-		sendForecastUsage();
+		//sendCurrentUsage();
+		//sendForecastUsage();
 	}
 
 	private void findHome() {
@@ -86,7 +88,7 @@ public class ApplianceAgent extends BaseAgent
 		ACLMessage iAmYours = new ACLMessage(ACLMessage.INFORM);
 		iAmYours.setContent("ApplianceDetail," + getName());
 		iAmYours.addReceiver(homeAID);
-		_actualHomeName = homeAID.getName();
+		_homeAID = homeAID;
 		send(iAmYours);
 		LogDebug("sending message to " + homeAID.getName());
 		removeBehaviour(_findHomeBehavior);
@@ -122,7 +124,7 @@ public class ApplianceAgent extends BaseAgent
 	{
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		//msg.setContent("electricity _historyOfCurrentUsage," + _historyOfCurrentUsage[_current_globals.getTime()]);
-		//msg.setContent("electricity _historyOfCurrentUsage," + _historyOfCurrentUsage.get(_current_globals.getTime()));
+		msg.setContent("current," + _historyOfCurrentUsage.get(_current_globals.getTime()-1));
 		sendHomeMessage(msg);
 	}
 
@@ -130,13 +132,12 @@ public class ApplianceAgent extends BaseAgent
 	{
 		//updateForecastUsage();
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		msg.setContent("electricity forecast," + makeNewForecast());
+		msg.setContent("forecast," + makeNewForecast());
 		sendHomeMessage(msg);
 	}
 
 	private double makeNewForecast() {
 		//TODO, Make average of usage
-		LogDebug("OSSU" + _wattUsage);
 		return _wattUsage *5;
 	}
 
@@ -148,8 +149,9 @@ public class ApplianceAgent extends BaseAgent
 	}
 
 	private void sendHomeMessage(ACLMessage msg) {
-		if(_actualHomeName != null) {
-			msg.addReceiver(new AID(_actualHomeName, AID.ISLOCALNAME));
+		if(_homeAID != null) {
+			msg.addReceiver(_homeAID);
+			send(msg);
 		}
 	}
 
@@ -179,6 +181,8 @@ public class ApplianceAgent extends BaseAgent
 	protected void TimeExpired()
 	{
 		_historyOfCurrentUsage.add((_isOn ? _wattUsage : 0));
+		sendCurrentUsage();
+		sendForecastUsage();
 	}
 
 	@Override

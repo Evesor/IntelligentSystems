@@ -44,6 +44,7 @@ public class HomeAgent extends NegotiatingAgent
 	private Map<String,Double> electricityForecast;
 	//wattage of each appliance
 	private Map<String, Integer> applianceWattMap;
+	private Map<String,Double> applianceCurrentUsage;
 	//list of appliance name
 	private List<String> applianceName;
 	//max applianceWattMap threshold of a house
@@ -65,9 +66,13 @@ public class HomeAgent extends NegotiatingAgent
 	private ArrayList<INegotiationStrategy> _currentNegotiations;
 	private Vector<PowerSaleAgreement> _current_sell_agreements;
 
+	private MessageTemplate electricityCurrentMT = MessageTemplate.and(
+			MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+			GoodMessageTemplates.ContatinsString("current,"));
+
 	private MessageTemplate electricityForecastMT = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-		GoodMessageTemplates.ContatinsString("electricity forecast"));//TODO change message string into "forecast"
+		GoodMessageTemplates.ContatinsString("forecast,"));
 
 	private MessageTemplate electricityRequestMT = MessageTemplate.and(
 		MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
@@ -89,6 +94,7 @@ public class HomeAgent extends NegotiatingAgent
 	protected void setup()
 	{
 		super.setup();
+		addMessageHandler(electricityCurrentMT, new HomeAgent.CurrentHandler());
 		addMessageHandler(electricityForecastMT, new HomeAgent.ForecastHandler());
 		addMessageHandler(electricityRequestMT, new HomeAgent.electricityRequestHandler());
 		addMessageHandler(PropMessageTemplate, new ProposalHandler());
@@ -96,6 +102,7 @@ public class HomeAgent extends NegotiatingAgent
 		addMessageHandler(ApplianceDetailMT, new ApplianceDetailHandler());
 		applianceNameOnMap = new HashMap<String,Boolean>();
 		applianceWattMap = new HashMap<String,Integer>();
+		applianceCurrentUsage = new HashMap<String,Double>();
 		electricityForecast = new HashMap<String,Double>();
 		applianceName = new ArrayList<>();
 		maxWatt = 10000;
@@ -172,20 +179,34 @@ public class HomeAgent extends NegotiatingAgent
 	//sum of every applianceNameOnMap appliance applianceWattMap
 	private int sumWatt()
 	{
-		return applianceName.stream()
-				.filter((appliance) -> applianceNameOnMap.get(appliance))
-				.mapToInt((appliance) -> applianceWattMap.get(appliance))
-				.sum();
+//		return applianceName.stream()
+//				.filter((appliance) -> applianceNameOnMap.get(appliance))
+//				.mapToInt((appliance) -> applianceWattMap.get(appliance))
+//				.sum();
+
+		int result = 0;
+		int i;
+		for(i=0;i<applianceName.size();i++)
+		{
+			result += applianceCurrentUsage.get(applianceName.get(i));
+		}
+		return result;
 	}
 
 	//sum of all appliance electricity forecast in the next x hour
 	//for now, next x hour forecast = x * next hour forecast
 	private int forecast(int x)
 	{
-		int result = applianceName.stream()
-				.mapToInt((appliance) -> applianceWattMap.get(appliance))
-				.sum();
+//		int result = applianceName.stream()
+//				.mapToInt((appliance) -> applianceWattMap.get(appliance))
+//				.sum();
 
+		int result = 0;
+		int i;
+		for(i=0;i<applianceName.size();i++)
+		{
+			result += electricityForecast.get(applianceName.get(i));
+		}
 		return x*result;
 	}
 
@@ -242,7 +263,21 @@ public class HomeAgent extends NegotiatingAgent
 	/*                                *\
 	*        BEGIN HANDLERS           *
 	\*								  */
-	//example message : ACLMessage.INFORM from appliance,"electricity forecast,10"
+	//example message : ACLMessage.INFORM from appliance,"current,10"
+	//receive forecast message and save in applianceCurrentUsage
+	private class CurrentHandler implements IMessageHandler
+	{
+		public void Handler(ACLMessage msg)
+		{
+			String[] splitValue = msg.getContent().split(",");
+			String senderName = splitValue[0];
+			double value = Double.parseDouble(splitValue[1]);
+			applianceCurrentUsage.put(senderName, value);
+			LogDebug(senderName + " current : " + value);
+		}
+	}
+
+	//example message : ACLMessage.INFORM from appliance,"forecast,10"
 	//receive forecast message and save in electricityForecast
 	private class ForecastHandler implements IMessageHandler
 	{
@@ -285,6 +320,7 @@ public class HomeAgent extends NegotiatingAgent
 				applianceNameOnMap.put(splitValue[1], false);
 				applianceWattMap.put(splitValue[1],10);//TODO get appliance applianceWattMap from JSON
 				electricityForecast.put(splitValue[1],0.0);
+				applianceCurrentUsage.put(splitValue[1],0.0);
 				LogVerbose(splitValue[1] + " has been added to " + getLocalName());
 				turnOnOff(splitValue[1],true);
 			}
