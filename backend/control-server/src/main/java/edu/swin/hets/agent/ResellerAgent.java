@@ -306,7 +306,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 data = new AgentData(buy_price, sell_price,current_sales, current_purchases, name);
             }
             public int getgroup() { return GROUP_ID; }
-            public AgentData getagent() {return data; }
+            public AgentData getagentData() {return data; }
             public String getid() {return Name;}
             private class AgentData implements Serializable{
                 private String Name;

@@ -260,13 +260,13 @@ public class ApplianceAgent extends BaseAgent
 			data = new AgentData();
 		}
 		public int getgroup() { return GROUP_ID; }
-		public AgentData getagent() {return data; }
+		public AgentData getagentData() {return data; }
 		public String getid() {return getName();}
 		private class AgentData {
 			public String getName () { return getLocalName();}
 			public Integer getWattage () {return watt;}
 			public Boolean getOn() {return on; }
-			public ArrayList<Integer> getCurrent() { return historyOfCurrentUsage; }
+			public ArrayList<Integer> getCurrent_Usage_History() { return historyOfCurrentUsage; }
 			//public ArrayList<Integer> getForecast() { return forecast; }
 		}
 	}

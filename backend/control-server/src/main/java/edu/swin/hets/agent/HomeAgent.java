@@ -418,7 +418,7 @@ public class HomeAgent extends NegotiatingAgent
 			data = new AgentData();
 		}
 		public int getgroup() { return GROUP_ID; }
-		public AgentData getagent() {return data; }
+		public AgentData getagentData() {return data; }
 		public String getid() {return getName();}
 
 		private class AgentData {

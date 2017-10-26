@@ -236,7 +236,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
         }
         public String getid() { return Name; }
         public int getgroup() { return GROUP_ID; }
-        public AgentData getagent() { return dat; }
+        public AgentData getagentData() { return dat; }
         private class AgentData implements Serializable {
             private String Name;
             private double current_sell_price;
