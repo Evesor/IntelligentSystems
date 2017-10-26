@@ -222,11 +222,11 @@ public class ResellerAgent extends NegotiatingAgent {
                     sendAcceptProposal(msg, agreement);
                     _currentBuyAgreements.add(agreement);
                     sendSaleMade(agreement);
+                    updateContracts();
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
-                    updateContracts();
-                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
-                            _nextRequiredAmount);
+//                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
+//                            _nextRequiredAmount);
                 }
             }
         }
