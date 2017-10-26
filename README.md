@@ -16,9 +16,10 @@ then access `http://localhost:4567/` using your web browser (latest firefox, chr
 ## configuration
 ### agent environment
 simply copy the file 
-`backend/control-server/config/system-definition.json.template` 
+
+```backend/control-server/config/system-definition.json.template```
 to
-`backend/control-server/config/system-definition.json`
+```backend/control-server/config/system-definition.json```
 
 and edit appropriately.
 
