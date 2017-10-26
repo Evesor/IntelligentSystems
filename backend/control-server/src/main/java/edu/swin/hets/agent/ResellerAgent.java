@@ -117,10 +117,6 @@ public class ResellerAgent extends NegotiatingAgent {
         }
         balanceBooks();
         updateContracts();
-        // We now know how much we have bought and how much we need to buy, send out CFP's to get electricity we need.
-        if (_nextRequiredAmount > _nextPurchasedAmount) {
-            sendBuyCFP();
-        }
     }
 
     private void balanceBooks() {
@@ -149,6 +145,10 @@ public class ResellerAgent extends NegotiatingAgent {
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
         //TODO, Remove once home is sorted again
         //_nextRequiredAmount = new java.util.Random().nextDouble() * 150 + 150;
+        // We now know how much we have bought and how much we need to buy, send out CFP's to get electricity we need.
+        if (_nextRequiredAmount > _nextPurchasedAmount) {
+            sendBuyCFP();
+        }
     }
 
     // Time is expiring, make sure we have purchased enough electricity
@@ -169,7 +169,7 @@ public class ResellerAgent extends NegotiatingAgent {
         PowerSaleProposal prop;
         for (DFAgentDescription powerPlant : powerPlants) {
             prop = new PowerSaleProposal(_nextRequiredAmount - _nextPurchasedAmount,1,
-                    (_current_globals.getAveragePriceLastTime() * 0.5), getAID(),powerPlant.getName());
+                    (_current_globals.getAveragePriceLastTime() * 0.5), powerPlant.getName(), getAID());
             // Make new negotiation for each powerPlant
             ACLMessage sent = sendCFP(prop, powerPlant.getName());
             INegotiationStrategy strategy;
@@ -221,8 +221,8 @@ public class ResellerAgent extends NegotiatingAgent {
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
                     updateContracts();
-//                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
-//                            _nextRequiredAmount);
+                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
+                            _nextRequiredAmount);
                 }
             }
         }
@@ -235,8 +235,9 @@ public class ResellerAgent extends NegotiatingAgent {
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _currentSellAgreements.add(agreement);
             sendSaleMade(agreement);
-//            LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
-//                " @ " + agreement.getCost());
+            updateContracts();
+            LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
+                " @ " + agreement.getCost());
         }
     }
 
