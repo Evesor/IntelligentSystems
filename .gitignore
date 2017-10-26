@@ -227,6 +227,7 @@ gradle-app.setting
 # Backend-specific configuration
 **/servers.properties
 **/system.properties
+**/system-definition.json
 
 # Keystore
 **/control-server/keystore/
