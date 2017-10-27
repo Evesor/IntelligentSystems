@@ -160,10 +160,10 @@ var agentGraph = (() => {
                 d3.select(this).attr('r', radius).style("stroke", "white")
             });
 
-        newNode.append("svg:text")
+        node.append("svg:text")
             .attr("class", "textClass")
-            .attr("x", 14)
-            .attr("y", ".31em")
+            .attr("dx", 14)
+            .attr("dy", ".31em")
             .text(function (d) {
                 return d.agentData.name;
             });
@@ -171,10 +171,8 @@ var agentGraph = (() => {
         //	ENTER + UPDATE
         node = node.merge(newNode);
 
-        // Links
-        //	UPDATE
+        //Links
         link = link.data(links, function (d) { return d.id; });
-        //	EXIT
         link.exit().remove();
         //	ENTER
         newLink = link.enter().append("line")
