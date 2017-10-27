@@ -4,7 +4,7 @@ let requestTypes = Object.freeze({
     }
 });
 
-let agentApi = (() => {
+var agentApi = (() => {
     const baseUrl = location.protocol +
         "//" +
         location.hostname +
@@ -12,7 +12,7 @@ let agentApi = (() => {
 
     /**
      * @param {string} agentId
-     * @param {string} message
+     * @param {string} message, a whitespace delimited list of arguments
      * @returns {Promise} the fetch request
      */
     this.changeBehaviour = (agentName, message) => {

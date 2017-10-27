@@ -6,8 +6,10 @@ import edu.swin.hets.agent.StatisticsAgent
 import edu.swin.hets.agent.WebAgent
 import edu.swin.hets.controller.distributor.ContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
+import edu.swin.hets.controller.gateway.ChangeBehaviourRequest
 import edu.swin.hets.controller.gateway.ContainerListRetriever
 import edu.swin.hets.controller.gateway.JadeTerminator
+import edu.swin.hets.controller.gateway.ChangeBehaviourMessageBehaviour
 import edu.swin.hets.web.ClientWebSocketHandler
 import jade.core.*
 import jade.util.leap.Properties
@@ -87,4 +89,8 @@ class JadeController(private val runtime: Runtime,
                     .toList()
                     .flatMap { it }
 
+
+    fun changeBehaviour(changeBehaviourRequest: ChangeBehaviourRequest) {
+        JadeGateway.execute(ChangeBehaviourMessageBehaviour(changeBehaviourRequest))
+    }
 }

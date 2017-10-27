@@ -1,8 +1,12 @@
 package edu.swin.hets.web
 
 
+import com.fasterxml.jackson.core.JsonParseException
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import edu.swin.hets.configuration.SystemConfig
 import edu.swin.hets.controller.JadeController
+import edu.swin.hets.controller.gateway.ChangeBehaviourRequest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import spark.Spark.*
@@ -35,7 +39,24 @@ class WebController(
             }
             path("/agent") {
                 post("/change-behaviour") { req, res ->
-                    res.status(200)
+                    try {
+                        val changeBehaviourRequest =
+                                jacksonObjectMapper().readValue(req.body(), ChangeBehaviourRequest::class.java)
+                        jadeController.changeBehaviour(changeBehaviourRequest)
+                        res.status(200)
+                        true
+                    } catch (e: Exception) {
+                        logger.error(e.toString())
+                        logger.error(e.stackTrace.toString())
+                        when (e) {
+                            is JsonParseException,
+                            is JsonMappingException -> {
+                                res.status(400)
+                            }
+                            else -> res.status(500)
+                        }
+                        false
+                    }
                 }
             }
         }
