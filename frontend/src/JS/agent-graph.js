@@ -8,7 +8,7 @@ let AgentGraph = () => {
     this.addNode = function (id, agentData) {
         Array.of(id)
             .filter(val => !nodes.some(node => node.id === val))
-            .forEach(id => nodes.push({"id": id}));
+            .forEach(id => nodes.push({"id": id})) //////////// <<<<<<<<<<<<<<<<< Add the group
         this.findNode(id).agentData = agentData;
         update();
     };
@@ -105,33 +105,24 @@ let AgentGraph = () => {
 
     var force = d3.layout.force();
 
-    var nodes = force.nodes(),
-        links = force.links();
+    var links = force.links(),
+        nodes = force.nodes();
 
     var update = function () {
         var link = vis.selectAll("line")
-            .data(links, function (d) {
-                return d.source.id + "-" + d.target.id;
-            });
+            .data(links, function (d) { return d.source.id + "-" + d.target.id; });
 
         link.enter().append("line")
-            .attr("id", function (d) {
-                return d.source.id + "-" + d.target.id;
-            })
-            .attr("stroke-width", function (d) {
-                return d.value / 10;
-            })
-            .attr("class", "link");
+            .attr("id", function (d) { return d.source.id + "-" + d.target.id; })
+            .attr("class", "link")
+            .attr("stroke-width", function (d) { return d.value / 2; });
+
         link.append("title")
-            .text(function (d) {
-                return d.value;
-            });
+            .text(function (d) { return d.value; });
         link.exit().remove();
 
         var node = vis.selectAll("g.node")
-            .data(nodes, function (d) {
-                return d.id;
-            });
+            .data(nodes, function (d) { return d.id; });
 
         var nodeEnter = node.enter().append("g")
             .attr("class", "node")
@@ -154,7 +145,11 @@ let AgentGraph = () => {
                 return "Node;" + d.id;
             })
             .attr("class", "nodeStrokeClass")
-            .attr("fill", function(d) { return color(d.id); });
+            .attr("fill", function(r) {
+                a = r.agentData;
+                console.log(r);
+                return color(r.group); ////// HUAN Please find a way to obtain the group
+            });
 
         nodeEnter.append("svg:text")
             .attr("class", "textClass")
@@ -171,18 +166,10 @@ let AgentGraph = () => {
                 return "translate(" + d.x + "," + d.y + ")";
             });
 
-            link.attr("x1", function (d) {
-                return d.source.x;
-            })
-                .attr("y1", function (d) {
-                    return d.source.y;
-                })
-                .attr("x2", function (d) {
-                    return d.target.x;
-                })
-                .attr("y2", function (d) {
-                    return d.target.y;
-                });
+            link.attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
         });
 
         // Restart the force layout.
@@ -191,7 +178,6 @@ let AgentGraph = () => {
             .charge(-80000)
             .friction(0)
             .linkDistance(100)
-            //.linkDistance( function(d) { return d.value * 15; } )
             .size([w, h])
             .start();
     };
