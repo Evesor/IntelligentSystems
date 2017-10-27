@@ -170,7 +170,9 @@ public class ResellerAgent extends NegotiatingAgent {
         //TODO make more complicated logic for initial offer.
         PowerSaleProposal prop;
         for (DFAgentDescription powerPlant : powerPlants) {
-            prop = new PowerSaleProposal(_nextRequiredAmount - _nextPurchasedAmount,1,
+            double toBuy = (_nextRequiredAmount - _nextPurchasedAmount);
+            toBuy = (toBuy > 500 ? 500 : toBuy);
+            prop = new PowerSaleProposal(toBuy,1,
                     (_current_globals.getAveragePriceLastTime() * 0.5), powerPlant.getName(), getAID());
             // Make new negotiation for each powerPlant
             ACLMessage sent = sendCFP(prop, powerPlant.getName());
@@ -236,6 +238,7 @@ public class ResellerAgent extends NegotiatingAgent {
             //TODO, check this is a valid proposal still.
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _currentSellAgreements.add(agreement);
+            LogDebug(agreement.getSellerAID() + "");
             sendSaleMade(agreement);
             updateContracts();
             LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
@@ -326,6 +329,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 public double getCurrent_Purchase_Volume() { return current_purchase_volume; }
                 public double getCurrent_Sales_Volume() { return current_sales_volume; }
                 public String getNegotiation_Strategy () { return _negotiationArgs.get(0); }
+                public double getMoney () { return _money; }
         }
     }
     /******************************************************************************
