@@ -1,9 +1,3 @@
-let requestTypes = Object.freeze({
-    properties: {
-
-    }
-});
-
 var agentApi = (() => {
     const baseUrl = location.protocol +
         "//" +
@@ -16,14 +10,14 @@ var agentApi = (() => {
      * @returns {Promise} the fetch request
      */
     this.changeBehaviour = (agentName, message) => {
-        const postInit = {
+        let postInit = {
             headers: new Headers(),
             method: "POST",
-            mode: "CORS",
-            body: {
+            mode: 'cors',
+            body: JSON.stringify({
                 "agentId": agentName,
                 "message": message
-            }
+            })
         };
 
         return fetch(baseUrl + "/api/agent/change-behaviour", postInit);
