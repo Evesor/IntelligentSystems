@@ -3,6 +3,8 @@ package edu.swin.hets.helper;
 import edu.swin.hets.helper.negotiator.BoulwareNegotiator;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import edu.swin.hets.helper.negotiator.LinearUtilityDecentNegotiator;
+import edu.swin.hets.helper.negotiator.TitForTatNegotiator;
+
 import java.util.concurrent.ExecutionException;
 import java.util.List;
 /******************************************************************************
@@ -28,6 +30,8 @@ public class NegotiatorFactory {
             case ("LinearUtilityDecentNegotiator"): return createLinearUtilityDecentNegotiator(firstOffer,
                     conversationID, opponentName, currentGlobals, utilityFun, arguments);
             case ("BoulwareNegotiator") : return createBoulwareNegotiator(firstOffer,
+                    conversationID, opponentName, currentGlobals, utilityFun, arguments);
+            case ("TitForTatNegotiator") : return createTitForTatNegotiator(firstOffer,
                     conversationID, opponentName, currentGlobals, utilityFun, arguments);
         }
         throw new ExecutionException(new Throwable("Did not find the Negotiation function type"));
@@ -122,5 +126,29 @@ public class NegotiatorFactory {
                 maxNegotiationTime, maxStallTime, priceJump, volumeJump, timeJump, acceptTolerance, utilityFunction);
 
 
+    }
+    /*
+    *    Args order: maxNegotiationTime, maxStallTime, acceptTolerance.
+     */
+    private INegotiationStrategy createTitForTatNegotiator (PowerSaleProposal firstOffer,
+                                                            String conversationID,
+                                                            String opponentsName,
+                                                            GlobalValues currentGlobals,
+                                                            IUtilityFunction utilityFunction,
+                                                            List<String> args) throws ExecutionException {
+        int maxNegotiationTime = 20;
+        int maxStallTime = 10;
+        double acceptTolerance = 0.99;
+        if (args.size() == 4) {
+            try {
+                maxNegotiationTime = Integer.parseInt(args.get(1));
+                maxStallTime = Integer.parseInt(args.get(2));
+                acceptTolerance = Double.parseDouble(args.get(3));
+            } catch (Exception e) {
+                throw new ExecutionException(new Throwable("Was passed invalid params to tit for tat negotiator"));
+            }
+        }// Leave as default
+        return new TitForTatNegotiator(firstOffer, conversationID, opponentsName, currentGlobals,
+                maxNegotiationTime, maxStallTime, acceptTolerance,  utilityFunction);
     }
 }

@@ -31,25 +31,26 @@ public class TitForTatNegotiator extends NegotiatorBase {
         if(conversationToLong()) return Optional.empty();
         if (getThereMostRecentOffer() == null) return Optional.of(getOurMostRecentOffer());
         // Change our offer by what they last changed by and offer if its within tolerance
-        PowerSaleProposal prop = new PowerSaleProposal(getAmount(), getTime(), getCost(),
-                getOurMostRecentOffer().getSellerAID(), getOurMostRecentOffer().getBuyerAID());
-        if (_utilityFunction.evaluate(prop) > _utilityFunction.evaluate(getOurMostRecentOffer()) * _accepTolerance)
-            return Optional.of(prop);
+        if(_proposalHistory.stream().filter((prop) -> prop[1] != null).count() < 1)
+            return Optional.of(getOurMostRecentOffer());
+        PowerSaleProposal newOffer = getOffer();
+        if (_utilityFunction.evaluate(newOffer) > _utilityFunction.evaluate(getOurMostRecentOffer()) * _accepTolerance)
+            return Optional.of(newOffer);
         return Optional.empty();
     }
-    //TODO, Finish
-    private double getAmount() {
-        if(_proposalHistory.stream().filter((prop) -> prop[1] != null).count() < 1)
-            return getOurMostRecentOffer().getAmount();
-        return 5;
-        // PowerSaleProposal thereSecondMostRecent = _proposalHistory.get(_proposalHistory.size() - 1);
-    }
 
-    private int getTime() {
-        return 5;
-    }
-
-    private double getCost () {
-        return 5;
+    private PowerSaleProposal getOffer() {
+        PowerSaleProposal thereSecondMostRecent = _proposalHistory.get(_proposalHistory.size() - 1)[1];
+        PowerSaleProposal thereMostRecentOffer = getThereMostRecentOffer();
+        PowerSaleProposal ourMostRecentOffer = getOurMostRecentOffer();
+        double powerAmount = ourMostRecentOffer.getAmount() +
+                (thereSecondMostRecent.getAmount() - thereMostRecentOffer.getAmount());
+        int length = ourMostRecentOffer.getDuration() +
+                (thereSecondMostRecent.getDuration() - thereMostRecentOffer.getDuration());
+        double cost = ourMostRecentOffer.getCost() +
+                (thereSecondMostRecent.getCost() - thereMostRecentOffer.getCost());
+        // Change by what they last changed by.
+        return new PowerSaleProposal(powerAmount,length ,cost, ourMostRecentOffer.getSellerAID(),
+                ourMostRecentOffer.getBuyerAID());
     }
 }
