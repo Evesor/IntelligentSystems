@@ -187,8 +187,6 @@ public class HomeAgent extends NegotiatingAgent
 		// Re calculate usage for this time slice
 		for (PowerSaleAgreement agreement : _current_buy_agreements) _next_purchased_amount += agreement.getAmount();
 		_next_required_amount = 1.5* forecast(1);
-		LogDebug("Upadte:" + _next_purchased_amount);
-		LogDebug("req" + _next_required_amount);
 	}
 
 	//sum of every applianceNameOnMap appliance applianceWattMap
@@ -317,7 +315,7 @@ public class HomeAgent extends NegotiatingAgent
 			if(splitValue.length == 2)
 			{
 				applianceName.add(splitValue[1]);
-				applianceNameOnMap.put(splitValue[1], false);
+				applianceNameOnMap.put(splitValue[1], true);
 				applianceWattMap.put(splitValue[1],10);//TODO get appliance applianceWattMap from JSON
 				electricityForecast.put(splitValue[1],0.0);
 				applianceCurrentUsage.put(splitValue[1],0.0);
