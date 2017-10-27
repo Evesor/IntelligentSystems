@@ -1,4 +1,4 @@
-let AgentGraph = () => {
+var agentGraph = (() => {
 
     /**
      * Adds a node to the graph
@@ -52,10 +52,33 @@ let AgentGraph = () => {
         return {"source": this.findNode(source), "target": this.findNode(target), "value": value};
     };
 
+    /**
+     * @param {string} sourceId
+     * @param {string} targetId
+     * @returns {(link|undefined)} the link 
+    */
+    this.findLink = function (sourceId, targetId) {
+        return links.map(link => {return {"linkSourceId": link.source.id, "linkTargetId": link.target.id}})
+            .filter(it => sourceId === it.linkSourceId)
+            .filter(it => targetId === it.linkTargetId)
+            .shift()
+    }
+
     this.addLink = function (link) {
-        links.push(link);
+        let existingLink = findLink(link.source.id, link.target.id)
+        if (existingLink == null){
+            links.push(link);
+        } else {
+            existingLink.value = link.value;
+        }
+        
         update();
     };
+
+
+    this.getLinks = function () {
+        return links;
+    }
 
     /**
      * @param {ws-link} link
@@ -188,4 +211,4 @@ let AgentGraph = () => {
     update();
 
     return this;
-};
+})();
