@@ -19,63 +19,27 @@
     "agents" : [ {
       "name" : "Appliance1",
       "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "25,Home1",
-      "owner" : "Home1"
+      "arguments" : "25,Home1"
     }, {
       "name" : "Appliance2",
       "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "14,Home1",
-      "owner" : "Home2"
+      "arguments" : "14,Home1"
     }, {
       "name" : "Appliance3",
       "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "31,Home1",
-      "owner" : "Home2"
+      "arguments" : "31,Home1"
     }, {
       "name" : "Appliance4",
       "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "12,Home2",
-      "owner" : "Home2"
+      "arguments" : "12,Home2"
     }, {
       "name" : "Appliance5",
       "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "15,Home2",
-      "owner" : "Home2"
+      "arguments" : "15,Home2"
     }, {
       "name" : "Appliance6",
       "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "24,Home2",
-      "owner" : "Home2"
-    }, {
-      "name" : "Appliance7",
-      "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "12,Home3",
-      "owner" : "Home2"
-    }, {
-      "name" : "Appliance8",
-      "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "15,Home3",
-      "owner" : "Home2"
-    }, {
-      "name" : "Appliance9",
-      "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "24,Home3",
-      "owner" : "Home2"
-    }, {
-      "name" : "Appliance10",
-      "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "12,Home4",
-      "owner" : "Home2"
-    }, {
-      "name" : "Appliance11",
-      "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "15,Home4",
-      "owner" : "Home3"
-    }, {
-      "name" : "Appliance12",
-      "className" : "edu.swin.hets.agent.ApplianceAgent",
-      "arguments" : "24,Home4",
-      "owner" : "Home4"
+      "arguments" : "24,Home2"
     }]
   }, {
     "name" : "Home Container",
@@ -84,12 +48,6 @@
       "className" : "edu.swin.hets.agent.HomeAgent"
     }, {
       "name" : "Home2",
-      "className" : "edu.swin.hets.agent.HomeAgent"
-    }, {
-      "name" : "Home3",
-      "className" : "edu.swin.hets.agent.HomeAgent"
-    }, {
-      "name" : "Home4",
       "className" : "edu.swin.hets.agent.HomeAgent"
     } ]
   }, {
@@ -102,14 +60,6 @@
       "name" : "Reseller2",
       "className" : "edu.swin.hets.agent.ResellerAgent",
       "arguments" : "LinearUtilityDecentNegotiator,9,5,0.2,0.1,1,0.95"
-    }, {
-      "name" : "Reseller3",
-      "className" : "edu.swin.hets.agent.ResellerAgent",
-      "arguments" : "LinearUtilityDecentNegotiator,9,5,0.3,0.1,1,0.99"
-    }, {
-      "name" : "Reseller4",
-      "className" : "edu.swin.hets.agent.ResellerAgent",
-      "arguments" : "TitForTatNegotiator,10,8,0.99"
     }]
   } ]
 }
