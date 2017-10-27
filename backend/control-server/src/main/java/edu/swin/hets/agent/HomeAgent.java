@@ -173,7 +173,7 @@ public class HomeAgent extends NegotiatingAgent
 		_current_sell_agreements.removeAll(toRemove);
 		// Re calculate usage for this time slice
 		for (PowerSaleAgreement agreement : _current_buy_agreements) _next_purchased_amount += agreement.getAmount();
-		_next_required_amount = forecast(1);
+		_next_required_amount = 1.5* forecast(1);
 	}
 
 	//sum of every applianceNameOnMap appliance applianceWattMap
@@ -195,19 +195,11 @@ public class HomeAgent extends NegotiatingAgent
 
 	//sum of all appliance electricity forecast in the next x hour
 	//for now, next x hour forecast = x * next hour forecast
-	private int forecast(int x)
+	private double forecast(int x)
 	{
-//		int result = applianceName.stream()
-//				.mapToInt((appliance) -> applianceWattMap.get(appliance))
-//				.sum();
-
-		int result = 0;
-		int i;
-		for(i=0;i<applianceName.size();i++)
-		{
-			result += electricityForecast.get(applianceName.get(i));
-		}
-		return x*result;
+		return x * applianceName.stream()
+				.mapToDouble((appliance) -> electricityForecast.get(appliance))
+				.sum();
 	}
 
 	//send request message to turnOnOff an appliance applianceNameOnMap or off
@@ -217,8 +209,10 @@ public class HomeAgent extends NegotiatingAgent
 		ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 		if(on==true){msg.setContent("applianceNameOnMap");}
 		else if(on==false)
-		{this.applianceNameOnMap.put(name,false);
-			msg.setContent("off");}
+		{
+			this.applianceNameOnMap.put(name,false);
+			msg.setContent("off");
+		}
 		msg.addReceiver(new AID(name,AID.ISLOCALNAME));
 		msg.setSender(getAID());
 		send(msg);
@@ -270,10 +264,10 @@ public class HomeAgent extends NegotiatingAgent
 		public void Handler(ACLMessage msg)
 		{
 			String[] splitValue = msg.getContent().split(",");
-			String senderName = splitValue[0];
+			String senderName = msg.getSender().getName();
 			double value = Double.parseDouble(splitValue[1]);
 			applianceCurrentUsage.put(senderName, value);
-			LogDebug(senderName + " current : " + value);
+			LogDebug("OSSU " + senderName + " current : " + value + "applianceCurrentUsage " + applianceCurrentUsage.get(senderName));
 		}
 	}
 
@@ -283,10 +277,10 @@ public class HomeAgent extends NegotiatingAgent
 	{
 		public void Handler(ACLMessage msg)
 		{
-			String senderName = msg.getSender().getLocalName();
+			String senderName = msg.getSender().getName();
 			double value = Double.parseDouble(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
 			electricityForecast.put(senderName, value);
-			LogDebug("forecast = " + forecast(1));
+			LogDebug("OSSU value : " + value + ", forecast = " + forecast(1) + "electricityForecast :" + electricityForecast.get(senderName));
 		}
 	}
 
@@ -386,12 +380,12 @@ public class HomeAgent extends NegotiatingAgent
 					if(contract.getSellerAID().getName().equals(getName()))
 					{
 						_current_sell_agreements.add(contract);
-						_next_required_amount += contract.getAmount();
+						//_next_required_amount += contract.getAmount();
 					}
 					else
 					{
 						_current_buy_agreements.add(contract);
-						_next_purchased_amount += contract.getAmount();
+						//_next_purchased_amount += contract.getAmount();
 					}
 					sendSaleMade(contract);
 
