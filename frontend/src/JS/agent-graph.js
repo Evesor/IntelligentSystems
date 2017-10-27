@@ -80,6 +80,10 @@ var agentGraph = (() => {
         return links;
     }
 
+    this.getNodes = function () {
+        return nodes;
+    }
+
     /**
      * @param {ws-link} link
      */
@@ -172,8 +176,7 @@ var agentGraph = (() => {
             .attr("class", "nodeStrokeClass")
             .attr("fill", function (r) {
                 a = r.agentData;
-                console.log(r);
-                return color(r.group); ////// HUAN Please find a way to obtain the group
+                return color(r.group); 
             });
 
         nodeEnter.append("svg:text")
