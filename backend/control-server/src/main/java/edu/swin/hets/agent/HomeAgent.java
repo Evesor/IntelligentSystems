@@ -8,6 +8,7 @@ import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import sun.rmi.runtime.Log;
 
 import java.lang.*;
 import java.util.*;
@@ -130,16 +131,16 @@ public class HomeAgent extends NegotiatingAgent
 	@Override
 	protected void TimeExpired()
 	{
-		LogDebug("potato : " + sumWatt());
-		LogDebug("bout last time" + currentElectricityLeft);
-		if (currentElectricityLeft <= sumWatt()) {
-			LogError("DId not buy enough electricity!");
+		LogDebug("Left " + currentElectricityLeft);
+		LogDebug("Needed: " + sumWatt());
+		if (currentElectricityLeft < sumWatt()) {
+			LogError("Did not buy enough electricity!");
 		}
 		currentElectricityLeft = _next_purchased_amount;
 		currentElectricityLeft -= sumWatt();
 		_next_purchased_amount = 0;
 		updateBookkeeping();
-		LogDebug("Requires:: " + _next_required_amount + " has bout:: " + _next_purchased_amount);
+		LogDebug("Requires:: " + _next_required_amount + " has bought:: " + _next_purchased_amount);
 		if(_next_required_amount > _next_purchased_amount) sendBuyCFP();
 		if(_next_required_amount < _next_purchased_amount) sendSellCFP();
 	}
@@ -177,15 +178,17 @@ public class HomeAgent extends NegotiatingAgent
 		// Get rid of old contracts that are no longer valid
 		ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
 		_current_buy_agreements.stream().filter(
-				(agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+				(agg) -> agg.getEndTime() <= _current_globals.getTime()).forEach(toRemove::add);
 		_current_buy_agreements.removeAll(toRemove);
 		toRemove.clear();
 		_current_sell_agreements.stream().filter(
-				(agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+				(agg) -> agg.getEndTime() <= _current_globals.getTime()).forEach(toRemove::add);
 		_current_sell_agreements.removeAll(toRemove);
 		// Re calculate usage for this time slice
 		for (PowerSaleAgreement agreement : _current_buy_agreements) _next_purchased_amount += agreement.getAmount();
 		_next_required_amount = 1.5* forecast(1);
+		LogDebug("Upadte:" + _next_purchased_amount);
+		LogDebug("req" + _next_required_amount);
 	}
 
 	//sum of every applianceNameOnMap appliance applianceWattMap
@@ -195,14 +198,6 @@ public class HomeAgent extends NegotiatingAgent
 				.filter((appliance) -> applianceNameOnMap.get(appliance))
 				.mapToInt((appliance) -> applianceWattMap.get(appliance))
 				.sum();
-
-//		int result = 0;
-//		int i;
-//		for(i=0;i<applianceName.size();i++)
-//		{
-//			result += applianceCurrentUsage.get(applianceName.get(i));
-//		}
-//		return result;
 	}
 
 	//sum of all appliance electricity forecast in the next x hour
@@ -379,15 +374,14 @@ public class HomeAgent extends NegotiatingAgent
 					PowerSaleAgreement contract = new PowerSaleAgreement(prop, _current_globals.getTime());
 					if(contract.getSellerAID().getName().equals(getName()))
 					{
-						LogDebug("Adding sell");
+
 						_current_sell_agreements.add(contract);
 					}
 					else
 					{
-						LogDebug("Adding Buy");
-
 						_current_buy_agreements.add(contract);
 					}
+					sendAcceptProposal(msg, contract);
 					updateBookkeeping();
 					LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + contract.getAmount() +
 							" @ " + contract.getCost());

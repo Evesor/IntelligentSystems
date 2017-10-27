@@ -238,6 +238,7 @@ public class ResellerAgent extends NegotiatingAgent {
             //TODO, check this is a valid proposal still.
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _currentSellAgreements.add(agreement);
+            LogDebug(agreement.getSellerAID() + "");
             sendSaleMade(agreement);
             updateContracts();
             LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
