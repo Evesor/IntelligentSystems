@@ -118,68 +118,49 @@ var agentGraph = (() => {
     var w = 960,
         h = 600;
 
-    var size = 12;
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
+    var links = [];
+    var nodes = [];
+    var radius = 10;
 
-    var color = d3.scale.category10();
-    var size = 12;
-
-    var vis = d3.select("svg")
+    var svg = d3.select("svg")
         .attr("width", w)
         .attr("height", h)
-        .attr("id", "svg")
-        .attr("pointer-events", "all")
-        .attr("viewBox", "0 0 " + w + " " + h)
-        .attr("perserveAspectRatio", "xMinYMid")
-        .append("svg:g");
+    var link = svg.append("g").selectAll(".link"),
+        node = svg.append("g").selectAll(".node");
 
-    var force = d3.layout.force();
-
-    var links = force.links(),
-        nodes = force.nodes();
+    var simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(function (d) { return d.id; }))
+        .force("charge", d3.forceManyBody().strength(function (d) { return -500; }))
+        .force("center", d3.forceCenter(w / 2, h / 2))
+        .force("xAxis", d3.forceX(w/2))
+        .force("yAxis", d3.forceY(h/2));
 
     var update = function () {
-        var link = vis.selectAll("line")
-            .data(links, function (d) { return d.source.id + "-" + d.target.id; });
-
-        link.enter().append("line")
-            .attr("id", function (d) { return d.source.id + "-" + d.target.id; })
-            .attr("class", "link")
-            .attr("stroke-width", function (d) { return d.value / 2; });
-
-        link.append("title")
-            .text(function (d) { return d.value; });
-        link.exit().remove();
-
-        var node = vis.selectAll("g.node")
-            .data(nodes, function (d) { return d.id; });
-
-        var nodeEnter = node.enter().append("g")
+        /** Update nodes */
+        node = node.data(nodes, function (d) { return d.id })
+        node.exit().remove();
+        /** Enter */
+        var newNode = node.enter().append("svg:circle")
             .attr("class", "node")
-            .call(force.drag)
-            .on("mouseover", function () {
-                d3.select(this).attr('r', size)
-                    .style("stroke", "red");
+            .attr("r", radius)
+            .attr("fill", function (d) { return color(d.group) })
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended)
+            )
+            .on("click", function (d) {
+                agentClickedOn(d.agentData, d.id)
             })
-            .on("mouseleave", function () {
-                d3.select(this).attr('r', size)
-                    .style("stroke", "white");
+            .on("mouseover", function (d) {
+                d3.select(this).attr('r', radius).style("stroke", "red")
             })
-            .on("click", function (r) {
-                agentClickedOn(r.agentData, r.id);
+            .on("mouseleave", function (d) {
+                d3.select(this).attr('r', radius).style("stroke", "white")
             });
 
-        nodeEnter.append("svg:circle")
-            .attr("r", size)
-            .attr("id", function (d) {
-                return "Node;" + d.id;
-            })
-            .attr("class", "nodeStrokeClass")
-            .attr("fill", function (r) {
-                a = r.agentData;
-                return color(r.group); 
-            });
-
-        nodeEnter.append("svg:text")
+        newNode.append("svg:text")
             .attr("class", "textClass")
             .attr("x", 14)
             .attr("y", ".31em")
@@ -187,30 +168,64 @@ var agentGraph = (() => {
                 return d.agentData.name;
             });
 
-        node.exit().remove();
+        //	ENTER + UPDATE
+        node = node.merge(newNode);
 
-        force.on("tick", function () {
-            node.attr("transform", function (d) {
-                return "translate(" + d.x + "," + d.y + ")";
-            });
+        // Links
+        //	UPDATE
+        link = link.data(links, function (d) { return d.id; });
+        //	EXIT
+        link.exit().remove();
+        //	ENTER
+        newLink = link.enter().append("line")
+            .attr("id", function (d) { return d.source.id + "-" + d.target.id })
+            .attr("class", "link")
+            .attr("stroke-width", function (d) { d.value / 2 });
 
-            link.attr("x1", function (d) { return d.source.x; })
-                .attr("y1", function (d) { return d.source.y; })
-                .attr("x2", function (d) { return d.target.x; })
-                .attr("y2", function (d) { return d.target.y; });
-        });
+        //	ENTER + UPDATE
+        link = link.merge(newLink);
 
-        // Restart the force layout.
-        force
-            .gravity(.01)
-            .charge(-80000)
-            .friction(0)
-            .linkDistance(100)
-            .size([w, h])
-            .start();
-    };
+        //	update simulation nodes, links, and alpha
+        simulation
+            .nodes(nodes)
+            .on("tick", ticked);
 
-    // Make it all go
+        simulation.force("link")
+            .links(links);
+
+        simulation.alpha(1).alphaTarget(0).restart();
+    }
+
+
+    function dragstarted(d) {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(d) {
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+    }
+
+    function dragended(d) {
+        if (!d3.event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+
+    //	tick event handler with bounded box
+    function ticked() {
+        node
+            .attr("cx", function (d) { return d.x = Math.max(radius, Math.min(w - radius, d.x)); })
+            .attr("cy", function (d) { return d.y = Math.max(radius, Math.min(w - radius, d.y)); });
+
+        link
+            .attr("x1", function (d) { return d.source.x; })
+            .attr("y1", function (d) { return d.source.y; })
+            .attr("x2", function (d) { return d.target.x; })
+            .attr("y2", function (d) { return d.target.y; });
+    }
     update();
 
     return this;
