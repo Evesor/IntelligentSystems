@@ -5,9 +5,10 @@
 function agentClickedOn(agentData, agentId) {
 	let agent_data_box = document.getElementById("agent-data");
 	agent_data_box.innerHTML='';
-
 	listDataVisualisation(agentData, agent_data_box);
-	addChangeNegotiationMethodsButton(agentId, agent_data_box);
+	if (agentData.type == "Reseller Agent") {
+		addChangeNegotiationMethodsButton(agentId, agent_data_box);
+	}
 }
 
 // Recursively add list items to list.

@@ -242,20 +242,18 @@ public class PowerPlantAgent extends NegotiatingAgent {
         private String Name;
         private AgentData dat;
         PowerPlantData(double sell_price, double production, String name) {
-            dat = new AgentData(sell_price, production, name);
+            dat = new AgentData(sell_price, production);
             Name = name;
         }
         public String getid() { return Name; }
         public int getgroup() { return GROUP_ID; }
         public AgentData getagentData() { return dat; }
         private class AgentData implements Serializable {
-            private String Name;
             private double current_sell_price;
             private double current_production;
-            AgentData (double sell_price, double production, String name) {
+            AgentData (double sell_price, double production) {
                 current_sell_price = sell_price;
                 current_production = production;
-                Name = name;
             }
             public double getCurrent_Production() { return current_production; }
             public double getCurrent_Sell_Price() { return current_sell_price; }
