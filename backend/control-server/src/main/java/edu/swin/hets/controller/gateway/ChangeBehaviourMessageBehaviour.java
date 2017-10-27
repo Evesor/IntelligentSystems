@@ -16,16 +16,6 @@ public class ChangeBehaviourMessageBehaviour extends OneShotBehaviour {
     private String _message;
     private String _agentName;
 
-    public ChangeBehaviourMessageBehaviour(String message) {
-        // Get agent name, send the rest to the agent.
-        _agentName = message.split(" ")[0];
-        List<String> incomingMessage = Arrays.asList(message.split(" ")).subList(1, message.length());
-        _message = "";
-        for (String s : incomingMessage) {
-            message += s;
-        }
-    }
-
     public ChangeBehaviourMessageBehaviour(ChangeBehaviourRequest changeBehaviourRequest) {
         _agentName = changeBehaviourRequest.getAgentId();
         _message = changeBehaviourRequest.getMessage();
@@ -38,6 +28,7 @@ public class ChangeBehaviourMessageBehaviour extends OneShotBehaviour {
         msg.addReceiver(new AID(_agentName, AID.ISLOCALNAME));
         try {
             msg.setContentObject(_message);
+            logger.error("Super mega fruit morty: " + _message + "::" + _agentName);
         } catch (IOException e) {
             logger.error(e.toString());
             //TODO, log this as error.
