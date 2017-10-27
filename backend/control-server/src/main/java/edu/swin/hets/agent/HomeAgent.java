@@ -49,7 +49,7 @@ public class HomeAgent extends NegotiatingAgent
 	//electricity forecast for next time slice for each appliance
 	private Map<String,Double> electricityForecast;
 	//wattage of each appliance
-	private Map<String, Integer> applianceWattMap;
+	private Map<String, Double> applianceWattMap;
 	private Map<String,Double> applianceCurrentUsage;
 	//list of appliance name
 	private List<String> applianceName;
@@ -109,7 +109,7 @@ public class HomeAgent extends NegotiatingAgent
 		addMessageHandler(QuoteAcceptedTemplate, new ProposalAcceptedHandler());
 		addMessageHandler(ApplianceDetailMT, new ApplianceDetailHandler());
 		applianceNameOnMap = new HashMap<String,Boolean>();
-		applianceWattMap = new HashMap<String,Integer>();
+		applianceWattMap = new HashMap<>();
 		applianceCurrentUsage = new HashMap<String,Double>();
 		electricityForecast = new HashMap<String,Double>();
 		applianceName = new ArrayList<>();
@@ -129,8 +129,6 @@ public class HomeAgent extends NegotiatingAgent
 	@Override
 	protected void TimeExpired()
 	{
-		LogDebug("Left " + currentElectricityLeft);
-		LogDebug("Needed: " + sumWatt());
 		if (currentElectricityLeft < sumWatt()) {
 			LogError("Did not buy enough electricity!");
 		}
@@ -138,7 +136,6 @@ public class HomeAgent extends NegotiatingAgent
 		currentElectricityLeft -= sumWatt();
 		_next_purchased_amount = 0;
 		updateBookkeeping();
-		LogDebug("Requires:: " + _next_required_amount + " has bought:: " + _next_purchased_amount);
 		if(_next_required_amount > _next_purchased_amount) sendBuyCFP();
 		if(_next_required_amount < _next_purchased_amount) sendSellCFP();
 	}
@@ -188,11 +185,11 @@ public class HomeAgent extends NegotiatingAgent
 	}
 
 	//sum of every applianceNameOnMap appliance applianceWattMap
-	private int sumWatt()
+	private double sumWatt()
 	{
 		return applianceName.stream()
 				.filter((appliance) -> applianceNameOnMap.get(appliance))
-				.mapToInt((appliance) -> applianceWattMap.get(appliance))
+				.mapToDouble((appliance) -> applianceWattMap.get(appliance))
 				.sum();
 	}
 
@@ -320,7 +317,7 @@ public class HomeAgent extends NegotiatingAgent
 				}
 				applianceName.add(splitValue[1]);
 				applianceNameOnMap.put(splitValue[1], true);
-				applianceWattMap.put(splitValue[1],10);//TODO get appliance applianceWattMap from JSON
+				applianceWattMap.put(splitValue[1], usage);//TODO get appliance applianceWattMap from JSON
 				electricityForecast.put(splitValue[1],0.0);
 				applianceCurrentUsage.put(splitValue[1],0.0);
 				LogVerbose(splitValue[1] + " has been added to " + getLocalName());
