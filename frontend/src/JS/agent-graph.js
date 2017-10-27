@@ -89,7 +89,10 @@ let AgentGraph = () => {
     var w = 960,
         h = 600;
 
+    var size = 12;
+
     var color = d3.scale.category10();
+    var size = 12;
 
     var vis = d3.select("svg")
         .attr("width", w)
@@ -132,10 +135,21 @@ let AgentGraph = () => {
 
         var nodeEnter = node.enter().append("g")
             .attr("class", "node")
-            .call(force.drag);
+            .call(force.drag)
+            .on("mouseover", function() {
+              d3.select(this).attr('r', size)
+                .style("stroke","red");
+            })
+            .on("mouseleave", function() {
+              d3.select(this).attr('r', size)
+                .style("stroke","white");
+            })
+            .on("click", function(r) {
+              agentClickedOn(r.agentData, r.id);
+            });
 
         nodeEnter.append("svg:circle")
-            .attr("r", 12)
+            .attr("r", size)
             .attr("id", function (d) {
                 return "Node;" + d.id;
             })
@@ -153,7 +167,6 @@ let AgentGraph = () => {
         node.exit().remove();
 
         force.on("tick", function () {
-
             node.attr("transform", function (d) {
                 return "translate(" + d.x + "," + d.y + ")";
             });
@@ -177,16 +190,14 @@ let AgentGraph = () => {
             .gravity(.01)
             .charge(-80000)
             .friction(0)
-            .linkDistance( function(d) { return d.value * 15; } )
+            .linkDistance(100)
+            //.linkDistance( function(d) { return d.value * 15; } )
             .size([w, h])
             .start();
     };
 
-
-        // Make it all go
+    // Make it all go
     update();
-
-
 
     return this;
 };

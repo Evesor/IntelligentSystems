@@ -3,18 +3,15 @@ var ws = new WebSocket("ws://localhost:4567/ws");
 
 ws.onopen = function(data)
 {
-	console.log("Connected to websocket...");
+	console.log("Connected to websocket.");
 };
 
 ws.onmessage = function(data) 
 { 
 	try {
 		var jsonData = JSON.parse(data.data);
-		console.log(jsonData);
 		drawMessages(jsonData);
 		drawStats(jsonData);
-		testMyClickedOn(jsonData)
-		console.log(update);
 		update(jsonData);
 	} catch (err) {}
 };
@@ -22,7 +19,6 @@ ws.onmessage = function(data)
 ws.onclose = function()
 { 
 	// Websocket is closed.
-	alert("Connection is closed..."); 
 };
 
 // Random range bcuz javascript doesn't have one?

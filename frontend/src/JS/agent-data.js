@@ -1,8 +1,3 @@
-function testMyClickedOn(data) {
-	if (data.hasOwnProperty('nodes')){
-		agentClickedOn(data.nodes[0].agentData);
-	}
-}
 /*
 *	agentData: The agentData from input
 *	agentId: the id used by d3
@@ -53,6 +48,7 @@ function addListToList (data, DOMList, name) {
 	 	listItem.setAttribute('class', 'list-group-item');
 	 	sub_list.appendChild(listItem);	
 	});
+	DOMList.appendChild(sub_list);
 }
 
 function prettyName (string) {
