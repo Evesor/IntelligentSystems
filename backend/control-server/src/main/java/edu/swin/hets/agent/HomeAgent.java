@@ -130,7 +130,9 @@ public class HomeAgent extends NegotiatingAgent
 	@Override
 	protected void TimeExpired()
 	{
-		if (currentElectricityLeft < _next_purchased_amount) {
+		LogDebug("potato : " + sumWatt());
+		LogDebug("bout last time" + currentElectricityLeft);
+		if (currentElectricityLeft <= sumWatt()) {
 			LogError("DId not buy enough electricity!");
 		}
 		currentElectricityLeft = _next_purchased_amount;
@@ -189,18 +191,18 @@ public class HomeAgent extends NegotiatingAgent
 	//sum of every applianceNameOnMap appliance applianceWattMap
 	private int sumWatt()
 	{
-//		return applianceName.stream()
-//				.filter((appliance) -> applianceNameOnMap.get(appliance))
-//				.mapToInt((appliance) -> applianceWattMap.get(appliance))
-//				.sum();
+		return applianceName.stream()
+				.filter((appliance) -> applianceNameOnMap.get(appliance))
+				.mapToInt((appliance) -> applianceWattMap.get(appliance))
+				.sum();
 
-		int result = 0;
-		int i;
-		for(i=0;i<applianceName.size();i++)
-		{
-			result += applianceCurrentUsage.get(applianceName.get(i));
-		}
-		return result;
+//		int result = 0;
+//		int i;
+//		for(i=0;i<applianceName.size();i++)
+//		{
+//			result += applianceCurrentUsage.get(applianceName.get(i));
+//		}
+//		return result;
 	}
 
 	//sum of all appliance electricity forecast in the next x hour
@@ -237,7 +239,7 @@ public class HomeAgent extends NegotiatingAgent
 		for(DFAgentDescription reseller : resellers)
 		{
 			prop = new PowerSaleProposal(toBuy,1,
-					(_current_by_price), getAID(),reseller.getName());
+					(_current_by_price), reseller.getName(), getAID());
 			ACLMessage sent = sendCFP(prop, reseller.getName());
 			INegotiationStrategy strategy = new HoldForFirstOfferPrice(prop,sent.getConversationId()
 					,reseller.getName().getName(),_current_globals, 20, 10,
@@ -250,6 +252,7 @@ public class HomeAgent extends NegotiatingAgent
 	private void sendSellCFP()
 	{
 		double toSell = _next_purchased_amount - _next_required_amount;
+
 		PowerSaleProposal prop;
 		DFAgentDescription[] resellers = getService("reseller");
 		for(DFAgentDescription reseller : resellers)
@@ -343,7 +346,6 @@ public class HomeAgent extends NegotiatingAgent
 			sendSaleMade(agreement);
 			_currentNegotiations.clear();
 			updateBookkeeping();
-			//TODO, update state.
 			LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
 					" @ " + agreement.getCost());
 		}
@@ -368,37 +370,27 @@ public class HomeAgent extends NegotiatingAgent
 				}
 				if(response.get() instanceof PowerSaleProposal) {
 					// We should send back a counter proposal.
-
-//					PowerSaleProposal counterProposal = (PowerSaleProposal) response;
-//					negotiation.addNewProposal(counterProposal, true);
-//					_currentNegotiations.add(negotiation);
-//					ACLMessage replyMsg = msg.createReply();
-//					replyMsg.setPerformative(ACLMessage.PROPOSE);
-//					addPowerSaleProposal(replyMsg, counterProposal);
-//					send(replyMsg);
-					//TODO sendProposal(ACLMessage origionalMSG, PowerSaleProposal prop);
+					PowerSaleProposal counterProposal = (PowerSaleProposal) response.get();
+					sendProposal(msg, counterProposal);
 				}
 				else {
 					// We should accept the contract.
 					_currentNegotiations.clear();
 					PowerSaleAgreement contract = new PowerSaleAgreement(prop, _current_globals.getTime());
-					LogVerbose(" has accepted a contract from " + msg.getSender().getName() +
-							" for " + contract.getCost());
-					//_current_sell_agreements.add(contract);
 					if(contract.getSellerAID().getName().equals(getName()))
 					{
+						LogDebug("Adding sell");
 						_current_sell_agreements.add(contract);
-						//_next_required_amount += contract.getAmount();
 					}
 					else
 					{
-						_current_buy_agreements.add(contract);
-						//_next_purchased_amount += contract.getAmount();
-					}
-					sendSaleMade(contract);
+						LogDebug("Adding Buy");
 
+						_current_buy_agreements.add(contract);
+					}
 					updateBookkeeping();
-					sendAcceptProposal(msg, contract);
+					LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + contract.getAmount() +
+							" @ " + contract.getCost());
 				}
 			}
 		}
