@@ -72,11 +72,6 @@ class LocalContainerDistributor(
                 val argumentMap: MutableMap<String, Any> = mutableMapOf()
                 val ownerList: MutableList<String> = mutableListOf()
 
-                if (className == HomeAgent::class.java.name) {
-                    ownerList.addAll(ArrayList(homeAgentMap[name]))
-                }
-                argumentMap.put(HomeAgent.APPLIANCE_LIST_MAP_KEY, ownerList)
-
                 containerController.createNewAgent(
                         name,
                         className,
