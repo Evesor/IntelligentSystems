@@ -288,6 +288,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 _negotiationArgs.forEach((arg) -> LogDebug(arg));
             }
             else LogError("tried to have its negation strategy changed to nothing");
+            LogDebug("Recived a message about chaninging strat.");
         }
     }
      /******************************************************************************
