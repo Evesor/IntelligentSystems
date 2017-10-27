@@ -5,7 +5,6 @@
                         (location.port ? ":" + 4567 : "") +
                         "/ws");
 
-    var graph = AgentGraph();
 
     webSocket.onmessage = function (msg) {
         let jsonData = JSON.parse(msg.data);
@@ -18,11 +17,11 @@
         let nodes = jsonData.nodes;
         let links = nodes.flatMap(x => x.links);
 
-        nodes.forEach(node => graph.addNode(node.id, node.agentData, node.group));
+        nodes.forEach(node => agentGraph.addNode(node.id, node.agentData, node.group));
         links
-            .filter(link => graph.validateLink(link))
-            .map(link => graph.createLink(link.source, link.target, link.value))
-            .forEach(link => graph.addLink(link));
+            .filter(link => agentGraph.validateLink(link))
+            .map(link => agentGraph.createLink(link.source, link.target, link.value))
+            .forEach(link => agentGraph.addLink(link));
 
     };
 

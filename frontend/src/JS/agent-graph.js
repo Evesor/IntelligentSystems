@@ -1,4 +1,4 @@
-let AgentGraph = () => {
+var agentGraph = (() => {
 
     /**
      * Adds a node to the graph
@@ -9,7 +9,7 @@ let AgentGraph = () => {
     this.addNode = function (id, agentData, group) {
         Array.of(id)
             .filter(val => !nodes.some(node => node.id === val))
-            .forEach(id => nodes.push({"id": id})) 
+            .forEach(id => nodes.push({ "id": id }))
         this.findNode(id).agentData = agentData;
         this.findNode(id).group = group;
         update();
@@ -49,13 +49,36 @@ let AgentGraph = () => {
     };
 
     this.createLink = function (source, target, value) {
-        return {"source": this.findNode(source), "target": this.findNode(target), "value": value};
+        return { "source": this.findNode(source), "target": this.findNode(target), "value": value };
     };
 
+    /**
+     * @param {string} sourceId
+     * @param {string} targetId
+     * @returns {(link|undefined)} the link 
+    */
+    this.findLink = function (sourceId, targetId) {
+        return links.map(link => { return { "linkSourceId": link.source.id, "linkTargetId": link.target.id } })
+            .filter(it => sourceId === it.linkSourceId)
+            .filter(it => targetId === it.linkTargetId)
+            .shift()
+    }
+
     this.addLink = function (link) {
-        links.push(link);
+        let existingLink = findLink(link.source.id, link.target.id)
+        if (existingLink == null) {
+            links.push(link);
+        } else {
+            existingLink.value = link.value;
+        }
+
         update();
     };
+
+
+    this.getLinks = function () {
+        return links;
+    }
 
     /**
      * @param {ws-link} link
@@ -66,7 +89,7 @@ let AgentGraph = () => {
             .filter(element => nodes.some(node => node.id === element.target))
             .shift();
 
-        return !!result; 
+        return !!result;
     };
 
     /**
@@ -129,16 +152,16 @@ let AgentGraph = () => {
         var nodeEnter = node.enter().append("g")
             .attr("class", "node")
             .call(force.drag)
-            .on("mouseover", function() {
-              d3.select(this).attr('r', size)
-                .style("stroke","red");
+            .on("mouseover", function () {
+                d3.select(this).attr('r', size)
+                    .style("stroke", "red");
             })
-            .on("mouseleave", function() {
-              d3.select(this).attr('r', size)
-                .style("stroke","white");
+            .on("mouseleave", function () {
+                d3.select(this).attr('r', size)
+                    .style("stroke", "white");
             })
-            .on("click", function(r) {
-              agentClickedOn(r.agentData, r.id);
+            .on("click", function (r) {
+                agentClickedOn(r.agentData, r.id);
             });
 
         nodeEnter.append("svg:circle")
@@ -147,7 +170,7 @@ let AgentGraph = () => {
                 return "Node;" + d.id;
             })
             .attr("class", "nodeStrokeClass")
-            .attr("fill", function(r) {
+            .attr("fill", function (r) {
                 a = r.agentData;
                 console.log(r);
                 return color(r.group); ////// HUAN Please find a way to obtain the group
@@ -188,4 +211,4 @@ let AgentGraph = () => {
     update();
 
     return this;
-};
+})();
