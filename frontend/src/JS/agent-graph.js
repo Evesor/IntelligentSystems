@@ -110,28 +110,19 @@ let AgentGraph = () => {
 
     var update = function () {
         var link = vis.selectAll("line")
-            .data(links, function (d) {
-                return d.source.id + "-" + d.target.id;
-            });
+            .data(links, function (d) { return d.source.id + "-" + d.target.id; });
 
         link.enter().append("line")
-            .attr("id", function (d) {
-                return d.source.id + "-" + d.target.id;
-            })
-            .attr("stroke-width", function (d) {
-                return d.value / 10;
-            })
-            .attr("class", "link");
+            .attr("id", function (d) { return d.source.id + "-" + d.target.id; })
+            .attr("class", "link")
+            .attr("stroke-width", function (d) { console.log(d.value); return d.value / 2; });
+
         link.append("title")
-            .text(function (d) {
-                return d.value;
-            });
+            .text(function (d) { return d.value; });
         link.exit().remove();
 
         var node = vis.selectAll("g.node")
-            .data(nodes, function (d) {
-                return d.id;
-            });
+            .data(nodes, function (d) { return d.id; });
 
         var nodeEnter = node.enter().append("g")
             .attr("class", "node")
@@ -171,18 +162,10 @@ let AgentGraph = () => {
                 return "translate(" + d.x + "," + d.y + ")";
             });
 
-            link.attr("x1", function (d) {
-                return d.source.x;
-            })
-                .attr("y1", function (d) {
-                    return d.source.y;
-                })
-                .attr("x2", function (d) {
-                    return d.target.x;
-                })
-                .attr("y2", function (d) {
-                    return d.target.y;
-                });
+            link.attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
         });
 
         // Restart the force layout.
@@ -191,7 +174,6 @@ let AgentGraph = () => {
             .charge(-80000)
             .friction(0)
             .linkDistance(100)
-            //.linkDistance( function(d) { return d.value * 15; } )
             .size([w, h])
             .start();
     };
