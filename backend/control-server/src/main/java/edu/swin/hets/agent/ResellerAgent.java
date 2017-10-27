@@ -325,6 +325,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 public double getCurrent_Buy_Price() { return current_buy_price; }
                 public double getCurrent_Purchase_Volume() { return current_purchase_volume; }
                 public double getCurrent_Sales_Volume() { return current_sales_volume; }
+                public String getNegotiation_Strategy () { return _negotiationArgs.get(0); }
         }
     }
     /******************************************************************************

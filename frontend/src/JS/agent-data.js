@@ -45,7 +45,8 @@ function addListToList (data, DOMList, name) {
 
 	data.forEach(function(element) {
 		let listItem = document.createElement('li');
-	 	listItem.appendChild(document.createTextNode(element[0]+ " :: " + element[1]));
+		console.log(element);
+	 	listItem.appendChild(document.createTextNode(element));
 	 	listItem.setAttribute('class', 'list-group-item');
 	 	sub_list.appendChild(listItem);	
 	});
