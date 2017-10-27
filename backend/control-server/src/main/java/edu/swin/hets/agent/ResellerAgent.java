@@ -170,7 +170,9 @@ public class ResellerAgent extends NegotiatingAgent {
         //TODO make more complicated logic for initial offer.
         PowerSaleProposal prop;
         for (DFAgentDescription powerPlant : powerPlants) {
-            prop = new PowerSaleProposal(_nextRequiredAmount - _nextPurchasedAmount,1,
+            double toBuy = (_nextRequiredAmount - _nextPurchasedAmount);
+            toBuy = (toBuy > 500 ? 500 : toBuy);
+            prop = new PowerSaleProposal(toBuy,1,
                     (_current_globals.getAveragePriceLastTime() * 0.5), powerPlant.getName(), getAID());
             // Make new negotiation for each powerPlant
             ACLMessage sent = sendCFP(prop, powerPlant.getName());

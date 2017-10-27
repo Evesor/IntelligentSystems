@@ -135,6 +135,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
             if (proposed.getAmount() > (MAX_PRODUCTION - _currentProduction)) {
                 LogVerbose(getName() + " was asked to sell electricity than it can make.");
+                sendRejectProposalMessage(msg, proposed);
                 return;
             }
             else if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
