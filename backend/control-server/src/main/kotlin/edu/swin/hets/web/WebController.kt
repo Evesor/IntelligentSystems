@@ -27,8 +27,11 @@ class WebController(
     fun start() {
         logger.info("Starting up Web Services...")
         port(if (!systemConfig.devMode) 80 else 4567)
-        webSocket(ClientWebSocketHandler.PATH, clientWebSocketHandler)
         staticFiles.location("/public")
+
+        webSocket(ClientWebSocketHandler.PATH, clientWebSocketHandler)
+
+        SparkCorsFilter().apply()
         path("/api") {
             before("/*") { req, _ -> logger.info("received API call from ${req.ip()}") }
             post("/shutdown") { req, res ->
