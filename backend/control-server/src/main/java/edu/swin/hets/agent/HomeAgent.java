@@ -267,7 +267,6 @@ public class HomeAgent extends NegotiatingAgent
 			String senderName = msg.getSender().getName();
 			double value = Double.parseDouble(splitValue[1]);
 			applianceCurrentUsage.put(senderName, value);
-			LogDebug("OSSU " + senderName + " current : " + value + "applianceCurrentUsage " + applianceCurrentUsage.get(senderName));
 		}
 	}
 
@@ -280,7 +279,6 @@ public class HomeAgent extends NegotiatingAgent
 			String senderName = msg.getSender().getName();
 			double value = Double.parseDouble(msg.getContent().substring(msg.getContent().lastIndexOf(",")+1));
 			electricityForecast.put(senderName, value);
-			LogDebug("OSSU value : " + value + ", forecast = " + forecast(1) + "electricityForecast :" + electricityForecast.get(senderName));
 		}
 	}
 
