@@ -47,17 +47,6 @@ public class WebAgent extends BaseAgent {
     }
 
     protected void TimeExpired() {
-        //clientWebSocketHandler.broadcast("wow");
-        if (messages.isEmpty()) return;
-        String output = "{\"nodes\":[";
-        for (String message : messages) {
-            output = output.concat(message + ",");
-        }
-        // Remove last comma
-        output = output.substring(0, output.length() - 1);
-        output = output.concat("]}");
-        messages.clear();
-        clientWebSocketHandler.broadcast(output);
     }
 
     protected String getJSON() {
@@ -65,6 +54,20 @@ public class WebAgent extends BaseAgent {
     }
 
     protected void TimePush(int ms_left) {
+        // Push messages in first time push rather than time expired, timing issues otherwise.
+        if (ms_left == (GlobalValues.lengthOfTimeSlice() - GlobalValues.pushTimeLength())) {
+            //clientWebSocketHandler.broadcast("wow");
+            if (messages.isEmpty()) return;
+            String output = "{\"nodes\":[";
+            for (String message : messages) {
+                output = output.concat(message + ",");
+            }
+            // Remove last comma
+            output = output.substring(0, output.length() - 1);
+            output = output.concat("]}");
+            messages.clear();
+            clientWebSocketHandler.broadcast(output);
+        }
     }
 
     /**

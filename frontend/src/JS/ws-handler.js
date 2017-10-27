@@ -1,7 +1,10 @@
 (() => {
 // Establish the WebSocket connection and set up event handlers
-    let webSocket = new WebSocket("ws://localhost:4567/ws");
-    var graph = AgentGraph();
+    let webSocket = new WebSocket("ws://" +
+                        location.hostname +
+                        (location.port ? ":" + 4567 : "") +
+                        "/ws");
+
 
     webSocket.onmessage = function (msg) {
         let jsonData = JSON.parse(msg.data);
@@ -12,23 +15,17 @@
 
     let handleAgentData = (jsonData) => {
         let nodes = jsonData.nodes;
+        let links = nodes.flatMap(x => x.links);
 
-        let links = jsonData.nodes.flatMap((x) => {
-            return x.links;
-        });
-
-        nodes.forEach(node => graph.addNode(node.id, node.agent));
-
+        nodes.forEach(node => agentGraph.addNode(node.id, node.agentData, node.group));
         links
-            .filter(link => graph.validateLink(link))
-            .map(link => graph.createLink(link.source, link.target, link.value))
-            .forEach(link => graph.addLink(link));
+            .filter(link => agentGraph.validateLink(link))
+            .map(link => agentGraph.createLink(link.source, link.target, link.value))
+            .forEach(link => agentGraph.addLink(link));
 
     };
 
     webSocket.onclose = function () {
         console.log("Websocket Closed.");
     };
-
-
 })();

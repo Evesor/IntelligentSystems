@@ -15,8 +15,8 @@
 
   <style>
     .link {
-      stroke: #2E2E2E;
-      stroke-width: 2px;
+      stroke: #999999;
+      /*stroke-width: 20px;*/
     }
 
     .node {
@@ -62,8 +62,8 @@
 
       <div class="collapse navbar-collapse" id="navigation-bar">
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item active">
-            <a class="nav-link" href="#index">Home <span class="sr-only">(current)</span></a>
+          <li class="nav-item">
+            <a class="nav-link active" href="#index">Home <span class="sr-only">(current)</span></a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#agents">Agents</a>
@@ -107,7 +107,7 @@
             </div>
 
             <div class="col">
-              <div class="box">
+              <div class="box" style="overflow:auto;">
                 <div id="agent-data"></div>
               </div>
             </div>
@@ -189,6 +189,7 @@
 
     <!-- d3 Graphs for siq interactive agent data -->
     <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="../JS/lib/agent-api.js"></script>
     <script src="../JS/polyfills.js"></script>
     <script src="../JS/agent-graph.js"></script>
     <script src="../JS/ws-handler.js"></script>

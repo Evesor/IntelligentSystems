@@ -1,17 +1,14 @@
-function testMyClickedOn(data) {
-	if (data.hasOwnProperty('nodes')){
-		agentClickedOn(data.nodes[0].agentData);
-	}
-}
-
-
-function agentClickedOn(agentData) {
+/*
+*	agentData: The agentData from input
+*	agentId: the id used by d3
+*/
+function agentClickedOn(agentData, agentId) {
 	let agent_data_box = document.getElementById("agent-data");
 	agent_data_box.innerHTML='';
-
 	listDataVisualisation(agentData, agent_data_box);
-	addChangeNegotiationMethodsButton(agentData.name, agent_data_box);
-	//addNegotiationMethods("1013122298");//Add id
+	if (agentData.type == "Reseller Agent") {
+		addChangeNegotiationMethodsButton(agentId, agent_data_box);
+	}
 }
 
 // Recursively add list items to list.
@@ -48,10 +45,12 @@ function addListToList (data, DOMList, name) {
 
 	data.forEach(function(element) {
 		let listItem = document.createElement('li');
-	 	listItem.appendChild(document.createTextNode(element[0]+ " :: " + element[1]));
+		console.log(element);
+	 	listItem.appendChild(document.createTextNode(element));
 	 	listItem.setAttribute('class', 'list-group-item');
 	 	sub_list.appendChild(listItem);	
 	});
+	DOMList.appendChild(sub_list);
 }
 
 function prettyName (string) {
@@ -59,59 +58,26 @@ function prettyName (string) {
 	return string.replace(/_/g, " ");
 }
 
+let makeMyButtonClickEvent = ((name) => {
+	return (() => { 
+		let response = prompt ("Please enter the agent behavior and paramaters with spaces");
+		agentApi.changeBehaviour(name, response);
+		//pushToJade(name + " " + response);
+	});
+});
+
 function addChangeNegotiationMethodsButton (name, DOMItem) {
 	let changeBehaviorButton = document.createElement("BUTTON");
-	//changeBehaviorButton.setAttribute('class',"btn btn-primary");
-	changeBehaviorButton.setAttribute('onclick', function() {
-		alert("potato!");
-	});
-	// changeBehaviorButton.addEventListner('click', function(event) {
-	// 	alert("potato!");
-
-	// });
+	changeBehaviorButton.setAttribute('onclick', makeMyButtonClickEvent(name));
+	changeBehaviorButton.onclick = makeMyButtonClickEvent(name);
 	changeBehaviorButton.appendChild(document.createTextNode("Change Behavior"));
 	DOMItem.appendChild(changeBehaviorButton);
 }
-
+/*
+*	input : A string to go the jade behavior
+*/
 function pushToJade (input) {
 
 }
-
-
-//Used to add a list of things we can send to the agent.
-// function addNegotiationMethods (agentId) {
-// 	let agent_data_box = document.getElementById("agent-data");
-// 	let list = document.createElement("ul");
-// 	agent_negotiation_methods.map(function(element) {
-// 		let li = document.createElement(li);
-// 		let button = document.createElement("BUTTON");
-// 		//button.className = ; TODO, change to be pretty later
-// 		let text = document.createTextNode(element);
-// 		button.appendChild(text);
-// 		//TODO, add styles.
-// 		button.addEventListner('click', function(event) {
-// 			//TODO, find way to add agent id to list.
-// 			let response = prompt("Params for " + element + " : ");
-// 			response = element + ' ' +response;
-// 			pushToJade(response);
-// 		}, false);	
-// 		li.appendChild(node);
-// 		list.appendChild(li);
-// 	});
-// }
-// 	agent_data_box.appendChild(list);
-// 	/*
-// <div class="dropdown">
-//   <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Dropdown Example
-//   <span class="caret"></span></button>
-//   <ul class="dropdown-menu">
-//     <li><a href="#">HTML</a></li>
-//     <li><a href="#">CSS</a></li>
-//     <li><a href="#">JavaScript</a></li>
-//   </ul>
-// </div>
-// */
-// }
-
 
 

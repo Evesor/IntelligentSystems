@@ -18,9 +18,10 @@ import java.util.concurrent.ExecutionException;
 public abstract class NegotiatingAgent extends BaseAgent{
     public static String CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY = "ChangeStrategy";
     // Used to define external message to change the negotiation strategy.
-    MessageTemplate ChangeNegotiationStrategyTemplate = MessageTemplate.and( //TODO, Fix
+    MessageTemplate ChangeNegotiationStrategyTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
             MessageTemplate.MatchOntology(CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY));
+            //TODO, once we have front end messages sorted check the sender.
     @Override
     protected void setup () {
         super.setup();

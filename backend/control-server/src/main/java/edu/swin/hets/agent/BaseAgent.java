@@ -197,7 +197,7 @@ public abstract class BaseAgent extends Agent{
                         _messages_this_timeslice.clear();
                     } else {
                         _current_globals = newGlobals;
-                        TimePush(_current_globals.getTimeLeft() * 1000);
+                        TimePush(_current_globals.getTimeLeft());
                     }
                 }
             } catch (UnreadableException e) {
