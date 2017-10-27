@@ -4,12 +4,14 @@ let AgentGraph = () => {
      * Adds a node to the graph
      * @param {string} id
      * @param {ws-agent} agentData
+     * @param {ws-group} group
      */
-    this.addNode = function (id, agentData) {
+    this.addNode = function (id, agentData, group) {
         Array.of(id)
             .filter(val => !nodes.some(node => node.id === val))
-            .forEach(id => nodes.push({"id": id})) //////////// <<<<<<<<<<<<<<<<< Add the group
+            .forEach(id => nodes.push({"id": id})) 
         this.findNode(id).agentData = agentData;
+        this.findNode(id).group = group;
         update();
     };
 

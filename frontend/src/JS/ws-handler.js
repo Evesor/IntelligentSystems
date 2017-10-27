@@ -16,11 +16,9 @@
 
     let handleAgentData = (jsonData) => {
         let nodes = jsonData.nodes;
-        let links = nodes.flatMap((x) => {
-            return x.links;
-        });
+        let links = nodes.flatMap(x => x.links);
 
-        nodes.forEach(node => graph.addNode(node.id, node.agentData));
+        nodes.forEach(node => graph.addNode(node.id, node.agentData, node.group));
         links
             .filter(link => graph.validateLink(link))
             .map(link => graph.createLink(link.source, link.target, link.value))
