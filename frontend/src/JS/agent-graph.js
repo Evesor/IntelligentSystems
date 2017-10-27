@@ -190,18 +190,11 @@ let AgentGraph = () => {
             .gravity(.01)
             .charge(-80000)
             .friction(0)
-            .linkDistance( function(d) { return 100; } )
+            .linkDistance(100)
             //.linkDistance( function(d) { return d.value * 15; } )
             .size([w, h])
             .start();
-
-        // force
-        //     .gravity(.01)
-        //     .charge(-80000)
-        //     .friction(0)
-        //     .size([w, h])
-        //     .linkDistance(200)
-        //     .start();
+    };
 
     // Make it all go
     update();
