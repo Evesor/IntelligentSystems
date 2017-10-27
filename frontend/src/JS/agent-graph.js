@@ -178,7 +178,7 @@ var agentGraph = (() => {
         newLink = link.enter().append("line")
             .attr("id", function (d) { return d.source.id + "-" + d.target.id })
             .attr("class", "link")
-            .attr("stroke-width", function (d) { d.value / 2 });
+            .attr("stroke-width", function (d) { return d.value / 2 });
 
         //	ENTER + UPDATE
         link = link.merge(newLink);
