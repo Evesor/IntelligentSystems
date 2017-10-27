@@ -10,11 +10,8 @@ ws.onmessage = function(data)
 { 
 	try {
 		var jsonData = JSON.parse(data.data);
-		console.log(jsonData);
 		drawMessages(jsonData);
 		drawStats(jsonData);
-		testMyClickedOn(jsonData)
-		console.log(update);
 		update(jsonData);
 	} catch (err) {}
 };
