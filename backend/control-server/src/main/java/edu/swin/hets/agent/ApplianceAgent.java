@@ -86,7 +86,7 @@ public class ApplianceAgent extends BaseAgent
 
 	private void sendIAmYoursToHome(AID homeAID) {
 		ACLMessage iAmYours = new ACLMessage(ACLMessage.INFORM);
-		iAmYours.setContent("ApplianceDetail," + getName());
+		iAmYours.setContent("ApplianceDetail," + getName() + "," + _wattUsage);
 		iAmYours.addReceiver(homeAID);
 		_homeAID = homeAID;
 		send(iAmYours);

@@ -8,8 +8,6 @@ import jade.core.AID;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import sun.rmi.runtime.Log;
-
 import java.lang.*;
 import java.util.*;
 /******************************************************************************
@@ -312,8 +310,14 @@ public class HomeAgent extends NegotiatingAgent
 	private class ApplianceDetailHandler implements IMessageHandler {
 		public void Handler(ACLMessage msg){
 			String[] splitValue = msg.getContent().split(",");
-			if(splitValue.length == 2)
+			if(splitValue.length == 3)
 			{
+				double usage = 10;
+				try	{
+					usage = Double.parseDouble(splitValue[2]);
+				} catch (Exception e) {
+					LogError("Could not pass the power usage!");
+				}
 				applianceName.add(splitValue[1]);
 				applianceNameOnMap.put(splitValue[1], true);
 				applianceWattMap.put(splitValue[1],10);//TODO get appliance applianceWattMap from JSON
