@@ -25,7 +25,7 @@ public class ChangeBehaviourMessageBehaviour extends OneShotBehaviour {
     public void action() {
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
         msg.setOntology(CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY);
-        msg.addReceiver(new AID(_agentName, AID.ISLOCALNAME));
+        msg.addReceiver(new AID(_agentName, AID.ISGUID));
         try {
             msg.setContentObject(_message);
             logger.error("Super mega fruit morty: " + _message + "::" + _agentName);
@@ -33,5 +33,6 @@ public class ChangeBehaviourMessageBehaviour extends OneShotBehaviour {
             logger.error(e.toString());
             //TODO, log this as error.
         }
+        myAgent.send(msg);
     }
 }
