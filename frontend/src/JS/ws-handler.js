@@ -1,6 +1,15 @@
 (() => {
+<<<<<<< HEAD:frontend/JS/ws-handler.js
     // Establish the WebSocket connection and set up event handlers
     let webSocket = new WebSocket("ws://localhost:4567/ws");
+=======
+// Establish the WebSocket connection and set up event handlers
+    let webSocket = new WebSocket("ws://" +
+                        location.hostname +
+                        (location.port ? ":" + 4567 : "") +
+                        "/ws");
+
+>>>>>>> frontend:frontend/src/JS/ws-handler.js
     var graph = AgentGraph();
 
     webSocket.onmessage = function (msg) {
@@ -11,19 +20,17 @@
     };
 
     let handleAgentData = (jsonData) => {
-        let ids = jsonData.nodes.map(nodes => {
-            return nodes.id;
-        }); 
-
-        let links = jsonData.nodes.flatMap((x) => {
+        let nodes = jsonData.nodes;
+        let links = nodes.flatMap((x) => {
             return x.links;
         });
 
-        ids.forEach(id => graph.addNode(id));
+        nodes.forEach(node => graph.addNode(node.id, node.agentData));
         links
             .filter(link => graph.validateLink(link))
             .map(link => graph.createLink(link.source, link.target, link.value))
             .forEach(link => graph.addLink(link));
+
     };
 
     webSocket.onclose = function () {

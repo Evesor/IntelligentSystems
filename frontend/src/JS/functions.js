@@ -12,7 +12,6 @@ ws.onmessage = function(data)
 		var jsonData = JSON.parse(data.data);
 		drawMessages(jsonData);
 		drawStats(jsonData);
-		
 		update(jsonData);
 	} catch (err) {}
 };

@@ -32,20 +32,20 @@ abstract class ContainerDistributor(val runtime: Runtime, val systemDefinition: 
         val DEFAULT_CONTAINER_CONFIGURATION =
                 SystemDefinition(listOf(
                         ContainerDefinition("Power Plant Container", listOf(
-                                AgentDefinition("PowerPlant1", PowerPlantAgent::class.java.name),
-                                AgentDefinition("PowerPlant2", PowerPlantAgent::class.java.name)
+                                AgentDefinition("PowerPlant1", PowerPlantAgent::class.java.name, arguments = "LinearUtilityDecentNegotiator,9,5,0.2,0.1,1,0.95"),
+                                AgentDefinition("PowerPlant2", PowerPlantAgent::class.java.name, arguments = "BoulwareNegotiator,9,5,0.2,0.1,1,0.95")
                         )),
                         ContainerDefinition("Appliance Container", listOf(
-                                AgentDefinition(name = "Appliance1", className = ApplianceAgent::class.java.name, owner = "Home1"),
-                                AgentDefinition(name = "Appliance2", className = ApplianceAgent::class.java.name, owner = "Home2")
+                                AgentDefinition(name = "Appliance1", className = ApplianceAgent::class.java.name, owner = "Home1", arguments = "10,Home1"),
+                                AgentDefinition(name = "Appliance2", className = ApplianceAgent::class.java.name, owner = "Home2", arguments = "20,Home2")
                         )),
                         ContainerDefinition("Home Container", listOf(
-                                AgentDefinition("Home1", HomeAgent::class.java.name),
-                                AgentDefinition("Home2", HomeAgent::class.java.name)
+                                AgentDefinition("Home1", HomeAgent::class.java.name, arguments = "LinearUtilityDecentNegotiator,0.05,0.5,2"),
+                                AgentDefinition("Home2", HomeAgent::class.java.name, arguments = "LinearUtilityDecentNegotiator,0.1,0.4,2")
                         )),
                         ContainerDefinition("Reseller Container", listOf(
-                                AgentDefinition(name = "Reseller1", className = ResellerAgent::class.java.name, arguments = "HoldForFirstOfferPrice"),
-                                AgentDefinition(name ="Reseller2", className =  ResellerAgent::class.java.name, arguments = "LinearUtilityDecentNegotiator,0.1,0.5,1")
+                                AgentDefinition(name = "Reseller1", className = ResellerAgent::class.java.name, arguments = "LinearUtilityDecentNegotiator,9,5,0.2,0.1,1,0.95"),
+                                AgentDefinition(name ="Reseller2", className =  ResellerAgent::class.java.name, arguments = "LinearUtilityDecentNegotiator,0.05,0.5,2")
                         ))
                 ))
     }

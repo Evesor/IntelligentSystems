@@ -1,23 +1,28 @@
-var AgentGraph = () => {
+let AgentGraph = () => {
 
-    // Add and remove elements on the graph object
-    this.addNode = function (id) {
+    /**
+     * Adds a node to the graph
+     * @param {string} id
+     * @param {ws-agent} agentData
+     */
+    this.addNode = function (id, agentData) {
         Array.of(id)
             .filter(val => !nodes.some(node => node.id === val))
             .forEach(id => nodes.push({"id": id}));
+        this.findNode(id).agentData = agentData;
         update();
     };
 
     this.removeNode = function (id) {
         var i = 0;
-        var n = findNode(id);
+        var n = this.findNode(id);
         while (i < links.length) {
             if ((links[i]["source"] == n) || (links[i]["target"] == n)) {
                 links.splice(i, 1);
             }
             else i++;
         }
-        nodes.splice(findNodeIndex(id), 1);
+        nodes.splice(this.findNodeIndex(id), 1);
         update();
     };
 
@@ -42,7 +47,7 @@ var AgentGraph = () => {
     };
 
     this.createLink = function (source, target, value) {
-        return {"source": findNode(source), "target": findNode(target), "value": value};
+        return {"source": this.findNode(source), "target": this.findNode(target), "value": value};
     };
 
     this.addLink = function (link) {
@@ -50,6 +55,9 @@ var AgentGraph = () => {
         update();
     };
 
+    /**
+     * @param {ws-link} link
+     */
     this.validateLink = function (link) {
         let result = Array.of(link)
             .filter(element => nodes.some(node => node.id === element.source))
@@ -59,23 +67,29 @@ var AgentGraph = () => {
         return !!result; 
     };
 
-    var findNode = function (id) {
-        for (var i in nodes) {
-            if (nodes[i]["id"] === id) return nodes[i];
-        }
+    /**
+     * Finds the first node with id
+     * @param {string} id 
+     * @returns {(node|undefined)} the node from the node list
+     */
+    this.findNode = function (id) {
+        return nodes.find(node => node.id === id);
     };
 
-    var findNodeIndex = function (id) {
-        for (var i = 0; i < nodes.length; i++) {
-            if (nodes[i].id == id) {
-                return i;
-            }
-        }
+    /**
+     * Finds the index of the node id
+     * @param {string} id 
+     * @returns {number} index of the node, -1 if it doesn't exist
+     */
+    this.findNodeIndex = function (id) {
+        return nodes.findIndex(node => node.id === id);
     };
 
     // set up the D3 visualisation in the specified element
     var w = 960,
         h = 600;
+
+    var size = 12;
 
     var color = d3.scale.category10();
     var size = 12;
@@ -121,7 +135,18 @@ var AgentGraph = () => {
 
         var nodeEnter = node.enter().append("g")
             .attr("class", "node")
-            .call(force.drag);
+            .call(force.drag)
+            .on("mouseover", function() {
+              d3.select(this).attr('r', size)
+                .style("stroke","red");
+            })
+            .on("mouseleave", function() {
+              d3.select(this).attr('r', size)
+                .style("stroke","white");
+            })
+            .on("click", function(r) {
+              agentClickedOn(r.agentData, r.id);
+            });
 
         nodeEnter.append("svg:circle")
             .attr("r", size)
@@ -130,26 +155,15 @@ var AgentGraph = () => {
                 return "Node;" + d.id;
             })
             .attr("class", "nodeStrokeClass")
-            .attr("fill", function(d) { return color(d.id); })
-                .on("mouseover", function() {
-                  d3.select(this).attr('r', size)
-                    .style("stroke","red")
-                })
-                .on("mouseleave", function() {
-                  d3.select(this).attr('r', size)
-                    .style("stroke","black")
-                })
-                .on("click", function(r) {
-                  getAgentsFromNodes(r.id);
-                });
+            .attr("fill", function(d) { return color(d.id); });
 
-        // nodeEnter.append("svg:text")
-        //     .attr("class", "textClass")
-        //     .attr("x", 14)
-        //     .attr("y", ".31em")
-        //     .text(function (d) {
-        //         return d.id;
-        //     });
+        nodeEnter.append("svg:text")
+            .attr("class", "textClass")
+            .attr("x", 14)
+            .attr("y", ".31em")
+            .text(function (d) {
+                return d.agentData.name;
+            });
 
         node.exit().remove();
 
@@ -177,7 +191,7 @@ var AgentGraph = () => {
             .gravity(.01)
             .charge(-80000)
             .friction(0)
-            .linkDistance( function(d) { return d.value * 10; } )
+            .linkDistance( function(d) { return d.value * 15; } )
             .size([w, h])
             .start();
     };

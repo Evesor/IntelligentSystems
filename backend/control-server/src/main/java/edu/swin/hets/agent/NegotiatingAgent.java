@@ -1,14 +1,11 @@
 package edu.swin.hets.agent;
 
-import com.hierynomus.msdtyp.ACL;
 import edu.swin.hets.helper.*;
 import edu.swin.hets.helper.negotiator.HoldForFirstOfferPrice;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-import sun.rmi.runtime.Log;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -19,10 +16,12 @@ import java.util.concurrent.ExecutionException;
  *       that any negotiating agent would do repeatedly.
  *****************************************************************************/
 public abstract class NegotiatingAgent extends BaseAgent{
+    public static String CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY = "ChangeStrategy";
     // Used to define external message to change the negotiation strategy.
     MessageTemplate ChangeNegotiationStrategyTemplate = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
-            GoodMessageTemplates.ContatinsString("Change")); //TODO, fix
+            MessageTemplate.MatchOntology(CHANGE_NEGOTIATION_STRATEGY_ONTOLOGY));
+            //TODO, once we have front end messages sorted check the sender.
     @Override
     protected void setup () {
         super.setup();
@@ -32,7 +31,7 @@ public abstract class NegotiatingAgent extends BaseAgent{
     ACLMessage sendSaleMade(PowerSaleAgreement agg) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         addPowerSaleAgreement(msg, agg);
-        msg.addReceiver(new AID("StatisticsAgent", AID.ISLOCALNAME));
+        msg.addReceiver(new AID(StatisticsAgent.AGENT_NAME, AID.ISLOCALNAME));
         send(msg);
         return msg;
     }
@@ -128,11 +127,12 @@ public abstract class NegotiatingAgent extends BaseAgent{
         if(negotiationArgs.size() < NegotiatorFactory.MIN_NUMBER_OF_ARGS ) {
             LogError("Does not have any details to make negotiators with, using a default");
             negotiationArgs.forEach((arg) -> LogError("was passed: " + arg));
-            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, currentTime, 8);
+            return new HoldForFirstOfferPrice(offer, conversationID, opponentName, _current_globals,
+                    10, 8, 0.1, 0.1, 0.5);
         }
         try {
-            return NegotiatorFactory.Factory.getNegotiationStrategy(negotiationArgs, utilityFunction, getName(),
-                    opponentName, offer, _current_globals.getTime(), conversationID);
+            return NegotiatorFactory.Factory.getNegotiationStrategy(negotiationArgs, utilityFunction,
+                    opponentName, offer, _current_globals, conversationID);
         } catch (ExecutionException e) {
             String error = "Negotiator factory failed to initialize with: " ;
             for (String a : negotiationArgs) { error += ("  " + a); }

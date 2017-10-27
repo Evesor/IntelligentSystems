@@ -8,7 +8,6 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -75,8 +74,8 @@ public class ResellerAgent extends NegotiatingAgent {
 
     protected void setup() {
         super.setup();
-        _currentByPrice = 1;
-        _currentSellPrice = 1.0;
+        _currentByPrice = _current_globals.getAveragePriceLastTime() * 0.75;
+        _currentSellPrice = _current_globals.getAveragePriceLastTime() * 1.25;
         _nextRequiredAmount = 0;
         _money = 500;
         _currentBuyAgreements = new ArrayList<>();
@@ -91,14 +90,14 @@ public class ResellerAgent extends NegotiatingAgent {
         RegisterAMSService(getAID().getName(), "reseller");
         addMessageHandler(ChangeNegotiationStrategyTemplate, new ChangeNegotiationStrategyHandler());
         _negotiationArgs = (List<String>) getArguments()[0];
-        if (_negotiationArgs.size() > 0) {
-            _negotiationArgs.forEach((a) -> LogDebug(" was passed: " + a));
-        }
+//        if (_negotiationArgs.size() > 0) {
+//            _negotiationArgs.forEach((a) -> LogDebug(" was passed: " + a));
+//        }
     }
 
     protected String getJSON() {
         String json = "test";
-        try {
+        try  {
             json = new ObjectMapper().writeValueAsString(
                     new ResellerAgentData(_currentByPrice, _currentSellPrice, _nextRequiredAmount,
                             _nextPurchasedAmount, getName()));
@@ -116,17 +115,17 @@ public class ResellerAgent extends NegotiatingAgent {
             LogError(getName() + " failed to fulfill all its contracts and was fined: " + fine);
             _money -= fine;
         }
+        double moneyMade = _currentSellAgreements.stream().mapToDouble((agg) -> agg.getCost() * agg.getAmount()).sum();
+        double moneySpent = _currentBuyAgreements.stream().mapToDouble((agg) -> agg.getCost() * agg.getAmount()).sum();
+        LogDebug("purchased " + _nextPurchasedAmount + " for " + moneySpent + " and sold "
+                + _nextRequiredAmount + " for " + moneyMade);
         balanceBooks();
         updateContracts();
-        // We now know how much we have bought and how much we need to buy, send out CFP's to get electricity we need.
-        if (_nextRequiredAmount > _nextPurchasedAmount) {
-            sendBuyCFP();
-        }
     }
 
     private void balanceBooks() {
-        for (PowerSaleAgreement agg : _currentBuyAgreements) _money +=  agg.getAmount() * agg.getCost();
-        for (PowerSaleAgreement agg : _currentSellAgreements) _money -=  agg.getAmount() * agg.getCost();
+        _money += (_currentSellAgreements.stream().mapToDouble((agg) -> agg.getCost() * agg.getAmount()).sum());
+        _money -= (_currentBuyAgreements.stream().mapToDouble((agg) -> agg.getCost() * agg.getAmount()).sum());
         if (_money < 0) {
             LogError(getName() + " has gone bankrupt!");
             //TODO, send message to main container to remove agent.
@@ -139,17 +138,19 @@ public class ResellerAgent extends NegotiatingAgent {
         // Get rid of old contracts that are no longer valid
         ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
         _currentBuyAgreements.stream().filter(
-                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+                (agg) -> agg.getEndTime() <= _current_globals.getTime()).forEach(toRemove::add);
         _currentBuyAgreements.removeAll(toRemove);
         toRemove.clear();
         _currentSellAgreements.stream().filter(
-                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+                (agg) -> agg.getEndTime() <= _current_globals.getTime()).forEach(toRemove::add);
         _currentSellAgreements.removeAll(toRemove);
         // Re calculate usage for this time slice
         for (PowerSaleAgreement agreement : _currentBuyAgreements) _nextPurchasedAmount += agreement.getAmount();
         for (PowerSaleAgreement agreement: _currentSellAgreements) _nextRequiredAmount += agreement.getAmount();
-        //TODO, Remove once home is sorted again
-        _nextRequiredAmount = 300;
+        // We now know how much we have bought and how much we need to buy, send out CFP's to get electricity we need.
+        if (_nextRequiredAmount > _nextPurchasedAmount) {
+            sendBuyCFP();
+        }
     }
 
     // Time is expiring, make sure we have purchased enough electricity
@@ -167,11 +168,11 @@ public class ResellerAgent extends NegotiatingAgent {
         DFAgentDescription[] powerPlants = getService("powerplant");
         _currentNegotiations.clear(); // We have just received a push or new timeSlice, clear list.
         //TODO make more complicated logic for initial offer.
-        PowerSaleProposal prop = new PowerSaleProposal(
-                _nextRequiredAmount - _nextPurchasedAmount,1, getAID(), false);
+        PowerSaleProposal prop;
         for (DFAgentDescription powerPlant : powerPlants) {
+            prop = new PowerSaleProposal(_nextRequiredAmount - _nextPurchasedAmount,1,
+                    (_current_globals.getAveragePriceLastTime() * 0.5), powerPlant.getName(), getAID());
             // Make new negotiation for each powerPlant
-            prop.setBuyerAID(getAID());
             ACLMessage sent = sendCFP(prop, powerPlant.getName());
             INegotiationStrategy strategy;
             try {
@@ -182,7 +183,7 @@ public class ResellerAgent extends NegotiatingAgent {
             }
             _currentNegotiations.add(strategy);
         }
-        LogDebug(getName() + " is sending cfp for: " + (_nextRequiredAmount - _nextPurchasedAmount) );
+        //LogDebug(getName() + " is sending cfp for: " + (_nextRequiredAmount - _nextPurchasedAmount) );
     }
 
     // Someone is negotiating with us.
@@ -200,7 +201,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 strategy.addNewProposal(proposed, false);
                 Optional <IPowerSaleContract> offer = strategy.getResponse();
                 if (!offer.isPresent()) { // We should end negotiation
-                    LogDebug("Has stopped negotiating with : " + msg.getSender().getName());
+                    //LogDebug("Has stopped negotiating with : " + msg.getSender().getName());
                     sendRejectProposalMessage(msg, proposed);
                     _currentNegotiations.remove(strategy);
                     return;
@@ -210,8 +211,8 @@ public class ResellerAgent extends NegotiatingAgent {
                     PowerSaleProposal counterProposal = (PowerSaleProposal) offer.get();
                     strategy.addNewProposal(counterProposal, true);
                     sendProposal(msg, counterProposal);
-                    LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
-                            " for electricity negotiating with " + msg.getSender().getName());
+//                    LogDebug(getName() + " offered to pay " + counterProposal.getCost()  +
+//                            " for electricity negotiating with " + msg.getSender().getName());
                 }
                 else {
                     // Accept the contract
@@ -219,11 +220,11 @@ public class ResellerAgent extends NegotiatingAgent {
                     sendAcceptProposal(msg, agreement);
                     _currentBuyAgreements.add(agreement);
                     sendSaleMade(agreement);
+                    updateContracts();
                     LogVerbose(getName() + " agreed to buy " + agreement.getAmount() + " electricity until " +
                             agreement.getEndTime() + " from " + agreement.getSellerAID().getName());
-                    updateContracts();
-                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
-                            _nextRequiredAmount);
+//                    LogDebug(getName() + " has purchased: " + _nextPurchasedAmount + " and needs: " +
+//                            _nextRequiredAmount);
                 }
             }
         }
@@ -236,6 +237,7 @@ public class ResellerAgent extends NegotiatingAgent {
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
             _currentSellAgreements.add(agreement);
             sendSaleMade(agreement);
+            updateContracts();
             LogDebug("Accepted a prop from: " + msg.getSender().getName() + " for " + agreement.getAmount() +
                 " @ " + agreement.getCost());
         }
@@ -260,28 +262,11 @@ public class ResellerAgent extends NegotiatingAgent {
     // Someone is wanting to buy electricity off us
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            // A request for a price on electricity
+            // A request for a price IsOn electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
-            if (_nextRequiredAmount > _nextPurchasedAmount) { // We have sold all the electricity we have purchased.
-                if (_current_globals.getTimeLeft() > (GlobalValues.lengthOfTimeSlice() * 0.75)) {
-                    // %75 percent of a cycle left, make an offer at increased price.
-                    if (proposed.getCost() < 0) { // No cost added, make up one at +%25
-                        proposed.setCost(_currentSellPrice * 1.25);
-                    }
-                    else {
-                        if (proposed.getCost() < _currentSellPrice * 1.25) {
-                            return; // There is already a price and it is to low
-                        }
-                    }
-                }
-            }
-            else {
-                if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
-                // else, leave the price alone, they have offered to pay more than we charge.
-            }
-            proposed.setSellerAID(getAID());
+            if (proposed.getCost() < _currentSellPrice) proposed.setCost(_currentSellPrice);
             ACLMessage sent = sendProposal(msg, proposed);
-            LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
+            //LogDebug(getName() + " sending a proposal to " + msg.getSender().getName());
             INegotiationStrategy strategy;
             try {
                 strategy = makeNegotiationStrategy(proposed, sent.getConversationId(), new BasicUtility()
@@ -296,11 +281,13 @@ public class ResellerAgent extends NegotiatingAgent {
     private class ChangeNegotiationStrategyHandler implements IMessageHandler {
         @Override
         public void Handler(ACLMessage msg) {
-            try {
-                _negotiationArgs = (List<String>) msg.getContentObject();
-            } catch (UnreadableException e) {
-                LogError("was sent details for negotiation that were not valid format.");
+            String [] arguments = msg.getContent().split(" ");
+            if (arguments.length > 0) {
+                _negotiationArgs = Arrays.asList(arguments);
+                LogDebug("Had its strategy changed to: ");
+                _negotiationArgs.forEach((arg) -> LogDebug(arg));
             }
+            else LogError("tried to have its negation strategy changed to nothing");
         }
     }
      /******************************************************************************
@@ -315,7 +302,7 @@ public class ResellerAgent extends NegotiatingAgent {
                 data = new AgentData(buy_price, sell_price,current_sales, current_purchases, name);
             }
             public int getgroup() { return GROUP_ID; }
-            public AgentData getagent() {return data; }
+            public AgentData getagentData() {return data; }
             public String getid() {return Name;}
             private class AgentData implements Serializable{
                 private String Name;
@@ -331,7 +318,7 @@ public class ResellerAgent extends NegotiatingAgent {
                     current_purchase_volume = current_purchases;
                     Name = name;
                 }
-                public String getName () { return Name.split("@")[0];}
+                public String getName () { return getLocalName(); }
                 public String getType () { return TYPE; }
                 public double getCurrent_Sell_Price() { return current_sell_price; }
                 public double getCurrent_Buy_Price() { return current_buy_price; }
@@ -346,8 +333,9 @@ public class ResellerAgent extends NegotiatingAgent {
     private class BasicUtility implements IUtilityFunction {
         private double _costImperative = 5;
         private double _supplyImperative = 5;
-        private double _timeImperative = 0.1;
-        private double _idealPrice = 0.5;
+        private double _timeImperative = 0.5;
+        private double _idealBuyPrice = _current_globals.getAveragePriceLastTime() * 0.5;
+        private double _idealSellPrice = _current_globals.getAveragePriceLastTime() * 1.5;
         private GlobalValues _createdTime;
 
         BasicUtility () {
@@ -358,17 +346,20 @@ public class ResellerAgent extends NegotiatingAgent {
         public double evaluate(PowerSaleProposal proposal) {
             double required = _nextRequiredAmount - _nextPurchasedAmount;
             double requiredUtil = (_supplyImperative / (Math.abs(required) < 0.1 ? 0.1 : required));
-            double costDifference = (_idealPrice - proposal.getCost());
-            double costDifferenceUtil = costDifference * _costImperative;
+            double costDifference;
             double timeImperative =  Math.abs((GlobalValues.lengthOfTimeSlice() -
                     _current_globals.getTimeLeft()) * _timeImperative);
+            if (proposal.getBuyerAID().getName().equals(getName()))
+                costDifference = (_idealBuyPrice - proposal.getCost());
+            else costDifference = (_idealSellPrice - proposal.getCost());
+            double costDifferenceUtil = costDifference * _costImperative;
             return (requiredUtil + costDifferenceUtil + timeImperative);
         }
 
 
         @Override
         public boolean equals(IUtilityFunction utility) {
-            return _createdTime == _current_globals;
+            return _createdTime.sameTime(_current_globals);
         }
 
     }

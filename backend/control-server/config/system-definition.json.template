@@ -1,0 +1,79 @@
+{
+ "containers" : [ {
+   "name" : "Power Plant Container",
+   "agents" : [ {
+     "name" : "PowerPlant1",
+     "className" : "edu.swin.hets.agent.PowerPlantAgent",
+     "arguments" : "BoulwareNegotiator,9,5,0.2,0.1,1,0.95"
+   }, {
+     "name" : "PowerPlant3",
+     "className" : "edu.swin.hets.agent.PowerPlantAgent",
+     "arguments" : "LinearUtilityDecentNegotiator,9,5,0.2,0.1,1,0.95"
+   },{
+     "name" : "PowerPlant2",
+     "className" : "edu.swin.hets.agent.PowerPlantAgent",
+     "arguments" : "HoldForFirstOfferPrice,8"
+   } ]
+ }, {
+   "name" : "Appliance Container",
+   "agents" : [ {
+     "name" : "Appliance1",
+     "className" : "edu.swin.hets.agent.ApplianceAgent",
+     "arguments" : "50,Home1",
+     "owner" : "Home1"
+   }, {
+     "name" : "Appliance2",
+     "className" : "edu.swin.hets.agent.ApplianceAgent",
+     "arguments" : "66,Home1",
+     "owner" : "Home2"
+   }, {
+     "name" : "Appliance3",
+     "className" : "edu.swin.hets.agent.ApplianceAgent",
+     "arguments" : "18,Home1",
+     "owner" : "Home2"
+   }, {
+     "name" : "Appliance4",
+     "className" : "edu.swin.hets.agent.ApplianceAgent",
+     "arguments" : "12,Home2",
+     "owner" : "Home2"
+   }, {
+     "name" : "Appliance5",
+     "className" : "edu.swin.hets.agent.ApplianceAgent",
+     "arguments" : "150,Home2",
+     "owner" : "Home2"
+   }, {
+     "name" : "Appliance6",
+     "className" : "edu.swin.hets.agent.ApplianceAgent",
+     "arguments" : "340,Home2",
+     "owner" : "Home2"
+   }]
+ }, {
+   "name" : "Home Container",
+   "agents" : [ {
+     "name" : "Home1",
+     "className" : "edu.swin.hets.agent.HomeAgent"
+   }, {
+     "name" : "Home2",
+     "className" : "edu.swin.hets.agent.HomeAgent"
+   } ]
+ }, {
+   "name" : "Reseller Container",
+   "agents" : [ {
+     "name" : "Reseller1",
+     "className" : "edu.swin.hets.agent.ResellerAgent",
+     "arguments" : "HoldForFirstOfferPrice,5"
+   }, {
+     "name" : "Reseller2",
+     "className" : "edu.swin.hets.agent.ResellerAgent",
+     "arguments" : "LinearUtilityDecentNegotiator,0.1,0.5,1"
+   }, {
+     "name" : "Reseller3",
+     "className" : "edu.swin.hets.agent.ResellerAgent",
+     "arguments" : "LinearUtilityDecentNegotiator,0.2,0.5,1"
+   }, {
+     "name" : "Reseller4",
+     "className" : "edu.swin.hets.agent.ResellerAgent",
+     "arguments" : "LinearUtilityDecentNegotiator,0.05,0.5,2"
+   }]
+ } ]
+}

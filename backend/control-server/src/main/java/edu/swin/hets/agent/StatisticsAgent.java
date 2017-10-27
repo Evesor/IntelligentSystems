@@ -13,13 +13,14 @@ import java.util.List;
 import java.util.function.ToDoubleFunction;
 /******************************************************************************
  *  Use: Creates statistics about the system
- *  Name: Always only have one of these on the main container, have it name set
+ *  Name: Always only have one of these IsOn the main container, have it name set
  *        to "StatisticsAgent"
  *  Preformatives Understood:
  *       - INFORM : Used to tell the stats agent about a new agreement.
  *             content: "An PowerSaleAgreement object."
  *****************************************************************************/
 public class StatisticsAgent extends NegotiatingAgent {
+    public static final String AGENT_NAME = "StatisticsAgent";
     private ArrayList<ArrayList<PowerSaleAgreement>> _agreements;
 
     private MessageTemplate _saleInformMessageTemplate = MessageTemplate.and(
@@ -73,15 +74,9 @@ public class StatisticsAgent extends NegotiatingAgent {
      *  Use: Used by getJson to output data to server.
      *****************************************************************************/
     private class StatisticsAgentData implements Serializable {
-        public List<Double> getAveragePrice () {
-            return average((agg) -> agg.getCost());
-        }
-        public List<Double> getAverageVolume () {
-            return average((agg) -> agg.getAmount());
-        }
-        public List<Double> getAverageTime () {
-            return average((agg) -> agg.getEndTime() - agg.getStartTime());
-        }
+        public List<Double> getAveragePrice () { return average((agg) -> agg.getCost()); }
+        public List<Double> getAverageVolume () { return average((agg) -> agg.getAmount()); }
+        public List<Double> getAverageTime () { return average((agg) -> agg.getEndTime() - agg.getStartTime()); }
         public List<Integer> getNumberOfSalesMade() {
             List<Integer> numberOfSales = new ArrayList<>();
             for (List<PowerSaleAgreement> agg : _agreements) {
@@ -90,7 +85,7 @@ public class StatisticsAgent extends NegotiatingAgent {
             return numberOfSales;
         }
 
-        // Function used to make average of values based on lambda of what value we want.
+        // Function used to make average of values based IsOn lambda of what value we want.
         private ArrayList<Double> average (ToDoubleFunction<PowerSaleAgreement> lambda) {
             ArrayList<Double> averageList = new ArrayList<>();
             for (ArrayList<PowerSaleAgreement> agreements : _agreements) {

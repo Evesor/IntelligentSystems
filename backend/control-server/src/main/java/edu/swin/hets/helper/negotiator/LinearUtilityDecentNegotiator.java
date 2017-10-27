@@ -1,10 +1,6 @@
 package edu.swin.hets.helper.negotiator;
 
-import edu.swin.hets.helper.INegotiationStrategy;
-import edu.swin.hets.helper.PowerSaleProposal;
-import edu.swin.hets.helper.PowerSaleAgreement;
-import edu.swin.hets.helper.IPowerSaleContract;
-import edu.swin.hets.helper.IUtilityFunction;
+import edu.swin.hets.helper.*;
 import jade.core.AID;
 
 import java.util.ArrayList;
@@ -18,108 +14,58 @@ import java.util.Optional;
  *       - The jump parameters refer to how big a change we should have
  *         between each offer. Smaller values may lead to more optimum
  *         solutions but with longer negotiation times.
+ *      Good ranges for params:
+ *          + maxStallTime 5 - 10
+ *          + maxNegotiationTime 15 - 20
+ *          + PriceJump 0.1 - 0.5
+ *          + VolumeJump 0.1 - 1
+ *          + TimeJump 1-2
+ *          + Acceptance to 0.9 -> 0.99
  *****************************************************************************/
-public class LinearUtilityDecentNegotiator implements INegotiationStrategy {
-    private ArrayList<PowerSaleProposal[]> _proposalHistory; // Will always be a 2 wide array
+public class LinearUtilityDecentNegotiator extends NegotiatorBase {
     private IUtilityFunction _utilityFun;
-    private String _ourName;
-    private Integer _timeSlice;
-    private String _opponentName;
     private double _priceJump;
     private double _volumeJump;
+    private double _acceptTolerance;
     private Integer _timeJump;
-    private String _conversationID;
-    //TODO, put hard limit on negotiation lengths.
 
-    public LinearUtilityDecentNegotiator(IUtilityFunction utilityFun,
-                                         String ourName,
-                                         String opponentName,
-                                         PowerSaleProposal firstOffer,
-                                         Integer timeSlice,
+    public LinearUtilityDecentNegotiator(PowerSaleProposal firstOffer,
+                                         String conversationID,
+                                         String opponentsName,
+                                         GlobalValues currentGlobals,
+                                         int maxNegotiationTime,
+                                         int maxStallTime,
                                          double priceJump,
                                          double volumeJump,
-                                         Integer timeJump,
-                                         String conversationID) {
-        _utilityFun = utilityFun;
-        _proposalHistory = new ArrayList<>();
-        _proposalHistory.add(new PowerSaleProposal[2]);
-        _proposalHistory.get(0)[0] = firstOffer;
-        _ourName = ourName;
-        _timeSlice = timeSlice;
-        _opponentName = opponentName;
+                                         int timeJump,
+                                         double acceptTolerance,
+                                         IUtilityFunction utilityFunction) {
+        super(opponentsName, conversationID, firstOffer, maxNegotiationTime, maxStallTime, currentGlobals);
+        _utilityFun = utilityFunction;
         _priceJump = priceJump;
         _volumeJump = volumeJump;
         _timeJump = timeJump;
-        _conversationID = conversationID;
-    }
-
-    public String getOpponentName() { return _opponentName; }
-
-    @Override
-    public String getConversationID() { return _conversationID; }
-
-    @Override
-    public void addNewProposal(PowerSaleProposal proposal, boolean fromUs) {
-        if (fromUs) {
-            _proposalHistory.add(new PowerSaleProposal[2]);
-            _proposalHistory.get(_proposalHistory.size() - 1)[0] = proposal;
-        }
-        else {
-            _proposalHistory.get(_proposalHistory.size() - 1)[1] = proposal;
-        }
+        _acceptTolerance = acceptTolerance;
     }
 
     @Override
     public Optional<IPowerSaleContract> getResponse() {
-        PowerSaleProposal ourOffer = _proposalHistory.get(_proposalHistory.size() - 1)[0];
-        PowerSaleProposal thereOffer = _proposalHistory.get(_proposalHistory.size() - 1)[1];
-        if (thereOffer == null && _proposalHistory.size() > 1) {
-            // They have not made an offer for our last one, use previous.
-            thereOffer = _proposalHistory.get(_proposalHistory.size() - 2)[1];
-        }
+        PowerSaleProposal ourOffer = getOurMostRecentOffer();
+        PowerSaleProposal thereOffer = getThereMostRecentOffer();
+        if (conversationStalled()) return Optional.empty();
+        if (conversationToLong()) return Optional.empty();
         if (thereOffer == null) return Optional.of(ourOffer);
         // They have made some kind of offer.
         double thereOfferUtil = _utilityFun.evaluate(thereOffer);
         double ourOfferUtil = _utilityFun.evaluate(ourOffer);
         //TODO, Remove
-        System.out.println(_ourName + " had initial offer of util: " + ourOfferUtil +
+        System.out.println(" had initial offer of util: " + ourOfferUtil +
                 " and was offered " + thereOfferUtil + " worth of utility");
-        if (thereOfferUtil > ourOfferUtil * 0.9) {
-            // We are within %90 utility of what we want. Accept the offer.
-            return Optional.of(new PowerSaleAgreement(thereOffer, _timeSlice));
+        if (thereOfferUtil > ourOfferUtil * _acceptTolerance) {
+            // We are within tolerance utility of what we want. Accept the offer.
+            return Optional.of(new PowerSaleAgreement(thereOffer, _currentGlobals.getTime()));
         }
-        // Move linearly towards there offer, provided it is within %90 of our best offer.
-        return linearMove(ourOffer, thereOffer, 0.9);
-    }
-
-    private boolean areWeSeller() {
-        if(_proposalHistory.get(0)[0].getSellerAID() != null) {
-            if (_proposalHistory.get(0)[0].getSellerAID().getName().equals(_ourName)) return true;
-        }
-        return false;
-    }
-    // Recursive function that looks for an offer that is closer to the one offered that is still acceptable.
-    // Note : Step size and tolerance are percentages, DO NOT EXCEEDED 0<->1
-    private Optional<IPowerSaleContract> linearMove(PowerSaleProposal p1, PowerSaleProposal p2, double tolerance) {
-        PowerSaleProposal counter = new PowerSaleProposal(
-                (p1.getAmount() - p2.getAmount()) * _volumeJump,
-                (int) Math.round((p1.getDuration() - p2.getDuration()) * _timeJump),
-                new AID(_ourName, AID.ISLOCALNAME),
-                areWeSeller());
-        counter.setCost((p1.getCost() - p2.getCost()) * _priceJump);
-        if (_utilityFun.evaluate(p1) * tolerance < _utilityFun.evaluate(counter)) {
-            // This counter is pretty good, return it.
-            return Optional.of(counter);
-        }
-        // We have just evaluated the quality of a deal near what the other person wanted, break
-        if (withinStepSize(counter, p2)) return Optional.empty();
-        // Recursively call till we get to there offer or we find an acceptable one.
-        return linearMove(counter, p2, tolerance);
-    }
-
-    private boolean withinStepSize (PowerSaleProposal p1, PowerSaleProposal p2) {
-        return (Math.abs((p1.getAmount() - p2.getAmount())) < _volumeJump &&
-                Math.abs((p1.getCost() - p2.getCost())) < _priceJump &&
-                Math.abs((p1.getDuration() - p2.getDuration())) < _timeJump);
+        // Move linearly towards there offer, provided it is within tolerance of our last offer.
+        return linearMove(ourOffer, thereOffer, _utilityFun, _volumeJump, _timeJump, _priceJump, _acceptTolerance);
     }
 }

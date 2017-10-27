@@ -6,8 +6,10 @@ import edu.swin.hets.agent.StatisticsAgent
 import edu.swin.hets.agent.WebAgent
 import edu.swin.hets.controller.distributor.ContainerDistributor
 import edu.swin.hets.controller.gateway.AgentRetriever
+import edu.swin.hets.controller.gateway.ChangeBehaviourRequest
 import edu.swin.hets.controller.gateway.ContainerListRetriever
 import edu.swin.hets.controller.gateway.JadeTerminator
+import edu.swin.hets.controller.gateway.ChangeBehaviourMessageBehaviour
 import edu.swin.hets.web.ClientWebSocketHandler
 import jade.core.*
 import jade.util.leap.Properties
@@ -40,9 +42,9 @@ class JadeController(private val runtime: Runtime,
     fun start() {
         logger.info("Spinning up the JADE platform...")
         mainContainer = runtime.createMainContainer(profile).apply {
-            createNewAgent("LoggingAgent", LoggingAgent::class.java.name, arrayOf()).start()
-            createNewAgent("WebServer", WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
-            createNewAgent("StatisticsAgent", StatisticsAgent::class.java.name, arrayOf())?.start()
+            createNewAgent(LoggingAgent.AGENT_NAME, LoggingAgent::class.java.name, arrayOf()).start()
+            createNewAgent(WebAgent.AGENT_NAME, WebAgent::class.java.name, arrayOf(clientWebSocketHandler)).start()
+            createNewAgent(StatisticsAgent.AGENT_NAME, StatisticsAgent::class.java.name, arrayOf())?.start()
         }
 
         JadeGateway.init(null,
@@ -62,7 +64,7 @@ class JadeController(private val runtime: Runtime,
         }
 
         Thread.sleep(1000)
-        mainContainer?.createNewAgent("GlobalValues", GlobalValuesAgent::class.java.name, arrayOf())?.start()
+        mainContainer?.createNewAgent(GlobalValuesAgent.AGENT_NAME, GlobalValuesAgent::class.java.name, arrayOf())?.start()
     }
 
     fun stop() {
@@ -87,4 +89,8 @@ class JadeController(private val runtime: Runtime,
                     .toList()
                     .flatMap { it }
 
+
+    fun changeBehaviour(changeBehaviourRequest: ChangeBehaviourRequest) {
+        JadeGateway.execute(ChangeBehaviourMessageBehaviour(changeBehaviourRequest))
+    }
 }

@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 /******************************************************************************
  *  Use: An agent for dealing with development messages.
- *  Name: Always only have one of these on the main container, have it name set
+ *  Name: Always only have one of these IsOn the main container, have it name set
  *        to "LoggingAgent"
  *  Notes: There is a format to these messages, please use the base log methods
  *         to send a message rather than sending messages directly.
@@ -20,6 +20,8 @@ import java.util.List;
  *          - content : Information about the system.
  *****************************************************************************/
 public class LoggingAgent extends BaseAgent{
+    public static final String AGENT_NAME = "LoggingAgent";
+
     private ArrayList<LoggedData> _logged_debug;
     private ArrayList<LoggedData> _logged_errors;
     private ArrayList<LoggedData> _logged_verbose;

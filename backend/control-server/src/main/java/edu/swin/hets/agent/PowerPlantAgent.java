@@ -5,17 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.swin.hets.helper.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-
 /******************************************************************************
  *  Use: A simple example of a power plant class that is not dependant
- *       on any events, should be extended later for more detailed classes.
+ *       IsOn any events, should be extended later for more detailed classes.
  *  Services Registered: "powerplant"
  *  Messages understood:
  *       - CFP : Used to ask for a request of electricity
@@ -36,10 +35,11 @@ import java.util.concurrent.ExecutionException;
 public class PowerPlantAgent extends NegotiatingAgent {
     private static final int GROUP_ID = 1;
     private static String TYPE = "Power Plant";
+    public static double BASE_COST = 5;
+    private static double MAX_PRODUCTION;
     private double _money;
     private double _costOfProduction;
     private double _currentIdealSellPrice;
-    private double _maxProduction;
     private double _currentProduction;
     private ArrayList<PowerSaleAgreement> _currentContracts;
     private ArrayList<INegotiationStrategy> _currentNegotiations;
@@ -64,7 +64,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
         super.setup();
         _money = 500;
         _currentProduction = 10;
-        _maxProduction = 1000;
+        MAX_PRODUCTION = 1000;
         _costOfProduction = 0.5;
         _currentIdealSellPrice = 1.8;
         _currentContracts = new ArrayList<>();
@@ -76,9 +76,9 @@ public class PowerPlantAgent extends NegotiatingAgent {
         addMessageHandler(ProposeTemplate, new ProposeHandler());
         addMessageHandler(ChangeNegotiationStrategyTemplate, new ChangeNegotiationStrategyHandler());
         _negotiationArgs = (List<String>) getArguments()[0];
-        if (_negotiationArgs.size() > 0) {
-            _negotiationArgs.forEach((arg) -> LogDebug("was passed: " + arg));
-        }
+//        if (_negotiationArgs.size() > 0) {
+//            _negotiationArgs.forEach((arg) -> LogDebug("was passed: " + arg));
+//        }
     }
 
     // Update bookkeeping.
@@ -106,6 +106,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
     }
 
     private void balanceBooks () {
+        calculateProductionCost();
         _currentContracts.forEach((agg) -> _money += agg.getCost() * agg.getAmount());
         _currentContracts.forEach((agg) -> _money -= agg.getAmount() * _costOfProduction);
     }
@@ -115,22 +116,28 @@ public class PowerPlantAgent extends NegotiatingAgent {
         ArrayList<PowerSaleAgreement> toRemove = new ArrayList<>();
         // Filter out old contracts
         _currentContracts.stream().filter(
-                (agg) -> agg.getEndTime() < _current_globals.getTime()).forEach(toRemove::add);
+                (agg) -> agg.getEndTime() <= _current_globals.getTime()).forEach(toRemove::add);
         _currentContracts.removeAll(toRemove);
         // Update how much we now need to produce.
         _currentContracts.forEach((agg) -> _currentProduction += agg.getAmount());
     }
 
+    private void calculateProductionCost() {
+        // Normalize value production over ratio of 0->PI => O and use Base*(1-0.5*sin(O)) to make cost.
+        if (_costOfProduction == 0) _costOfProduction = BASE_COST;
+        _costOfProduction = BASE_COST *(1 - 0.5 * Math.sin((_currentProduction / MAX_PRODUCTION) * Math.PI));
+    }
+
     // Someone buying from us.
     private class CFPHandler implements IMessageHandler {
         public void Handler(ACLMessage msg) {
-            // A request for a price on electricity
+            // A request for a price IsOn electricity
             PowerSaleProposal proposed = getPowerSalePorposal(msg);
-            if (proposed.getAmount() > (_maxProduction - _currentProduction)) {
+            if (proposed.getAmount() > (MAX_PRODUCTION - _currentProduction)) {
                 LogVerbose(getName() + " was asked to sell electricity than it can make.");
                 return;
             }
-            if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
+            else if (proposed.getCost() < _currentIdealSellPrice) proposed.setCost(_currentIdealSellPrice);
             ACLMessage sent = sendProposal(msg, proposed);
             INegotiationStrategy strategy;
             try {
@@ -140,7 +147,6 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 return;
             }
             _currentNegotiations.add(strategy);
-            proposed.setSellerAID(getAID());
             LogVerbose(getName() + " sending a proposal for " +  proposed.getAmount() + " @ " +
                     proposed.getCost() + " to: "  + msg.getSender().getName());
         }
@@ -171,7 +177,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
         public void Handler(ACLMessage msg) {
             // A quote we have previously made has been accepted.
             PowerSaleAgreement agreement = getPowerSaleAgrement(msg);
-            if (agreement.getAmount() > (_maxProduction - _currentProduction)) {
+            if (agreement.getAmount() > (MAX_PRODUCTION - _currentProduction)) {
                 // Cant sell that much electricity, send back error message.
                 sendRejectAgreementMessage(msg, agreement);
                 return;
@@ -194,7 +200,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             strategy.addNewProposal(prop, false);
             Optional<IPowerSaleContract> response = strategy.getResponse();
             if (!response.isPresent()) { // We should end negotiations.
-                LogDebug("has stopped negotiating with: " + msg.getSender());
+                //LogDebug("has stopped negotiating with: " + msg.getSender());
                 _currentNegotiations.remove(strategy);
                 sendRejectProposalMessage(msg, prop);
                 return;
@@ -204,8 +210,8 @@ public class PowerPlantAgent extends NegotiatingAgent {
                 PowerSaleProposal counter = (PowerSaleProposal) response.get();
                 sendProposal(msg, counter);
                 strategy.addNewProposal(counter, true);
-                LogDebug(getName() + " offered to pay " + counter.getCost()  +
-                        " for electricity negotiating with " + msg.getSender().getName());
+//                LogDebug(getName() + " offered to pay " + counter.getCost()  +
+//                        " for electricity negotiating with " + msg.getSender().getName());
             }
             else { // Accept
                 PowerSaleAgreement agreement = (PowerSaleAgreement) response.get();
@@ -220,11 +226,13 @@ public class PowerPlantAgent extends NegotiatingAgent {
     private class ChangeNegotiationStrategyHandler implements IMessageHandler {
         @Override
         public void Handler(ACLMessage msg) {
-            try {
-                _negotiationArgs = (List<String>) msg.getContentObject();
-            } catch (UnreadableException e) {
-                LogError("was sent details for negotiation that were not valid format.");
+            String [] arguments = msg.getContent().split(" ");
+            if (arguments.length > 0) {
+                _negotiationArgs = Arrays.asList(arguments);
+                LogDebug("Had its strategy changed to: ");
+                _negotiationArgs.forEach((arg) -> LogDebug(arg));
             }
+            else LogError("tried to have its negation strategy changed to nothing");
         }
     }
     /******************************************************************************
@@ -239,7 +247,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
         }
         public String getid() { return Name; }
         public int getgroup() { return GROUP_ID; }
-        public AgentData getagent() { return dat; }
+        public AgentData getagentData() { return dat; }
         private class AgentData implements Serializable {
             private String Name;
             private double current_sell_price;
@@ -251,7 +259,7 @@ public class PowerPlantAgent extends NegotiatingAgent {
             }
             public double getCurrent_Production() { return current_production; }
             public double getCurrent_Sell_Price() { return current_sell_price; }
-            public String getName () { return Name.split("@")[0];}
+            public String getName () { return getLocalName(); }
         }
     }
     /******************************************************************************

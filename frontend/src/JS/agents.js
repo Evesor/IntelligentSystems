@@ -40,6 +40,7 @@ function update(graph) {
         .data(graph.nodes)
         .enter().append("circle")
         .attr("r", size)
+          .style("stroke","black")
         .attr("fill", function(d) { return color(d.group); })
         .call(d3.drag()
             .on("start", dragstarted)
