@@ -150,7 +150,6 @@ let AgentGraph = () => {
 
         nodeEnter.append("svg:circle")
             .attr("r", size)
-            .style("stroke","black")
             .attr("id", function (d) {
                 return "Node;" + d.id;
             })

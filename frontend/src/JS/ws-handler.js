@@ -1,15 +1,10 @@
 (() => {
-<<<<<<< HEAD:frontend/JS/ws-handler.js
-    // Establish the WebSocket connection and set up event handlers
-    let webSocket = new WebSocket("ws://localhost:4567/ws");
-=======
 // Establish the WebSocket connection and set up event handlers
     let webSocket = new WebSocket("ws://" +
                         location.hostname +
                         (location.port ? ":" + 4567 : "") +
                         "/ws");
 
->>>>>>> frontend:frontend/src/JS/ws-handler.js
     var graph = AgentGraph();
 
     webSocket.onmessage = function (msg) {
