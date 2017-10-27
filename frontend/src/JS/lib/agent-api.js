@@ -4,7 +4,7 @@ let requestTypes = Object.freeze({
     }
 });
 
-let agentApi = (() => {
+var agentApi = (() => {
     const baseUrl = location.protocol +
         "//" +
         location.hostname +
